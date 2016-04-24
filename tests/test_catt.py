@@ -15,7 +15,7 @@ class TestThings(unittest.TestCase):
     def test_cache(self):
         cache = catt.Cache("/tmp/catt_cache/")
         cache.set("key", "value")
-        self.assertEquals(cache.get("key", 1), "value")
+        self.assertEqual(cache.get("key", 1), "value")
         time.sleep(1.2)
         self.assertIsNone(cache.get("key", 1))
 
