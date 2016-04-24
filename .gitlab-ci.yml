@@ -1,3 +1,4 @@
+image: themattrix/tox
 before_script:
   - pip install tox
 
