@@ -1,0 +1,6 @@
+before_script:
+  - pip install tox
+
+catt:
+  script:
+  - tox
