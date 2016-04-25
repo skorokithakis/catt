@@ -85,6 +85,8 @@ class CastController:
 
     def status(self):
         status = self.cast.media_controller.status.__dict__
+        if not status["duration"]:
+            echo("Nothing currently playing.")
         status["progress"] = int((status["current_time"] / status["duration"]) * 100)
         status["remaining_minutes"] = (status["duration"] - status["current_time"]) / 60
         echo(
