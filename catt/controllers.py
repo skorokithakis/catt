@@ -75,7 +75,7 @@ class CastController:
     def seek(self, seconds):
         self.cast.media_controller.seek(int(seconds))
 
-    def rewind(self, seconds):
+    def rewind(self, seconds=None):
         try:
             seconds = int(seconds)
         except:
