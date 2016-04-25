@@ -75,11 +75,7 @@ class CastController:
     def seek(self, seconds):
         self.cast.media_controller.seek(int(seconds))
 
-    def rewind(self, seconds=None):
-        try:
-            seconds = int(seconds)
-        except:
-            seconds = 30
+    def rewind(self, seconds):
         pos = self.cast.media_controller.status.current_time
         self.seek(pos - seconds)
 
