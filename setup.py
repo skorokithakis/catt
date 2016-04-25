@@ -12,9 +12,6 @@ except ImportError:
 with open('README.rst') as readme_file:
     readme = readme_file.read()
 
-with open('HISTORY.rst') as history_file:
-    history = history_file.read()
-
 requirements = [
     "youtube-dl>=2016.4.19",
     "PyChromecast>=0.7.0",
@@ -28,7 +25,7 @@ setup(
     name='catt',
     version=__version__,
     description="Cast All The Things allows you to send videos from many, many online sources to your Chromecast.",
-    long_description=readme + '\n\n' + history,
+    long_description=readme,
     author="Stavros Korokithakis",
     author_email='hi@stavros.io',
     url='https://github.com/skorokithakis/catt',
