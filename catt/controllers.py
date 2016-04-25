@@ -1,11 +1,9 @@
-# -*- coding: utf-8 -*-
 import os
 import time
-from click import echo
-import click
 import youtube_dl
 import pychromecast
 import tempfile
+from click import echo
 
 
 def get_stream_url(video_url):
@@ -91,49 +89,3 @@ class CastController:
 
     def kill(self):
         self.cast.quit_app()
-
-
-@click.group()
-def cli():
-    pass
-
-
-@cli.command()
-@click.argument("video_url")
-def cast(video_url):
-    stream_url = get_stream_url(video_url)
-    cast = CastController()
-    cc_name = cast.cast.device.friendly_name
-    echo(u"Playing %s on %s..." % (video_url, cc_name))
-    cast.play_media(stream_url)
-
-
-@cli.command()
-def play():
-    CastController().play()
-
-
-@cli.command()
-def pause():
-    CastController().pause()
-
-
-@cli.command()
-def stop():
-    CastController().kill()
-
-
-@cli.command()
-def rewind():
-    CastController().rewind()
-
-
-@cli.command()
-@click.argument("seconds")
-def seek(seconds):
-    CastController().seek(seconds)
-
-
-@cli.command()
-def status():
-    CastController().status()
