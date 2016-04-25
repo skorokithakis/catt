@@ -120,7 +120,7 @@ def pause():
 
 @cli.command()
 def stop():
-    CastController().stop()
+    CastController().kill()
 
 
 @cli.command()
