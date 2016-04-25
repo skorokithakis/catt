@@ -2,6 +2,7 @@ import os
 import time
 import youtube_dl
 import pychromecast
+import shutil
 import tempfile
 from click import echo
 
@@ -15,7 +16,7 @@ def get_stream_url(video_url):
 
 
 class Cache:
-    def __init__(self, cache_dir):
+    def __init__(self, cache_dir=os.path.join(tempfile.gettempdir(), "catt_cache/")):
         self.cache_dir = cache_dir
         try:
             os.mkdir(cache_dir)
@@ -38,11 +39,16 @@ class Cache:
     def set(self, key, value):
         open(self._get_cache_filename(key), "w").write(value)
 
+    def clear(self):
+        try:
+            shutil.rmtree(self.cache_dir)
+        except:
+            pass
+
 
 class CastController:
     def __init__(self):
-        tempdir = tempfile.gettempdir()
-        cache = Cache(os.path.join(tempdir, "catt_cache/"))
+        cache = Cache()
 
         cached_chromecast = cache.get("chromecast_host", 3 * 24 * 3600)
         if cached_chromecast:

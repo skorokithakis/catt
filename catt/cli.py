@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 import click
 
-from .controllers import get_stream_url, CastController
+from .controllers import get_stream_url, CastController, Cache
 
 
 @click.group()
-def cli():
-    pass
+@click.option("--delete-cache", is_flag=True)
+def cli(delete_cache):
+    if delete_cache:
+        Cache().clear()
 
 
 @cli.command()
