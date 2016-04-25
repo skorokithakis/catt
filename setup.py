@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
+from catt import __version__
 try:
     from setuptools import setup
 except ImportError:
@@ -25,7 +26,7 @@ test_requirements = [
 
 setup(
     name='catt',
-    version='0.0.1',
+    version=__version__,
     description="Cast All The Things allows you to send videos from many, many online sources to your Chromecast.",
     long_description=readme + '\n\n' + history,
     author="Stavros Korokithakis",
