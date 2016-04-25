@@ -6,4 +6,6 @@ python:
   - "3.5"
 
 # command to run tests, e.g. python setup.py test
-script: python setup.py test
+script:
+  - python setup.py test
+  - flake8 .
