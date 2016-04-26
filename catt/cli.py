@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import click
 
-from .controllers import get_stream_url, CastController, Cache
+from .controllers import get_stream_info, CastController, Cache
 
 
 @click.group()
@@ -16,11 +16,11 @@ def cli(delete_cache):
 @cli.command(short_help="Send a video to a Chromecast for playing.")
 @click.argument("video_url")
 def cast(video_url):
-    stream_url = get_stream_url(video_url)
+    stream_info = get_stream_info(video_url)
     cast = CastController()
     cc_name = cast.cast.device.friendly_name
-    click.echo(u"Playing %s on %s..." % (video_url, cc_name))
-    cast.play_media(stream_url)
+    click.echo(u"Playing %s on %s..." % (stream_info["title"], cc_name))
+    cast.play_media(stream_info["url"])
 
 
 @cli.command(short_help="Pause a video.")

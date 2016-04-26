@@ -7,12 +7,16 @@ import tempfile
 from click import echo
 
 
-def get_stream_url(video_url):
+def get_stream_info(video_url):
     ydl = youtube_dl.YoutubeDL({})
     info = ydl.extract_info(video_url, download=False)
     format_selector = ydl.build_format_selector("best")
     best_format = list(format_selector(info["formats"]))[0]
-    return best_format["url"]
+    stream_info = {
+        "url": best_format["url"],
+        "title": info.get("title", video_url),
+    }
+    return stream_info
 
 
 class Cache:

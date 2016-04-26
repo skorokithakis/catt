@@ -4,12 +4,12 @@
 import time
 import unittest
 
-from catt.controllers import Cache, get_stream_url
+from catt.controllers import Cache, get_stream_info
 
 
 class TestThings(unittest.TestCase):
-    def test_get_stream_url(self):
-        url = get_stream_url("https://www.youtube.com/watch?v=VZMfhtKa-wo")
+    def test_get_stream_info(self):
+        url = get_stream_info("https://www.youtube.com/watch?v=VZMfhtKa-wo")["url"]
         self.assertIn("https://", url)
 
     def test_cache(self):
