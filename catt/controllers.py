@@ -88,8 +88,12 @@ class CastController:
         if not status["duration"]:
             echo("Nothing currently playing.")
             return
-        status["progress"] = int((status["current_time"] / status["duration"]) * 100)
+
+        status["current_time"] = int(status["current_time"])
+        status["duration"] = int(status["duration"])
+        status["progress"] = int(((1.0 * status["current_time"]) / status["duration"]) * 100)
         status["remaining_minutes"] = (status["duration"] - status["current_time"]) / 60
+
         echo(
             "Time: {current_time}/{duration} ({progress}%)\n"
             "Remaining minutes: {remaining_minutes:0.1f}\n"
