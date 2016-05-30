@@ -6,8 +6,8 @@ from .controllers import get_stream_info, CastController, Cache
 
 @click.group()
 @click.option("--delete-cache", is_flag=True, help="Empty the Chromecast "
-        "discovery cache. Specify this if you're having errors connecting to "
-        "the Chromecast.")
+              "discovery cache. Specify this if you're having errors connecting to "
+              "the Chromecast.")
 def cli(delete_cache):
     if delete_cache:
         Cache().clear()
