@@ -86,6 +86,13 @@ class CastController:
         pos = self.cast.media_controller.status.current_time
         self.seek(pos - seconds)
 
+    def ffwd(self, seconds):
+        pos = self.cast.media_controller.status.current_time
+        self.seek(pos + seconds)
+
+    def volume(self, level):
+        self.cast.set_volume(level)
+
     def status(self):
         status = self.cast.media_controller.status.__dict__
         if not status["duration"]:
