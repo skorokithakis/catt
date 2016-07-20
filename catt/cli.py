@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import click
 
+
 from .controllers import get_stream_info, CastController, Cache
 
 
@@ -44,10 +45,22 @@ def rewind(seconds):
     CastController().rewind(seconds)
 
 
+@cli.command(short_help="Fastforward a video by SECS seconds.")
+@click.argument("seconds", type=click.INT, required=False, default=30, metavar="SECS")
+def ffwd(seconds):
+    CastController().ffwd(seconds)
+
+
 @cli.command(short_help="Seek the video to SECS seconds.")
 @click.argument("seconds", type=click.INT, metavar="SECS")
 def seek(seconds):
     CastController().seek(seconds)
+
+
+@cli.command(short_help="Set the volume to LVL [0-1].")
+@click.argument("level", type=click.FLOAT, required=False, default=0.5, metavar="LVL")
+def volume(level):
+    CastController().volume(level)
 
 
 @cli.command(short_help="Show some information about the currently-playing video.")
