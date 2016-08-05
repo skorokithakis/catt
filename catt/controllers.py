@@ -12,7 +12,7 @@ def get_stream_info(video_url):
     info = ydl.extract_info(video_url, download=False)
     format_selector = ydl.build_format_selector("best")
     try:
-        best_format = list(format_selector(info["formats"]))[0]
+        best_format = list(format_selector(info))[0]
     except KeyError:
         best_format = info
     stream_info = {
