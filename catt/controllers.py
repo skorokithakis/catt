@@ -70,7 +70,8 @@ class CastController:
                              'BubbleUPnP']
         if self.cast.app_display_name not in NON_BLOCKING_APPS:
             self.kill()
-            time.sleep(5)
+            while self.cast.app_display_name != 'Backdrop':
+                time.sleep(1)
         self.cast.play_media(url, content_type)
 
     def play(self):
