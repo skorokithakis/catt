@@ -66,8 +66,12 @@ class CastController:
         time.sleep(0.2)
 
     def play_media(self, url, content_type="video/mp4"):
-        self.kill()
-        time.sleep(5)
+        NON_BLOCKING_APPS = ['Backdrop', 'Default Media Receiver',
+                             'BubbleUPnP']
+        if self.cast.app_display_name not in NON_BLOCKING_APPS:
+            self.kill()
+            while self.cast.app_display_name != 'Backdrop':
+                time.sleep(1)
         self.cast.play_media(url, content_type)
 
     def play(self):
