@@ -97,6 +97,12 @@ class CastController:
     def volume(self, level):
         self.cast.set_volume(level)
 
+    def volumeup(self):
+        self.cast.volume_up()
+
+    def volumedown(self):
+        self.cast.volume_down()
+
     def status(self):
         status = self.cast.media_controller.status.__dict__
         if not status["duration"]:
@@ -113,6 +119,11 @@ class CastController:
             "Remaining minutes: {remaining_minutes:0.1f}\n"
             "State: {player_state}\n".format(**status)
         )
+
+    def info(self):
+        status = self.cast.media_controller.status.__dict__
+        for (key, value) in status.items():
+            echo("%s : %s" % (key, value))
 
     def kill(self):
         self.cast.quit_app()
