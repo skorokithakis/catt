@@ -34,7 +34,7 @@ video hosting services.
 CATT can also cast local files (if they're in a format the Chromecast supports
 natively)::
 
-    catt cast ./myvideo,mp4
+    catt cast ./myvideo.mp4
 
 You can also control your Chromecast through ``catt`` commands, for example with
 ``catt pause``. Try running ``catt --help`` to see the full list of commands.
