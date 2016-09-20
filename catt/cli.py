@@ -96,9 +96,24 @@ def volume(level):
     CastController().volume(level)
 
 
+@cli.command(short_help="Turn up volume by an 0.1 increment.")
+def volumeup():
+    CastController().volumeup()
+
+
+@cli.command(short_help="Turn down volume by an 0.1 increment.")
+def volumedown():
+    CastController().volumedown()
+
+
 @cli.command(short_help="Show some information about the currently-playing video.")
 def status():
     CastController().status()
+
+
+@cli.command(short_help="Show complete information about the currently-playing video.")
+def info():
+    CastController().info()
 
 
 if __name__ == "__main__":
