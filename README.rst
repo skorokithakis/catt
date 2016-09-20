@@ -10,7 +10,9 @@ Cast All The Things
 
 
 Cast All The Things allows you to send videos from many, many online sources
-(YouTube, Vimeo, and a few hundred others) to your Chromecast.
+(YouTube, Vimeo, and a few hundred others) to your Chromecast. It also allows
+you to cast local files.
+
 
 Installation
 ------------
@@ -28,6 +30,11 @@ To use Cast All The Things, just specify a URL::
 
 CATT supports any service that youtube-dl supports, which includes most online
 video hosting services.
+
+CATT can also cast local files (if they're in a format the Chromecast supports
+natively)::
+
+    catt cast ./myvideo,mp4
 
 You can also control your Chromecast through ``catt`` commands, for example with
 ``catt pause``. Try running ``catt --help`` to see the full list of commands.
