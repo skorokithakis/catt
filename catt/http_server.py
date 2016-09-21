@@ -1,8 +1,14 @@
 import os
 import time
 import traceback
-import SocketServer
-from BaseHTTPServer import BaseHTTPRequestHandler
+try:
+    import SocketServer
+except ImportError:
+    import socketserver as SocketServer
+try:
+    from BaseHTTPServer import BaseHTTPRequestHandler
+except ImportError:
+    from http.server import BaseHTTPRequestHandler
 
 
 def serve_file(filename, address="", port=45114):
