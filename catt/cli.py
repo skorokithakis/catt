@@ -10,6 +10,9 @@ from .controllers import get_stream_info, CastController, Cache
 from .http_server import serve_file
 
 
+chromecast_ip = None
+chromecast_name = None
+
 def get_local_ip(cc_host):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect((cc_host, 0))
@@ -20,15 +23,24 @@ def get_local_ip(cc_host):
 @click.option("--delete-cache", is_flag=True, help="Empty the Chromecast "
               "discovery cache. Specify this if you're having errors connecting to "
               "the Chromecast.")
-def cli(delete_cache):
+# FIXME --ip and --name should be mutually exclusive
+@click.option("--ip", help="IP Address of the target Chromecast device")
+@click.option("--name", help="Name of the target Chromecast device")
+def cli(delete_cache, ip, name):
     if delete_cache:
         Cache().clear()
+    if ip:
+        global chromecast_ip
+        chromecast_ip = ip
+    elif name:
+        global chromecast_name
+        chromecast_name = name
 
 
 @cli.command(short_help="Send a video to a Chromecast for playing.")
 @click.argument("video_url")
 def cast(video_url):
-    cast = CastController()
+    cast = CastController(chromecast_ip, chromecast_name)
     cc_name = cast.cast.device.friendly_name
 
     if "://" not in video_url:
@@ -59,61 +71,61 @@ def cast(video_url):
 
 @cli.command(short_help="Pause a video.")
 def pause():
-    CastController().pause()
+    CastController(chromecast_ip, chromecast_name).pause()
 
 
 @cli.command(short_help="Resume a video after it has been paused.")
 def play():
-    CastController().play()
+    CastController(chromecast_ip, chromecast_name).play()
 
 
 @cli.command(short_help="Stop playing.")
 def stop():
-    CastController().kill()
+    CastController(chromecast_ip, chromecast_name).kill()
 
 
 @cli.command(short_help="Rewind a video by SECS seconds.")
 @click.argument("seconds", type=click.INT, required=False, default=30, metavar="SECS")
 def rewind(seconds):
-    CastController().rewind(seconds)
+    CastController(chromecast_ip, chromecast_name).rewind(seconds)
 
 
 @cli.command(short_help="Fastforward a video by SECS seconds.")
 @click.argument("seconds", type=click.INT, required=False, default=30, metavar="SECS")
 def ffwd(seconds):
-    CastController().ffwd(seconds)
+    CastController(chromecast_ip, chromecast_name).ffwd(seconds)
 
 
 @cli.command(short_help="Seek the video to SECS seconds.")
 @click.argument("seconds", type=click.INT, metavar="SECS")
 def seek(seconds):
-    CastController().seek(seconds)
+    CastController(chromecast_ip, chromecast_name).seek(seconds)
 
 
 @cli.command(short_help="Set the volume to LVL [0-1].")
 @click.argument("level", type=click.FLOAT, required=False, default=0.5, metavar="LVL")
 def volume(level):
-    CastController().volume(level)
+    CastController(chromecast_ip, chromecast_name).volume(level)
 
 
 @cli.command(short_help="Turn up volume by an 0.1 increment.")
 def volumeup():
-    CastController().volumeup()
+    CastController(chromecast_ip, chromecast_name).volumeup()
 
 
 @cli.command(short_help="Turn down volume by an 0.1 increment.")
 def volumedown():
-    CastController().volumedown()
+    CastController(chromecast_ip, chromecast_name).volumedown()
 
 
 @cli.command(short_help="Show some information about the currently-playing video.")
 def status():
-    CastController().status()
+    CastController(chromecast_ip, chromecast_name).status()
 
 
 @cli.command(short_help="Show complete information about the currently-playing video.")
 def info():
-    CastController().info()
+    CastController(chromecast_ip, chromecast_name).info()
 
 
 if __name__ == "__main__":

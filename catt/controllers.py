@@ -54,12 +54,19 @@ class Cache:
 
 
 class CastController:
-    def __init__(self):
+    def __init__(self, chromecast_ip=None, chromecast_name=None):
         cache = Cache()
 
         cached_chromecast = cache.get("chromecast_host", 3 * 24 * 3600)
         if cached_chromecast:
-            self.cast = pychromecast.Chromecast(cached_chromecast)
+            if chromecast_ip:
+                self.cast = pychromecast.Chromecast(chromecast_ip)
+            elif chromecast_name:
+                self.cast = pychromecast.get_chromecast(
+                    friendly_name=chromecast_name
+                )
+            else:
+                self.cast = pychromecast.Chromecast(cached_chromecast)
         else:
             self.cast = pychromecast.get_chromecast()
             cache.set("chromecast_host", self.cast.host)
