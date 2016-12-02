@@ -4,7 +4,8 @@ import youtube_dl
 import pychromecast
 import shutil
 import tempfile
-from click import echo
+import json
+from click import echo, ClickException
 
 
 def get_stream_info(video_url):
@@ -22,29 +23,57 @@ def get_stream_info(video_url):
     return stream_info
 
 
+class ChromecastDeviceError(ClickException):
+    pass
+
+
 class Cache:
-    def __init__(self, cache_dir=os.path.join(tempfile.gettempdir(), "catt_cache/")):
+    def __init__(self, duration=3 * 24 * 3600,
+                 cache_dir=os.path.join(tempfile.gettempdir(), "catt_cache/")):
+        def _initialize_cache(filename):
+            with open(filename, "w") as cache:
+                json.dump({}, cache)
+
         self.cache_dir = cache_dir
         try:
             os.mkdir(cache_dir)
         except:
             pass
 
-    def _get_cache_filename(self, key):
-        return os.path.join(self.cache_dir, key)
+        cache_filename = os.path.join(cache_dir, "chromecast_host")
+        self.cache_filename = cache_filename
 
-    def get(self, key, duration):
-        cache_filename = self._get_cache_filename(key)
         if os.path.exists(cache_filename):
-            if os.path.getctime(cache_filename) + duration > time.time():
-                return open(cache_filename).read()
-            else:
-                os.remove(cache_filename)
+            if os.path.getctime(cache_filename) + duration < time.time():
+                _initialize_cache(cache_filename)
         else:
-            return None
+            _initialize_cache(cache_filename)
 
-    def set(self, key, value):
-        open(self._get_cache_filename(key), "w").write(value)
+    def _read_cache(self):
+        with open(self.cache_filename, "r") as cache:
+            return json.load(cache)
+
+    def _write_cache(self, data):
+        with open(self.cache_filename, "w") as cache:
+            json.dump(data, cache)
+
+    def get(self, name):
+        data = self._read_cache()
+        if not data:
+            return
+        if not name:
+            devices = list(data.keys())
+            devices.sort()
+            return data[devices[0]]
+        try:
+            return data[name]
+        except KeyError:
+            pass
+
+    def set(self, name, value):
+        data = self._read_cache()
+        data[name] = value
+        self._write_cache(data)
 
     def clear(self):
         try:
@@ -54,15 +83,25 @@ class Cache:
 
 
 class CastController:
-    def __init__(self):
-        cache = Cache()
+    def __init__(self, device_name):
+        def _check_device(device):
+            if not device:
+                raise ChromecastDeviceError("Device not found.")
 
-        cached_chromecast = cache.get("chromecast_host", 3 * 24 * 3600)
-        if cached_chromecast:
+        cache = Cache()
+        cached_chromecast = cache.get(device_name)
+
+        try:
             self.cast = pychromecast.Chromecast(cached_chromecast)
-        else:
-            self.cast = pychromecast.get_chromecast()
-            cache.set("chromecast_host", self.cast.host)
+        except pychromecast.error.ChromecastConnectionError:
+            if device_name:
+                self.cast = pychromecast.get_chromecast(friendly_name=device_name)
+                _check_device(self.cast)
+            else:
+                self.cast = pychromecast.get_chromecast()
+                _check_device(self.cast)
+            cache.set(self.cast.name, self.cast.host)
+
         time.sleep(0.2)
 
     def play_media(self, url, content_type="video/mp4"):
