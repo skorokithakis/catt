@@ -30,10 +30,6 @@ class ChromecastDeviceError(ClickException):
 class Cache:
     def __init__(self, duration=3 * 24 * 3600,
                  cache_dir=os.path.join(tempfile.gettempdir(), "catt_cache/")):
-        def _initialize_cache(filename):
-            with open(filename, "w") as cache:
-                json.dump({}, cache)
-
         self.cache_dir = cache_dir
         try:
             os.mkdir(cache_dir)
@@ -45,9 +41,16 @@ class Cache:
 
         if os.path.exists(cache_filename):
             if os.path.getctime(cache_filename) + duration < time.time():
-                _initialize_cache(cache_filename)
+                self._initialize_cache()
         else:
-            _initialize_cache(cache_filename)
+            self._initialize_cache()
+
+    def _initialize_cache(self):
+        data = {}
+        devices = pychromecast.get_chromecasts()
+        for device in devices:
+            data[device.name] = device.host
+        self._write_cache(data)
 
     def _read_cache(self):
         with open(self.cache_filename, "r") as cache:
@@ -59,16 +62,14 @@ class Cache:
 
     def get(self, name):
         data = self._read_cache()
-        if not data:
-            return
         if not name:
             devices = list(data.keys())
             devices.sort()
-            return data[devices[0]]
+            return (devices[0], data[devices[0]])
         try:
-            return data[name]
+            return (name, data[name])
         except KeyError:
-            pass
+            return (name, None)
 
     def set(self, name, value):
         data = self._read_cache()
@@ -84,22 +85,15 @@ class Cache:
 
 class CastController:
     def __init__(self, device_name):
-        def _check_device(device):
-            if not device:
-                raise ChromecastDeviceError("Device not found.")
-
         cache = Cache()
-        cached_chromecast = cache.get(device_name)
+        cached_name, cached_ip = cache.get(device_name)
 
         try:
-            self.cast = pychromecast.Chromecast(cached_chromecast)
+            self.cast = pychromecast.Chromecast(cached_ip)
         except pychromecast.error.ChromecastConnectionError:
-            if device_name:
-                self.cast = pychromecast.get_chromecast(friendly_name=device_name)
-                _check_device(self.cast)
-            else:
-                self.cast = pychromecast.get_chromecast()
-                _check_device(self.cast)
+            self.cast = pychromecast.get_chromecast(friendly_name=cached_name)
+            if not self.cast:
+                raise ChromecastDeviceError("Device not found.")
             cache.set(self.cast.name, self.cast.host)
 
         time.sleep(0.2)
