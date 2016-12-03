@@ -62,6 +62,8 @@ class Cache:
 
     def get(self, name):
         data = self._read_cache()
+        if not data:
+            return (None, None)
         if not name:
             devices = list(data.keys())
             devices.sort()
