@@ -91,9 +91,14 @@ class CastController:
         cached_name, cached_ip = cache.get(device_name)
 
         try:
+            if not cached_ip:
+                raise ValueError
             self.cast = pychromecast.Chromecast(cached_ip)
-        except pychromecast.error.ChromecastConnectionError:
-            self.cast = pychromecast.get_chromecast(friendly_name=cached_name)
+        except (pychromecast.error.ChromecastConnectionError, ValueError):
+            if cached_name:
+                self.cast = pychromecast.get_chromecast(friendly_name=cached_name)
+            else:
+                self.cast = pychromecast.get_chromecast()
             if not self.cast:
                 raise ChromecastDeviceError("Device not found.")
             cache.set(self.cast.name, self.cast.host)
