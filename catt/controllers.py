@@ -63,15 +63,15 @@ class Cache:
     def get(self, name):
         data = self._read_cache()
         if not data:
-            return (None, None)
+            return None
         if not name:
             devices = list(data.keys())
             devices.sort()
-            return (None, data[devices[0]])
+            return data[devices[0]]
         try:
-            return (name, data[name])
+            return data[name]
         except KeyError:
-            return (name, None)
+            return None
 
     def set(self, name, value):
         data = self._read_cache()
@@ -88,15 +88,15 @@ class Cache:
 class CastController:
     def __init__(self, device_name):
         cache = Cache()
-        cached_name, cached_ip = cache.get(device_name)
+        cached_ip = cache.get(device_name)
 
         try:
             if not cached_ip:
                 raise ValueError
             self.cast = pychromecast.Chromecast(cached_ip)
         except (pychromecast.error.ChromecastConnectionError, ValueError):
-            if cached_name:
-                self.cast = pychromecast.get_chromecast(friendly_name=cached_name)
+            if device_name:
+                self.cast = pychromecast.get_chromecast(friendly_name=device_name)
             else:
                 self.cast = pychromecast.get_chromecast()
             if not self.cast:

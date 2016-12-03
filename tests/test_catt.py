@@ -15,16 +15,16 @@ class TestThings(unittest.TestCase):
     def test_cache(self):
         cache = Cache()
         cache.set("key", "value")
-        self.assertEqual(cache.get("key"), ("key", "value"))
+        self.assertEqual(cache.get("key"), "value")
 
         time.sleep(1.2)
         cache = Cache(duration=1)
-        self.assertEqual(cache.get("key"), (None, None))
+        self.assertEqual(cache.get("key"), None)
 
         cache.set("key", "value")
         cache.clear()
         cache = Cache()
-        self.assertEqual(cache.get("key"), (None, None))
+        self.assertEqual(cache.get("key"), None)
         cache.clear()
 
 
