@@ -67,7 +67,7 @@ class Cache:
         if not name:
             devices = list(data.keys())
             devices.sort()
-            return (devices[0], data[devices[0]])
+            return (None, data[devices[0]])
         try:
             return (name, data[name])
         except KeyError:
