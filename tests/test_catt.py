@@ -19,12 +19,12 @@ class TestThings(unittest.TestCase):
 
         time.sleep(1.2)
         cache = Cache(duration=1)
-        self.assertEqual(cache.get("key"), ("key", None))
+        self.assertEqual(cache.get("key"), (None, None))
 
         cache.set("key", "value")
         cache.clear()
         cache = Cache()
-        self.assertEqual(cache.get("key"), ("key", None))
+        self.assertEqual(cache.get("key"), (None, None))
         cache.clear()
 
 
