@@ -29,14 +29,14 @@ class ChromecastDeviceError(ClickException):
 
 class Cache:
     def __init__(self, duration=3 * 24 * 3600,
-                 cache_dir=os.path.join(tempfile.gettempdir(), "catt_cache/")):
+                 cache_dir=os.path.join(tempfile.gettempdir(), "catt_cache")):
         self.cache_dir = cache_dir
         try:
             os.mkdir(cache_dir)
         except:
             pass
 
-        cache_filename = os.path.join(cache_dir, "chromecast_host")
+        cache_filename = os.path.join(cache_dir, "chromecast_hosts")
         self.cache_filename = cache_filename
 
         if os.path.exists(cache_filename):
