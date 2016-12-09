@@ -4,6 +4,7 @@ import random
 import os
 import socket
 import time
+import json
 from threading import Thread
 
 from .controllers import get_stream_info, CastController, Cache
@@ -16,19 +17,35 @@ def get_local_ip(cc_host):
     return s.getsockname()[0]
 
 
+class CattCliError(click.ClickException):
+    pass
+
+
 @click.group()
-@click.option("--delete-cache", is_flag=True, help="Empty the Chromecast "
-              "discovery cache. Specify this if you're having errors connecting to "
-              "the Chromecast.")
-def cli(delete_cache):
+@click.option("--delete-cache", is_flag=True,
+              help="Empty the Chromecast discovery cache.")
+@click.option("--write-config", is_flag=True,
+              help="Write name of default Chromecast device to config file")
+@click.option("-d", "--device", metavar="NAME",
+              help="Select Chromecast device.")
+@click.pass_context
+def cli(ctx, delete_cache, write_config, device):
     if delete_cache:
         Cache().clear()
+    ctx.obj["device"] = device
+    if write_config:
+        if device:
+            cast = CastController(device)
+            writeconfig()
+        else:
+            raise CattCliError("No device specified.")
 
 
 @cli.command(short_help="Send a video to a Chromecast for playing.")
 @click.argument("video_url")
-def cast(video_url):
-    cast = CastController()
+@click.pass_obj
+def cast(settings, video_url):
+    cast = CastController(settings["device"])
     cc_name = cast.cast.device.friendly_name
 
     if "://" not in video_url:
@@ -58,63 +75,109 @@ def cast(video_url):
 
 
 @cli.command(short_help="Pause a video.")
-def pause():
-    CastController().pause()
+@click.pass_obj
+def pause(settings):
+    cast = CastController(settings["device"])
+    cast.pause()
 
 
 @cli.command(short_help="Resume a video after it has been paused.")
-def play():
-    CastController().play()
+@click.pass_obj
+def play(settings):
+    cast = CastController(settings["device"])
+    cast.play()
 
 
 @cli.command(short_help="Stop playing.")
-def stop():
-    CastController().kill()
+@click.pass_obj
+def stop(settings):
+    cast = CastController(settings["device"])
+    cast.kill()
 
 
 @cli.command(short_help="Rewind a video by SECS seconds.")
 @click.argument("seconds", type=click.INT, required=False, default=30, metavar="SECS")
-def rewind(seconds):
-    CastController().rewind(seconds)
+@click.pass_obj
+def rewind(settings, seconds):
+    cast = CastController(settings["device"])
+    cast.rewind(seconds)
 
 
 @cli.command(short_help="Fastforward a video by SECS seconds.")
 @click.argument("seconds", type=click.INT, required=False, default=30, metavar="SECS")
-def ffwd(seconds):
-    CastController().ffwd(seconds)
+@click.pass_obj
+def ffwd(settings, seconds):
+    cast = CastController(settings["device"])
+    cast.ffwd(seconds)
 
 
 @cli.command(short_help="Seek the video to SECS seconds.")
 @click.argument("seconds", type=click.INT, metavar="SECS")
-def seek(seconds):
-    CastController().seek(seconds)
+@click.pass_obj
+def seek(settings, seconds):
+    cast = CastController(settings["device"])
+    cast.seek(seconds)
 
 
 @cli.command(short_help="Set the volume to LVL [0-1].")
 @click.argument("level", type=click.FLOAT, required=False, default=0.5, metavar="LVL")
-def volume(level):
-    CastController().volume(level)
+@click.pass_obj
+def volume(settings, level):
+    cast = CastController(settings["device"])
+    cast.volume(level)
 
 
 @cli.command(short_help="Turn up volume by an 0.1 increment.")
-def volumeup():
-    CastController().volumeup()
+@click.pass_obj
+def volumeup(settings):
+    cast = CastController(settings["device"])
+    cast.volumeup()
 
 
 @cli.command(short_help="Turn down volume by an 0.1 increment.")
-def volumedown():
-    CastController().volumedown()
+@click.pass_obj
+def volumedown(settings):
+    cast = CastController(settings["device"])
+    cast.volumedown()
 
 
 @cli.command(short_help="Show some information about the currently-playing video.")
-def status():
-    CastController().status()
+@click.pass_obj
+def status(settings):
+    cast = CastController(settings["device"])
+    cast.status()
 
 
 @cli.command(short_help="Show complete information about the currently-playing video.")
-def info():
-    CastController().info()
+@click.pass_obj
+def info(settings):
+    cast = CastController(settings["device"])
+    cast.info()
+
+@click.pass_obj
+def writeconfig(settings):
+    config_dir = click.get_app_dir("catt")
+    try:
+        os.mkdir(config_dir)
+    except FileExistsError:
+        pass
+    config_filename = os.path.join(config_dir, "catt.json")
+    with open(config_filename, "w") as config:
+        json.dump(settings, config)
+
+
+def readconfig():
+    config_filename = os.path.join(click.get_app_dir("catt"), "catt.json")
+    try:
+        with open(config_filename, "r") as config:
+            return json.load(config)
+    except FileNotFoundError:
+        return None
+
+
+def main():
+    return cli(obj={}, default_map=readconfig())
 
 
 if __name__ == "__main__":
-    cli()
+    cli(obj={}, default_map=readconfig())
