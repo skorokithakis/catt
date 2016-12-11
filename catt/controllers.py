@@ -36,11 +36,10 @@ class Cache:
         except:
             pass
 
-        cache_filename = os.path.join(cache_dir, "chromecast_hosts")
-        self.cache_filename = cache_filename
+        self.cache_filename = os.path.join(cache_dir, "chromecast_hosts")
 
-        if os.path.exists(cache_filename):
-            if os.path.getctime(cache_filename) + duration < time.time():
+        if os.path.exists(self.cache_filename):
+            if os.path.getctime(self.cache_filename) + duration < time.time():
                 self._initialize_cache()
         else:
             self._initialize_cache()
@@ -62,8 +61,13 @@ class Cache:
 
     def get(self, name):
         data = self._read_cache()
+
+        # In the case that cache has been initialized with no cc's on the
+        # network, we need to ensure auto-discovery.
         if not data:
             return None
+        # When the user does not specify a device, we need to make an attempt
+        # to consistently return the same IP, thus the alphabetical sorting.
         if not name:
             devices = list(data.keys())
             devices.sort()
