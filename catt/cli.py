@@ -25,7 +25,7 @@ class CattCliError(click.ClickException):
 @click.option("--delete-cache", is_flag=True,
               help="Empty the Chromecast discovery cache.")
 @click.option("--write-config", is_flag=True,
-              help="Write name of default Chromecast device to config file")
+              help="Write name of default Chromecast device to config file.")
 @click.option("-d", "--device", metavar="NAME",
               help="Select Chromecast device.")
 @click.pass_context
