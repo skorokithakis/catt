@@ -159,7 +159,7 @@ def writeconfig(settings):
     config_dir = click.get_app_dir("catt")
     try:
         os.mkdir(config_dir)
-    except FileExistsError:
+    except:
         pass
     config_filename = os.path.join(config_dir, "catt.json")
     with open(config_filename, "w") as config:
@@ -171,7 +171,7 @@ def readconfig():
     try:
         with open(config_filename, "r") as config:
             return json.load(config)
-    except FileNotFoundError:
+    except:
         return None
 
 
