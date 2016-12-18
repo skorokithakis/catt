@@ -35,8 +35,8 @@ def cli(ctx, delete_cache, write_config, device):
     ctx.obj["device"] = device
     if write_config:
         if device:
-            cast = CastController(device)
-            writeconfig()
+            CastController.get_chromecast(device)
+            writeconfig(ctx.obj)
         else:
             raise CattCliError("No device specified.")
 
@@ -154,7 +154,7 @@ def info(settings):
     cast = CastController(settings["device"])
     cast.info()
 
-@click.pass_obj
+
 def writeconfig(settings):
     config_dir = click.get_app_dir("catt")
     try:

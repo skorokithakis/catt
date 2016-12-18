@@ -23,7 +23,7 @@ def get_stream_info(video_url):
     return stream_info
 
 
-class ChromecastDeviceError(ClickException):
+class CattCastError(ClickException):
     pass
 
 
@@ -100,14 +100,24 @@ class CastController:
             self.cast = pychromecast.Chromecast(cached_ip)
         except (pychromecast.error.ChromecastConnectionError, ValueError):
             if device_name:
-                self.cast = pychromecast.get_chromecast(friendly_name=device_name)
+                self.cast = self.get_chromecast(friendly_name=device_name)
             else:
-                self.cast = pychromecast.get_chromecast()
-            if not self.cast:
-                raise ChromecastDeviceError("Device not found.")
+                self.cast = self.get_chromecast()
             cache.set(self.cast.name, self.cast.host)
-
         time.sleep(0.2)
+
+    def get_chromecast(self, friendly_name=None):
+        devices = pychromecast.get_chromecasts()
+        if friendly_name:
+            try:
+                return next(cc for cc in devices if cc.name == friendly_name)
+            except StopIteration:
+                raise CattCastError("Specified device not found.")
+        else:
+            try:
+                return min(devices, key=lambda cc: cc.name)
+            except ValueError:
+                raise CattCastError("No devices found.")
 
     def play_media(self, url, content_type="video/mp4"):
         self.cast.play_media(url, content_type)
