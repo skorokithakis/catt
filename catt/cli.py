@@ -21,6 +21,22 @@ class CattCliError(click.ClickException):
     pass
 
 
+class CattTimeParamType(click.ParamType):
+    def convert(self, value, param, ctx):
+        try:
+            time = [int(x) for x in value.split(':')]
+            tlen = len(time)
+            if (tlen > 1 and any(t > 59 for t in time)) or tlen > 3:
+                raise ValueError
+        except ValueError:
+            self.fail('%s is not a valid time description' % value, param, ctx)
+        else:
+            time.reverse()
+            return sum(time[p] * 60 ** p for p in range(tlen))
+
+CATT_TIME = CattTimeParamType()
+
+
 @click.group()
 @click.option("--delete-cache", is_flag=True,
               help="Empty the Chromecast discovery cache.")
@@ -95,28 +111,30 @@ def stop(settings):
     cast.kill()
 
 
-@cli.command(short_help="Rewind a video by SECS seconds.")
-@click.argument("seconds", type=click.INT, required=False, default=30, metavar="SECS")
+@cli.command(short_help="Rewind a video by TIME duration.")
+@click.argument("time", type=CATT_TIME,
+                required=False, default="30", metavar="TIME")
 @click.pass_obj
-def rewind(settings, seconds):
+def rewind(settings, time):
     cast = CastController(settings["device"])
-    cast.rewind(seconds)
+    cast.rewind(time)
 
 
-@cli.command(short_help="Fastforward a video by SECS seconds.")
-@click.argument("seconds", type=click.INT, required=False, default=30, metavar="SECS")
+@cli.command(short_help="Fastforward a video by TIME duration.")
+@click.argument("time", type=CATT_TIME,
+                required=False, default="30", metavar="TIME")
 @click.pass_obj
-def ffwd(settings, seconds):
+def ffwd(settings, time):
     cast = CastController(settings["device"])
-    cast.ffwd(seconds)
+    cast.ffwd(time)
 
 
-@cli.command(short_help="Seek the video to SECS seconds.")
-@click.argument("seconds", type=click.INT, metavar="SECS")
+@cli.command(short_help="Seek the video to TIME position.")
+@click.argument("time", type=CATT_TIME, metavar="TIME")
 @click.pass_obj
-def seek(settings, seconds):
+def seek(settings, time):
     cast = CastController(settings["device"])
-    cast.seek(seconds)
+    cast.seek(time)
 
 
 @cli.command(short_help="Set the volume to LVL [0-1].")
