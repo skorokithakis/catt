@@ -10,7 +10,10 @@ from click import echo, ClickException
 
 def get_stream_info(video_url):
     ydl = youtube_dl.YoutubeDL({})
-    info = ydl.extract_info(video_url, download=False)
+    try:
+        info = ydl.extract_info(video_url, download=False)
+    except youtube_dl.utils.DownloadError:
+        raise CattCastError("Remote resource not found.")
     format_selector = ydl.build_format_selector("best")
     try:
         best_format = list(format_selector(info))[0]
