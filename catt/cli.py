@@ -4,11 +4,18 @@ import random
 import os
 import socket
 import time
-import json
+try:
+    import ConfigParser as configparser
+except:
+    import configparser
 from threading import Thread
 
-from .controllers import get_stream_info, CastController, Cache
-from .http_server import serve_file
+try:
+    from .controllers import get_stream_info, CastController, Cache
+    from .http_server import serve_file
+except SystemError:
+    from controllers import get_stream_info, CastController, Cache
+    from http_server import serve_file
 
 
 def get_local_ip(cc_host):
@@ -40,21 +47,23 @@ CATT_TIME = CattTimeParamType()
 @click.group()
 @click.option("--delete-cache", is_flag=True,
               help="Empty the Chromecast discovery cache.")
-@click.option("--write-config", is_flag=True,
-              help="Write name of default Chromecast device to config file.")
 @click.option("-d", "--device", metavar="NAME",
               help="Select Chromecast device.")
 @click.pass_context
-def cli(ctx, delete_cache, write_config, device):
+def cli(ctx, delete_cache, device):
     if delete_cache:
         Cache().clear()
     ctx.obj["device"] = device
-    if write_config:
-        if device:
-            CastController.get_chromecast(device)
-            writeconfig(ctx.obj)
-        else:
-            raise CattCliError("No device specified.")
+
+
+@cli.command(short_help="Write the name of default Chromecast "
+                        "device to config file.")
+@click.pass_obj
+def write_config(settings):
+    if settings.get("device"):
+        writeconfig(settings)
+    else:
+        raise CattCliError("No device specified.")
 
 
 @cli.command(short_help="Send a video to a Chromecast for playing.")
@@ -179,18 +188,23 @@ def writeconfig(settings):
         os.mkdir(config_dir)
     except:
         pass
-    config_filename = os.path.join(config_dir, "catt.json")
-    with open(config_filename, "w") as config:
-        json.dump(settings, config)
+
+    config_filename = os.path.join(config_dir, "catt.cfg")
+    config = configparser.ConfigParser()
+
+    for key, value in settings.items():
+        config.set("DEFAULT", key, value)
+
+    with open(config_filename, 'w') as configfile:
+        config.write(configfile)
 
 
 def readconfig():
-    config_filename = os.path.join(click.get_app_dir("catt"), "catt.json")
-    try:
-        with open(config_filename, "r") as config:
-            return json.load(config)
-    except:
-        return None
+    config_filename = os.path.join(click.get_app_dir("catt"), "catt.cfg")
+
+    config = configparser.RawConfigParser()
+    config.read(config_filename)
+    return dict(config.defaults())
 
 
 def main():
@@ -198,4 +212,4 @@ def main():
 
 
 if __name__ == "__main__":
-    cli(obj={}, default_map=readconfig())
+    main()
