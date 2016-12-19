@@ -61,6 +61,8 @@ def cli(ctx, delete_cache, device):
 @click.pass_obj
 def write_config(settings):
     if settings.get("device"):
+        # This is so we fail if the specified Chromecast cannot be found.
+        CastController.get_chromecast(settings["device"])
         writeconfig(settings)
     else:
         raise CattCliError("No device specified.")
