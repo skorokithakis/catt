@@ -11,10 +11,10 @@ except:
 from threading import Thread
 
 try:
-    from .controllers import get_stream_info, CastController, Cache
+    from .controllers import get_stream_info, get_chromecast, CastController, Cache
     from .http_server import serve_file
 except SystemError:
-    from controllers import get_stream_info, CastController, Cache
+    from controllers import get_stream_info, get_chromecast, CastController, Cache
     from http_server import serve_file
 
 
@@ -62,7 +62,7 @@ def cli(ctx, delete_cache, device):
 def write_config(settings):
     if settings.get("device"):
         # This is so we fail if the specified Chromecast cannot be found.
-        CastController.get_chromecast(settings["device"])
+        get_chromecast(settings["device"])
         writeconfig(settings)
     else:
         raise CattCliError("No device specified.")
