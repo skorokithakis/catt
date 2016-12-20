@@ -41,6 +41,7 @@ class CattTimeParamType(click.ParamType):
             time.reverse()
             return sum(time[p] * 60 ** p for p in range(tlen))
 
+
 CATT_TIME = CattTimeParamType()
 
 
