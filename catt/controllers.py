@@ -28,16 +28,15 @@ def get_stream_info(video_url):
 
 def get_chromecast(device_name):
     devices = pychromecast.get_chromecasts()
+    if not devices:
+        raise CattCastError("No devices found.")
     if device_name:
         try:
             return next(cc for cc in devices if cc.name == device_name)
         except StopIteration:
             raise CattCastError("Specified device not found.")
     else:
-        try:
-            return min(devices, key=lambda cc: cc.name)
-        except ValueError:
-            raise CattCastError("No devices found.")
+        return min(devices, key=lambda cc: cc.name)
 
 
 class CattCastError(ClickException):
@@ -106,6 +105,8 @@ class Cache:
 
 class CastController:
     def __init__(self, device_name):
+        if device_name:
+            echo("Trying to connect to %s" % device_name)
         cache = Cache()
         cached_ip = cache.get(device_name)
 
