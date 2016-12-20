@@ -149,11 +149,11 @@ def seek(settings, time):
 
 
 @cli.command(short_help="Set the volume to LVL [0-1].")
-@click.argument("level", type=click.FLOAT, required=False, default=0.5, metavar="LVL")
+@click.argument("level", type=click.IntRange(0, 100), metavar="LVL")
 @click.pass_obj
 def volume(settings, level):
     cast = CastController(settings["device"])
-    cast.volume(level)
+    cast.volume(level / 100.0)
 
 
 @cli.command(short_help="Turn up volume by an 0.1 increment.")
