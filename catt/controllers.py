@@ -118,7 +118,6 @@ class CastController:
             cache.set(self.cast.name, self.cast.host)
         time.sleep(0.2)
 
-
     def play_media(self, url, content_type="video/mp4"):
         self.cast.play_media(url, content_type)
 
