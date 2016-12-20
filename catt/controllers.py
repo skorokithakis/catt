@@ -105,8 +105,6 @@ class Cache:
 
 class CastController:
     def __init__(self, device_name):
-        if device_name:
-            echo("Trying to connect to %s" % device_name)
         cache = Cache()
         cached_ip = cache.get(device_name)
 

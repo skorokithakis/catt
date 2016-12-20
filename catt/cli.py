@@ -55,6 +55,8 @@ def cli(ctx, delete_cache, device):
     if delete_cache:
         Cache().clear()
     ctx.obj["device"] = device
+    if device:
+        click.echo("Trying to connect to %s" % device)
 
 
 @cli.command(short_help="Write the name of default Chromecast "
