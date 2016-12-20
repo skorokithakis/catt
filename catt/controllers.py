@@ -26,6 +26,19 @@ def get_stream_info(video_url):
     return stream_info
 
 
+def get_chromecast(device_name):
+    devices = pychromecast.get_chromecasts()
+    if not devices:
+        raise CattCastError("No devices found.")
+    if device_name:
+        try:
+            return next(cc for cc in devices if cc.name == device_name)
+        except StopIteration:
+            raise CattCastError("Specified device not found.")
+    else:
+        return min(devices, key=lambda cc: cc.name)
+
+
 class CattCastError(ClickException):
     pass
 
@@ -72,9 +85,7 @@ class Cache:
         # When the user does not specify a device, we need to make an attempt
         # to consistently return the same IP, thus the alphabetical sorting.
         if not name:
-            devices = list(data.keys())
-            devices.sort()
-            return data[devices[0]]
+            return data[min(data, key=str)]
         try:
             return data[name]
         except KeyError:
@@ -102,25 +113,9 @@ class CastController:
                 raise ValueError
             self.cast = pychromecast.Chromecast(cached_ip)
         except (pychromecast.error.ChromecastConnectionError, ValueError):
-            if device_name:
-                self.cast = self.get_chromecast(friendly_name=device_name)
-            else:
-                self.cast = self.get_chromecast()
+            self.cast = get_chromecast(device_name)
             cache.set(self.cast.name, self.cast.host)
         time.sleep(0.2)
-
-    def get_chromecast(self, friendly_name=None):
-        devices = pychromecast.get_chromecasts()
-        if friendly_name:
-            try:
-                return next(cc for cc in devices if cc.name == friendly_name)
-            except StopIteration:
-                raise CattCastError("Specified device not found.")
-        else:
-            try:
-                return min(devices, key=lambda cc: cc.name)
-            except ValueError:
-                raise CattCastError("No devices found.")
 
     def play_media(self, url, content_type="video/mp4"):
         self.cast.play_media(url, content_type)

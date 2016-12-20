@@ -11,10 +11,10 @@ except:
 from threading import Thread
 
 try:
-    from .controllers import get_stream_info, CastController, Cache
+    from .controllers import get_stream_info, get_chromecast, CastController, Cache
     from .http_server import serve_file
 except SystemError:
-    from controllers import get_stream_info, CastController, Cache
+    from controllers import get_stream_info, get_chromecast, CastController, Cache
     from http_server import serve_file
 
 
@@ -41,6 +41,7 @@ class CattTimeParamType(click.ParamType):
             time.reverse()
             return sum(time[p] * 60 ** p for p in range(tlen))
 
+
 CATT_TIME = CattTimeParamType()
 
 
@@ -54,6 +55,8 @@ def cli(ctx, delete_cache, device):
     if delete_cache:
         Cache().clear()
     ctx.obj["device"] = device
+    if device:
+        click.echo("Trying to connect to %s" % device)
 
 
 @cli.command(short_help="Write the name of default Chromecast "
@@ -62,7 +65,7 @@ def cli(ctx, delete_cache, device):
 def write_config(settings):
     if settings.get("device"):
         # This is so we fail if the specified Chromecast cannot be found.
-        CastController.get_chromecast(settings["device"])
+        get_chromecast(settings["device"])
         writeconfig(settings)
     else:
         raise CattCliError("No device specified.")
