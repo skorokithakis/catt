@@ -10,12 +10,8 @@ except:
     import configparser
 from threading import Thread
 
-try:
-    from .controllers import get_stream_info, get_chromecast, CastController, Cache
-    from .http_server import serve_file
-except SystemError:
-    from controllers import get_stream_info, get_chromecast, CastController, Cache
-    from http_server import serve_file
+from .controllers import get_stream_info, get_chromecast, CastController, Cache
+from .http_server import serve_file
 
 
 def get_local_ip(cc_host):
