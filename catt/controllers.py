@@ -34,7 +34,7 @@ def get_chromecast(device_name):
         try:
             return next(cc for cc in devices if cc.name == device_name)
         except StopIteration:
-            raise CattCastError("Specified device not found.")
+            raise CattCastError("Specified device %s not found." % device_name)
     else:
         return min(devices, key=lambda cc: cc.name)
 
