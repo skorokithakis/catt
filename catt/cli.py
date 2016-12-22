@@ -14,6 +14,10 @@ from .controllers import get_stream_info, get_chromecast, CastController, Cache
 from .http_server import serve_file
 
 
+CONFIG_DIR = click.get_app_dir("catt")
+CONFIG_FILENAME = os.path.join(CONFIG_DIR, "catt.cfg")
+
+
 def get_local_ip(cc_host):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect((cc_host, 0))
@@ -41,11 +45,18 @@ class CattTimeParamType(click.ParamType):
 CATT_TIME = CattTimeParamType()
 
 
+def get_device(ctx, param, value):
+    try:
+        return ctx.default_map["aliases"][value]
+    except KeyError:
+        return value
+
+
 @click.group()
 @click.option("--delete-cache", is_flag=True,
               help="Empty the Chromecast discovery cache.")
 @click.option("-d", "--device", metavar="NAME",
-              help="Select Chromecast device.")
+              callback=get_device, help="Select Chromecast device.")
 @click.pass_context
 def cli(ctx, delete_cache, device):
     if delete_cache:
@@ -182,32 +193,39 @@ def info(settings):
 
 
 def writeconfig(settings):
-    config_dir = click.get_app_dir("catt")
     try:
-        os.mkdir(config_dir)
+        os.mkdir(CONFIG_DIR)
     except:
         pass
 
-    config_filename = os.path.join(config_dir, "catt.cfg")
-    config = configparser.ConfigParser()
-
+    config = readconfig()
+    if "defaults" not in config:
+        config["defaults"] = {}
     for key, value in settings.items():
-        config.set("DEFAULT", key, value)
+        config["defaults"][key] = value
 
-    with open(config_filename, 'w') as configfile:
+    with open(CONFIG_FILENAME, 'w') as configfile:
         config.write(configfile)
 
 
 def readconfig():
-    config_filename = os.path.join(click.get_app_dir("catt"), "catt.cfg")
-
-    config = configparser.RawConfigParser()
-    config.read(config_filename)
-    return dict(config.defaults())
+    config = configparser.ConfigParser()
+    config.read(CONFIG_FILENAME)
+    return config
 
 
 def main():
-    return cli(obj={}, default_map=readconfig())
+    config = readconfig()
+    if "aliases" in config:
+        aliases = {"aliases": dict(config["aliases"])}
+    else:
+        aliases = {"aliases": {}}
+    if "defaults" in config:
+        defaults = dict(config["defaults"])
+    else:
+        defaults = {}
+    defaults.update(aliases)
+    return cli(obj={}, default_map=defaults)
 
 
 if __name__ == "__main__":
