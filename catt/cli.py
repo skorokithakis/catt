@@ -3,11 +3,12 @@ import os
 import random
 import socket
 import time
+
+from threading import Thread
 try:
     import ConfigParser as configparser
 except:
     import configparser
-from threading import Thread
 
 import click
 

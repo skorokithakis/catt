@@ -4,10 +4,10 @@ import shutil
 import tempfile
 import time
 
-from click import ClickException, echo
-
 import pychromecast
-import youtube_dl  # noqa, looks like flake8-tidy-imports has a bug here.
+import youtube_dl
+
+from click import ClickException, echo
 
 
 def get_stream_info(video_url):
