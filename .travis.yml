@@ -10,4 +10,4 @@ install: "pip install -r requirements_dev.txt"
 # command to run tests, e.g. python setup.py test
 script:
   - python setup.py test
-  - flake8 .
+  - flake8 catt
