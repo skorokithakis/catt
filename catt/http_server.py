@@ -13,7 +13,7 @@ except ImportError:
 
 def serve_file(filename, address="", port=45114):
     class FileHandler(BaseHTTPRequestHandler):
-        def do_GET(self):
+        def do_GET(self):  # noqa
             try:
                 f = open(filename, "rb")
                 st = os.fstat(f.fileno())
@@ -35,7 +35,7 @@ def serve_file(filename, address="", port=45114):
                     if not data:
                         break
                     self.wfile.write(data)
-            except:
+            except:  # noqa
                 traceback.print_exc()
             f.close()
 

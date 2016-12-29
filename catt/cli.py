@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-import click
-import random
 import os
+import random
 import socket
 import time
 try:
@@ -10,7 +9,9 @@ except:
     import configparser
 from threading import Thread
 
-from .controllers import get_stream_info, get_chromecast, CastController, Cache
+import click
+
+from .controllers import Cache, CastController, get_chromecast, get_stream_info
 from .http_server import serve_file
 
 

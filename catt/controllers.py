@@ -1,11 +1,13 @@
+import json
 import os
-import time
-import youtube_dl
-import pychromecast
 import shutil
 import tempfile
-import json
-from click import echo, ClickException
+import time
+
+from click import ClickException, echo
+
+import pychromecast
+import youtube_dl  # noqa, looks like flake8-tidy-imports has a bug here.
 
 
 def get_stream_info(video_url):
