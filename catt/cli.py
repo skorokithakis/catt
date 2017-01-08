@@ -199,11 +199,9 @@ def writeconfig(settings):
         pass
 
     # Put all the standalone options from the settings into an "options" key.
-    conf = readconfig()
-    conf["options"] = {}
-    for key, value in settings.items():
-        conf["options"][key] = value
-        del conf[key]
+    old_conf = readconfig()
+    conf = {"options": settings}
+    conf["aliases"] = old_conf["aliases"]
 
     # Convert the conf dict into a ConfigParser instance.
     config = configparser.ConfigParser()
