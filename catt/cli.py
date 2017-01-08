@@ -198,34 +198,44 @@ def writeconfig(settings):
     except:
         pass
 
-    config = readconfig()
-    if "defaults" not in config:
-        config["defaults"] = {}
+    # Put all the standalone options from the settings into an "options" key.
+    conf = readconfig()
+    conf["options"] = {}
     for key, value in settings.items():
-        config["defaults"][key] = value
+        conf["options"][key] = value
+        del conf[key]
+
+    # Convert the conf dict into a ConfigParser instance.
+    config = configparser.ConfigParser()
+    for section, options in conf.items():
+        config.add_section(section)
+        for option, value in options.items():
+            config.set(section, option, value)
 
     with open(CONFIG_FILENAME, 'w') as configfile:
         config.write(configfile)
 
 
 def readconfig():
+    """
+    Read the configuration from the config file.
+
+    Returns a dictionary of the form:
+        {"option": "value",
+         "aliases": {"device1": "device_name"}}
+    """
     config = configparser.ConfigParser()
     config.read(CONFIG_FILENAME)
-    return config
+    conf_dict = {section: dict(config.items(section)) for section in config.sections()}
+
+    conf = conf_dict.get("options", {})
+    conf["aliases"] = conf_dict.get("aliases", {})
+
+    return conf
 
 
 def main():
-    config = readconfig()
-    if "aliases" in config:
-        aliases = {"aliases": dict(config["aliases"])}
-    else:
-        aliases = {"aliases": {}}
-    if "defaults" in config:
-        defaults = dict(config["defaults"])
-    else:
-        defaults = {}
-    defaults.update(aliases)
-    return cli(obj={}, default_map=defaults)
+    return cli(obj={}, default_map=readconfig())
 
 
 if __name__ == "__main__":
