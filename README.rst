@@ -40,6 +40,19 @@ You can also control your Chromecast through ``catt`` commands, for example with
 ``catt pause``. Try running ``catt --help`` to see the full list of commands.
 
 
+Contributing
+------------
+If you want to contribute a feature to CATT, please open an issue (or comment on
+an existing one) first, to make sure it's something that the maintainers are
+interested in. Afterwards, just clone the repository and hack away!
+
+To run CATT in development, you can use the following command:
+
+    python -m catt.cli -h
+
+Thanks!
+
+
 Info
 ----
 
