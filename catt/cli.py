@@ -16,6 +16,10 @@ from .controllers import Cache, CastController, get_chromecast, get_stream_info
 from .http_server import serve_file
 
 
+CONFIG_DIR = click.get_app_dir("catt")
+CONFIG_FILENAME = os.path.join(CONFIG_DIR, "catt.cfg")
+
+
 def get_local_ip(cc_host):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect((cc_host, 0))
@@ -43,11 +47,18 @@ class CattTimeParamType(click.ParamType):
 CATT_TIME = CattTimeParamType()
 
 
+def get_device(ctx, param, value):
+    try:
+        return ctx.default_map["aliases"][value]
+    except KeyError:
+        return value
+
+
 @click.group()
 @click.option("--delete-cache", is_flag=True,
               help="Empty the Chromecast discovery cache.")
 @click.option("-d", "--device", metavar="NAME",
-              help="Select Chromecast device.")
+              callback=get_device, help="Select Chromecast device.")
 @click.pass_context
 def cli(ctx, delete_cache, device):
     if delete_cache:
@@ -184,28 +195,43 @@ def info(settings):
 
 
 def writeconfig(settings):
-    config_dir = click.get_app_dir("catt")
     try:
-        os.mkdir(config_dir)
+        os.mkdir(CONFIG_DIR)
     except:
         pass
 
-    config_filename = os.path.join(config_dir, "catt.cfg")
+    # Put all the standalone options from the settings into an "options" key.
+    old_conf = readconfig()
+    conf = {"options": settings}
+    conf["aliases"] = old_conf["aliases"]
+
+    # Convert the conf dict into a ConfigParser instance.
     config = configparser.ConfigParser()
+    for section, options in conf.items():
+        config.add_section(section)
+        for option, value in options.items():
+            config.set(section, option, value)
 
-    for key, value in settings.items():
-        config.set("DEFAULT", key, value)
-
-    with open(config_filename, 'w') as configfile:
+    with open(CONFIG_FILENAME, 'w') as configfile:
         config.write(configfile)
 
 
 def readconfig():
-    config_filename = os.path.join(click.get_app_dir("catt"), "catt.cfg")
+    """
+    Read the configuration from the config file.
 
-    config = configparser.RawConfigParser()
-    config.read(config_filename)
-    return dict(config.defaults())
+    Returns a dictionary of the form:
+        {"option": "value",
+         "aliases": {"device1": "device_name"}}
+    """
+    config = configparser.ConfigParser()
+    config.read(CONFIG_FILENAME)
+    conf_dict = {section: dict(config.items(section)) for section in config.sections()}
+
+    conf = conf_dict.get("options", {})
+    conf["aliases"] = conf_dict.get("aliases", {})
+
+    return conf
 
 
 def main():
