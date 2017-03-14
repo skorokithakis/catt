@@ -11,16 +11,36 @@ from click import ClickException, echo
 
 
 def get_stream_info(video_url):
-    ydl = youtube_dl.YoutubeDL({})
+    ydl = youtube_dl.YoutubeDL({"noplaylist": True, "playlistend": 1})
+
     try:
-        info = ydl.extract_info(video_url, download=False)
+        pre = ydl.extract_info(video_url, process=False)
     except youtube_dl.utils.DownloadError:
         raise CattCastError("Remote resource not found.")
+
+    if "entries" in pre:
+        preinfo = list(pre["entries"])[0]
+        msg = "first"
+    elif "url" in pre:
+        preinfo = pre
+        msg = "current"
+    else:
+        preinfo = pre
+        msg = None
+
+    info = ydl.process_ie_result(preinfo, download=False)
+
+    if msg:
+        echo("Warning: Playlists not supported, playing %s video." % msg,
+             err=True)
+
     format_selector = ydl.build_format_selector("best")
+
     try:
         best_format = list(format_selector(info))[0]
     except KeyError:
         best_format = info
+
     stream_info = {
         "url": best_format["url"],
         "title": info.get("title", video_url),
