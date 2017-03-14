@@ -22,16 +22,20 @@ def get_stream_info(video_url):
 
     if "entries" in pre:
         preinfo = list(pre["entries"])[0]
-        echo("Warning: Playlists not supported, playing first video.",
-             err=True)
+        msg = "first"
     elif "url" in pre:
         preinfo = pre
-        echo("Warning: Playlists not supported, playing current video.",
-             err=True)
+        msg = "current"
     else:
         preinfo = pre
+        msg = None
 
     info = ydl.process_ie_result(preinfo, download=False)
+
+    if msg:
+        echo("Warning: Playlists not supported, playing %s video." % msg,
+             err=True)
+
     format_selector = ydl.build_format_selector("best")
 
     try:
