@@ -11,9 +11,7 @@ from click import ClickException, echo
 
 
 def get_stream_info(video_url):
-    ydl = youtube_dl.YoutubeDL({})
-    ydl.params["noplaylist"] = True
-    ydl.params["playlistend"] = 1
+    ydl = youtube_dl.YoutubeDL({"noplaylist": True, "playlistend": 1})
 
     try:
         pre = ydl.extract_info(video_url, process=False)
