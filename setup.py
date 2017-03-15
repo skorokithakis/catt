@@ -13,7 +13,7 @@ with open('README.rst') as readme_file:
     readme = readme_file.read()
 
 requirements = [
-    "youtube-dl>=2016.07.13",
+    "youtube-dl>=2017.3.15",
     "PyChromecast==0.7.7",
     "Click>=5.0",
 ]
