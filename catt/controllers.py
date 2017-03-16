@@ -48,6 +48,12 @@ def get_stream_info(video_url):
     return stream_info
 
 
+def get_chromecasts():
+    devices = pychromecast.get_chromecasts()
+    devices.sort(key=lambda cc: cc.name)
+    return devices
+
+
 def get_chromecast(device_name):
     devices = pychromecast.get_chromecasts()
     if not devices:

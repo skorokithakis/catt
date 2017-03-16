@@ -12,7 +12,7 @@ except:
 
 import click
 
-from .controllers import Cache, CastController, get_chromecast, get_stream_info
+from .controllers import Cache, CastController, get_chromecasts, get_chromecast, get_stream_info
 from .http_server import serve_file
 
 
@@ -192,6 +192,14 @@ def status(settings):
 def info(settings):
     cast = CastController(settings["device"])
     cast.info()
+
+
+@cli.command(short_help="Scan the local network and show all Chromecasts and their IPs.")
+@click.pass_obj
+def scan(settings):
+    click.echo("Scanning Chromecasts...")
+    for device in get_chromecasts():
+        click.echo("{0.host} - {0.device.friendly_name} - {0.device.manufacturer} {0.device.model_name}".format(device))
 
 
 def writeconfig(settings):
