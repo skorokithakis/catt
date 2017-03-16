@@ -12,7 +12,13 @@ except:
 
 import click
 
-from .controllers import Cache, CastController, get_chromecasts, get_chromecast, get_stream_info
+from .controllers import (
+    Cache,
+    CastController,
+    get_chromecast,
+    get_chromecasts,
+    get_stream_info,
+)
 from .http_server import serve_file
 
 
