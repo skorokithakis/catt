@@ -143,30 +143,45 @@ class CastController:
         except (pychromecast.error.ChromecastConnectionError, ValueError):
             self.cast = get_chromecast(device_name)
             cache.set(self.cast.name, self.cast.host)
-        time.sleep(0.2)
+
+        self.cast.wait()
+
+    def check_state(self):
+        if self.cast.app_id == "E8C28D3C" or not self.cast.app_id:
+            raise CattCastError("Chromecast is inactive.")
+        self.cast.media_controller.block_until_active(1)
+        if self.cast.media_controller.status.player_state in ["UNKNOWN", "IDLE"]:
+            raise CattCastError("Nothing is currently playing.")
 
     def play_media(self, url, content_type="video/mp4"):
         self.cast.play_media(url, content_type)
+        self.cast.media_controller.block_until_active()
 
     def play(self):
+        self.check_state()
         self.cast.media_controller.play()
 
     def pause(self):
+        self.check_state()
         self.cast.media_controller.pause()
 
     def stop(self):
+        self.check_state()
         self.cast.media_controller.stop()
 
     def seek(self, seconds):
-        self.cast.media_controller.seek(int(seconds))
+        self.check_state()
+        self.cast.media_controller.seek(seconds)
 
     def rewind(self, seconds):
+        self.check_state()
         pos = self.cast.media_controller.status.current_time
-        self.seek(pos - seconds)
+        self.cast.media_controller.seek(pos - seconds)
 
     def ffwd(self, seconds):
+        self.check_state()
         pos = self.cast.media_controller.status.current_time
-        self.seek(pos + seconds)
+        self.cast.media_controller.seek(pos + seconds)
 
     def volume(self, level):
         self.cast.set_volume(level)
@@ -178,9 +193,11 @@ class CastController:
         self.cast.volume_down()
 
     def status(self):
+        self.check_state()
         status = self.cast.media_controller.status.__dict__
+
         if not status["duration"]:
-            echo("Nothing currently playing.")
+            echo("State: {player_state}\n".format(**status))
             return
 
         status["current_time"] = int(status["current_time"])
@@ -195,6 +212,7 @@ class CastController:
         )
 
     def info(self):
+        self.check_state()
         status = self.cast.media_controller.status.__dict__
         for (key, value) in status.items():
             echo("%s : %s" % (key, value))
