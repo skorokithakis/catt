@@ -149,7 +149,7 @@ class CastController:
     def check_state(self):
         if self.cast.app_id == "E8C28D3C" or not self.cast.app_id:
             raise CattCastError("Chromecast is inactive.")
-        self.cast.media_controller.block_until_active(1)
+        self.cast.media_controller.block_until_active(1.0)
         if self.cast.media_controller.status.player_state in ["UNKNOWN", "IDLE"]:
             raise CattCastError("Nothing is currently playing.")
 
