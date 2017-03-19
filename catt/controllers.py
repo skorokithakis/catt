@@ -133,7 +133,6 @@ class Cache:
 
 class CastController:
     def __init__(self, device_name, state_check=True):
-        INACTIVE = ["UNKNOWN", "IDLE"]
         cache = Cache()
         cached_ip = cache.get(device_name)
 
@@ -148,11 +147,14 @@ class CastController:
         self.cast.wait()
 
         if state_check:
-            if self.cast.app_id == "E8C28D3C" or not self.cast.app_id:
-                raise CattCastError("Chromecast is inactive.")
-            self.cast.media_controller.block_until_active(1.0)
-            if self.cast.media_controller.status.player_state in INACTIVE:
-                raise CattCastError("Nothing is currently playing.")
+            self._check_state()
+
+    def _check_state(self):
+        if self.cast.app_id == "E8C28D3C" or not self.cast.app_id:
+            raise CattCastError("Chromecast is inactive.")
+        self.cast.media_controller.block_until_active(1.0)
+        if self.cast.media_controller.status.player_state in ["UNKNOWN", "IDLE"]:
+            raise CattCastError("Nothing is currently playing.")
 
     def play_media(self, url, content_type="video/mp4"):
         self.cast.play_media(url, content_type)
@@ -163,9 +165,6 @@ class CastController:
 
     def pause(self):
         self.cast.media_controller.pause()
-
-    def stop(self):
-        self.cast.media_controller.stop()
 
     def seek(self, seconds):
         self.cast.media_controller.seek(seconds)
