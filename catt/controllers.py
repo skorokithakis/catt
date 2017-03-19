@@ -132,7 +132,8 @@ class Cache:
 
 
 class CastController:
-    def __init__(self, device_name):
+    def __init__(self, device_name, state_check=True):
+        INACTIVE = ["UNKNOWN", "IDLE"]
         cache = Cache()
         cached_ip = cache.get(device_name)
 
@@ -146,42 +147,36 @@ class CastController:
 
         self.cast.wait()
 
-    def _check_state(self):
-        if self.cast.app_id == "E8C28D3C" or not self.cast.app_id:
-            raise CattCastError("Chromecast is inactive.")
-        self.cast.media_controller.block_until_active(1.0)
-        if self.cast.media_controller.status.player_state in ["UNKNOWN", "IDLE"]:
-            raise CattCastError("Nothing is currently playing.")
+        if state_check:
+            if self.cast.app_id == "E8C28D3C" or not self.cast.app_id:
+                raise CattCastError("Chromecast is inactive.")
+            self.cast.media_controller.block_until_active(1.0)
+            if self.cast.media_controller.status.player_state in INACTIVE:
+                raise CattCastError("Nothing is currently playing.")
 
     def play_media(self, url, content_type="video/mp4"):
         self.cast.play_media(url, content_type)
         self.cast.media_controller.block_until_active()
 
     def play(self):
-        self._check_state()
         self.cast.media_controller.play()
 
     def pause(self):
-        self._check_state()
         self.cast.media_controller.pause()
 
     def stop(self):
-        self._check_state()
         self.cast.media_controller.stop()
 
     def seek(self, seconds):
-        self._check_state()
         self.cast.media_controller.seek(seconds)
 
     def rewind(self, seconds):
-        self._check_state()
         pos = self.cast.media_controller.status.current_time
-        self.cast.media_controller.seek(pos - seconds)
+        self.seek(pos - seconds)
 
     def ffwd(self, seconds):
-        self._check_state()
         pos = self.cast.media_controller.status.current_time
-        self.cast.media_controller.seek(pos + seconds)
+        self.seek(pos + seconds)
 
     def volume(self, level):
         self.cast.set_volume(level)
@@ -193,7 +188,6 @@ class CastController:
         self.cast.volume_down()
 
     def status(self):
-        self._check_state()
         status = self.cast.media_controller.status.__dict__
 
         if not status["duration"]:
@@ -212,7 +206,6 @@ class CastController:
         )
 
     def info(self):
-        self._check_state()
         status = self.cast.media_controller.status.__dict__
         for (key, value) in status.items():
             echo("%s : %s" % (key, value))

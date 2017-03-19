@@ -88,7 +88,7 @@ def write_config(settings):
 @click.argument("video_url")
 @click.pass_obj
 def cast(settings, video_url):
-    cast = CastController(settings["device"])
+    cast = CastController(settings["device"], state_check=False)
     cc_name = cast.cast.device.friendly_name
 
     if "://" not in video_url:
@@ -134,7 +134,7 @@ def play(settings):
 @cli.command(short_help="Stop playing.")
 @click.pass_obj
 def stop(settings):
-    cast = CastController(settings["device"])
+    cast = CastController(settings["device"], state_check=False)
     cast.kill()
 
 
@@ -168,21 +168,21 @@ def seek(settings, time):
 @click.argument("level", type=click.IntRange(0, 100), metavar="LVL")
 @click.pass_obj
 def volume(settings, level):
-    cast = CastController(settings["device"])
+    cast = CastController(settings["device"], state_check=False)
     cast.volume(level / 100.0)
 
 
 @cli.command(short_help="Turn up volume by an 0.1 increment.")
 @click.pass_obj
 def volumeup(settings):
-    cast = CastController(settings["device"])
+    cast = CastController(settings["device"], state_check=False)
     cast.volumeup()
 
 
 @cli.command(short_help="Turn down volume by an 0.1 increment.")
 @click.pass_obj
 def volumedown(settings):
-    cast = CastController(settings["device"])
+    cast = CastController(settings["device"], state_check=False)
     cast.volumedown()
 
 
