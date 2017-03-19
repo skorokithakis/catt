@@ -180,11 +180,11 @@ class CastController:
     def volume(self, level):
         self.cast.set_volume(level)
 
-    def volumeup(self):
-        self.cast.volume_up()
+    def volumeup(self, delta):
+        self.cast.volume_up(delta)
 
-    def volumedown(self):
-        self.cast.volume_down()
+    def volumedown(self, delta):
+        self.cast.volume_down(delta)
 
     def status(self):
         status = self.cast.media_controller.status.__dict__

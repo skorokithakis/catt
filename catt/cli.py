@@ -172,18 +172,22 @@ def volume(settings, level):
     cast.volume(level / 100.0)
 
 
-@cli.command(short_help="Turn up volume by an 0.1 increment.")
+@cli.command(short_help="Turn up volume by an DELTA increment.")
+@click.argument("delta", type=click.IntRange(0, 100),
+                required=False, default=10, metavar="DELTA")
 @click.pass_obj
-def volumeup(settings):
+def volumeup(settings, delta):
     cast = CastController(settings["device"], state_check=False)
-    cast.volumeup()
+    cast.volumeup(delta / 100.0)
 
 
-@cli.command(short_help="Turn down volume by an 0.1 increment.")
+@cli.command(short_help="Turn down volume by an DELTA increment.")
+@click.argument("delta", type=click.IntRange(0, 100),
+                required=False, default=10, metavar="DELTA")
 @click.pass_obj
-def volumedown(settings):
+def volumedown(settings, delta):
     cast = CastController(settings["device"], state_check=False)
-    cast.volumedown()
+    cast.volumedown(delta / 100.0)
 
 
 @cli.command(short_help="Show some information about the currently-playing video.")
