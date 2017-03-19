@@ -172,7 +172,7 @@ def volume(settings, level):
     cast.volume(level / 100.0)
 
 
-@cli.command(short_help="Turn up volume by an DELTA increment.")
+@cli.command(short_help="Turn up volume by a DELTA increment.")
 @click.argument("delta", type=click.IntRange(1, 100),
                 required=False, default=10, metavar="DELTA")
 @click.pass_obj
@@ -181,7 +181,7 @@ def volumeup(settings, delta):
     cast.volumeup(delta / 100.0)
 
 
-@cli.command(short_help="Turn down volume by an DELTA increment.")
+@cli.command(short_help="Turn down volume by a DELTA increment.")
 @click.argument("delta", type=click.IntRange(1, 100),
                 required=False, default=10, metavar="DELTA")
 @click.pass_obj
