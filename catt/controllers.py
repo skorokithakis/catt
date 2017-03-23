@@ -3,6 +3,7 @@ import os
 import shutil
 import tempfile
 import time
+import threading
 
 import pychromecast
 import youtube_dl
@@ -131,8 +132,18 @@ class Cache:
             pass
 
 
+class MediaStatusListener:
+    def __init__(self):
+        self.ready = threading.Event()
+
+    def new_media_status(self, status):
+        if status.player_state == "BUFFERING":
+            self.ready.set()
+
+
 class CastController:
     def __init__(self, device_name, state_check=True):
+        self.listener = MediaStatusListener()
         cache = Cache()
         cached_ip = cache.get(device_name)
 
@@ -152,13 +163,16 @@ class CastController:
     def _check_state(self):
         if self.cast.app_id == "E8C28D3C" or not self.cast.app_id:
             raise CattCastError("Chromecast is inactive.")
+
         self.cast.media_controller.block_until_active(1.0)
+
         if self.cast.media_controller.status.player_state in ["UNKNOWN", "IDLE"]:
             raise CattCastError("Nothing is currently playing.")
 
     def play_media(self, url, content_type="video/mp4"):
         self.cast.play_media(url, content_type)
-        self.cast.media_controller.block_until_active()
+        self.cast.media_controller.register_status_listener(self.listener)
+        self.listener.ready.wait()
 
     def play(self):
         self.cast.media_controller.play()
