@@ -1,9 +1,9 @@
+import threading
 import json
 import os
 import shutil
 import tempfile
 import time
-import threading
 
 import pychromecast
 import youtube_dl
