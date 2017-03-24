@@ -132,18 +132,20 @@ class Cache:
             pass
 
 
-class MediaStatusListener:
-    def __init__(self):
+class StatusListener:
+    def __init__(self, running_app, id="CC1AD845"):
+        self.id = id
         self.ready = threading.Event()
+        if running_app == self.id:
+            self.ready.set()
 
-    def new_media_status(self, status):
-        if status.player_state == "BUFFERING":
+    def new_cast_status(self, status):
+        if status.app_id == self.id:
             self.ready.set()
 
 
 class CastController:
     def __init__(self, device_name, state_check=True):
-        self.listener = MediaStatusListener()
         cache = Cache()
         cached_ip = cache.get(device_name)
 
@@ -156,6 +158,7 @@ class CastController:
             cache.set(self.cast.name, self.cast.host)
 
         self.cast.wait()
+        self.listener = StatusListener(self.cast.app_id)
 
         if state_check:
             self._check_state()
@@ -171,8 +174,9 @@ class CastController:
 
     def play_media(self, url, content_type="video/mp4"):
         self.cast.play_media(url, content_type)
-        self.cast.media_controller.register_status_listener(self.listener)
+        self.cast.register_status_listener(self.listener)
         self.listener.ready.wait()
+        self.cast.media_controller.block_until_active()
 
     def play(self):
         self.cast.media_controller.play()
