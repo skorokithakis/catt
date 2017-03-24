@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 import tempfile
+import threading
 import time
 
 import pychromecast
@@ -131,6 +132,18 @@ class Cache:
             pass
 
 
+class StatusListener:
+    def __init__(self, running_app, id="CC1AD845"):
+        self.id = id
+        self.ready = threading.Event()
+        if running_app == self.id:
+            self.ready.set()
+
+    def new_cast_status(self, status):
+        if status.app_id == self.id:
+            self.ready.set()
+
+
 class CastController:
     def __init__(self, device_name, state_check=True):
         cache = Cache()
@@ -145,6 +158,7 @@ class CastController:
             cache.set(self.cast.name, self.cast.host)
 
         self.cast.wait()
+        self.listener = StatusListener(self.cast.app_id)
 
         if state_check:
             self._check_state()
@@ -152,12 +166,16 @@ class CastController:
     def _check_state(self):
         if self.cast.app_id == "E8C28D3C" or not self.cast.app_id:
             raise CattCastError("Chromecast is inactive.")
+
         self.cast.media_controller.block_until_active(1.0)
+
         if self.cast.media_controller.status.player_state in ["UNKNOWN", "IDLE"]:
             raise CattCastError("Nothing is currently playing.")
 
     def play_media(self, url, content_type="video/mp4"):
         self.cast.play_media(url, content_type)
+        self.cast.register_status_listener(self.listener)
+        self.listener.ready.wait()
         self.cast.media_controller.block_until_active()
 
     def play(self):
