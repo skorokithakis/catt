@@ -207,25 +207,22 @@ class CastController:
     def status(self):
         status = self.cast.media_controller.status.__dict__
 
-        if not status["duration"]:
-            echo("State: {player_state}\n".format(**status))
-            return
+        if status["duration"]:
+            dur, cur = int(status["duration"]), int(status["current_time"])
+            duration = time.strftime('%H:%M:%S', time.gmtime(dur))
+            current = time.strftime('%H:%M:%S', time.gmtime(cur))
+            remaining = time.strftime('%H:%M:%S', time.gmtime(dur - cur))
+            progress = int((1.0 * cur / dur) * 100)
 
-        status["current_time"] = int(status["current_time"])
-        status["duration"] = int(status["duration"])
-        status["progress"] = int(((1.0 * status["current_time"]) / status["duration"]) * 100)
-        status["remaining_minutes"] = (status["duration"] - status["current_time"]) / 60
+            echo("Time: %s / %s (%s%%)" % (current, duration, progress))
+            echo("Remaining time: %s" % remaining)
 
-        echo(
-            "Time: {current_time}/{duration} ({progress}%)\n"
-            "Remaining minutes: {remaining_minutes:0.1f}\n"
-            "State: {player_state}\n".format(**status)
-        )
+        echo("State: %s" % status["player_state"])
 
     def info(self):
         status = self.cast.media_controller.status.__dict__
         for (key, value) in status.items():
-            echo("%s : %s" % (key, value))
+            echo("%s: %s" % (key, value))
 
     def kill(self):
         self.cast.quit_app()
