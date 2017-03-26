@@ -208,10 +208,11 @@ class CastController:
         status = self.cast.media_controller.status.__dict__
 
         if status["duration"]:
+            human_time = lambda x: time.strftime('%H:%M:%S', time.gmtime(x))
             dur, cur = int(status["duration"]), int(status["current_time"])
-            duration = time.strftime('%H:%M:%S', time.gmtime(dur))
-            current = time.strftime('%H:%M:%S', time.gmtime(cur))
-            remaining = time.strftime('%H:%M:%S', time.gmtime(dur - cur))
+            duration = human_time(dur)
+            current = human_time(cur)
+            remaining = human_time(dur - cur)
             progress = int((1.0 * cur / dur) * 100)
 
             echo("Time: %s / %s (%s%%)" % (current, duration, progress))
