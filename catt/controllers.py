@@ -177,8 +177,8 @@ class CastController:
             raise CattCastError("Nothing is currently playing.")
 
     def play_media(self, url, content_type="video/mp4"):
-        self.cast.play_media(url, content_type)
         self.cast.register_status_listener(self.listener)
+        self.cast.play_media(url, content_type)
         self.listener.ready.wait()
         self.cast.media_controller.block_until_active()
 
