@@ -51,21 +51,24 @@ def get_stream_info(video_url):
 
 def get_chromecasts():
     devices = pychromecast.get_chromecasts()
+
+    if not devices:
+        raise CattCastError("No devices found.")
+
     devices.sort(key=lambda cc: cc.name)
     return devices
 
 
 def get_chromecast(device_name):
-    devices = pychromecast.get_chromecasts()
-    if not devices:
-        raise CattCastError("No devices found.")
+    devices = get_chromecasts()
+
     if device_name:
         try:
             return next(cc for cc in devices if cc.name == device_name)
         except StopIteration:
             raise CattCastError("Specified device %s not found." % device_name)
     else:
-        return min(devices, key=lambda cc: cc.name)
+        return devices[0]
 
 
 def human_time(seconds):
