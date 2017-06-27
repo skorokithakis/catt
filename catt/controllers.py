@@ -68,6 +68,10 @@ def get_chromecast(device_name):
         return min(devices, key=lambda cc: cc.name)
 
 
+def human_time(seconds):
+    return time.strftime("%H:%M:%S", time.gmtime(seconds))
+
+
 class CattCastError(ClickException):
     pass
 
@@ -208,7 +212,6 @@ class CastController:
         status = self.cast.media_controller.status.__dict__
 
         if status["duration"]:
-            human_time = lambda x: time.strftime('%H:%M:%S', time.gmtime(x))
             dur, cur = int(status["duration"]), int(status["current_time"])
             duration = human_time(dur)
             current = human_time(cur)
