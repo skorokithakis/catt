@@ -58,12 +58,12 @@ be selected, when you have not selected a device via the cli.
 
 You can write your choice of default device to ``catt.cfg`` by doing::
 
-    ``catt -d <name_of_chromecast> write_config``
+    catt -d <name_of_chromecast> write_config
 
 In the ``[aliases]`` section, you can specify aliases for the names of your
 chromecasts. You can then select a device just by doing::
 
-    ``catt -d <alias> <command>``
+    catt -d <alias> <command>
 
 Currently, in order to advantage of this functionality, you need to manually
 edit ``catt.cfg``
