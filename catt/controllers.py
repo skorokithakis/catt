@@ -31,7 +31,7 @@ def get_stream_info(video_url):
 
     try:
         info = ydl.process_ie_result(preinfo, download=False)
-    except youtube_dl.utils.ExtractorError:
+    except (youtube_dl.utils.ExtractorError, youtube_dl.utils.DownloadError):
         raise CattCastError("Youtube-dl extractor failed.")
 
     if msg:
