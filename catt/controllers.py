@@ -29,7 +29,10 @@ def get_stream_info(video_url):
         preinfo = pre
         msg = None
 
-    info = ydl.process_ie_result(preinfo, download=False)
+    try:
+        info = ydl.process_ie_result(preinfo, download=False)
+    except (youtube_dl.utils.ExtractorError, youtube_dl.utils.DownloadError):
+        raise CattCastError("Youtube-dl extractor failed.")
 
     if msg:
         echo("Warning: Playlists not supported, playing %s video." % msg,
