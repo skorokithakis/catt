@@ -39,9 +39,38 @@ natively)::
 You can also control your Chromecast through ``catt`` commands, for example with
 ``catt pause``. Try running ``catt --help`` to see the full list of commands.
 
+Configuration file
+""""""""""""""""""
+
+CATT can utilize a config-file stored at ``~/.config/catt/catt.cfg``
+
+The format is as following::
+
+    [options]
+    device = chromecast_one
+    
+    [aliases]
+    one = chromecast_one
+    two = chromecast_two
+
+In the ``[options]`` section, ``device`` denotes the default device that will 
+be selected, when you have not selected a device via the cli.
+
+You can write your choice of default device to ``catt.cfg`` by doing::
+
+    catt -d <name_of_chromecast> write_config
+
+In the ``[aliases]`` section, you can specify aliases for the names of your
+chromecasts. You can then select a device just by doing::
+
+    catt -d <alias> <command>
+
+Currently, in order to advantage of this functionality, you need to manually
+edit ``catt.cfg``
 
 Contributing
 ------------
+
 If you want to contribute a feature to CATT, please open an issue (or comment on
 an existing one) first, to make sure it's something that the maintainers are
 interested in. Afterwards, just clone the repository and hack away!
