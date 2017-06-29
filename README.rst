@@ -65,7 +65,7 @@ chromecasts. You can then select a device just by doing::
 
     catt -d <alias> <command>
 
-Currently, in order to advantage of this functionality, you need to manually
+Currently, in order to take advantage of this functionality, you need to manually
 edit ``catt.cfg``
 
 Contributing
