@@ -27,9 +27,9 @@ CONFIG_FILENAME = os.path.join(CONFIG_DIR, "catt.cfg")
 
 
 def get_local_ip(cc_host):
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect((cc_host, 0))
-    return s.getsockname()[0]
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.connect((cc_host, 0))
+    return sock.getsockname()[0]
 
 
 class CattCliError(click.ClickException):
@@ -39,15 +39,15 @@ class CattCliError(click.ClickException):
 class CattTimeParamType(click.ParamType):
     def convert(self, value, param, ctx):
         try:
-            time = [int(x) for x in value.split(':')]
-            tlen = len(time)
-            if (tlen > 1 and any(t > 59 for t in time)) or tlen > 3:
+            tdesc = [int(x) for x in value.split(":")]
+            tlen = len(tdesc)
+            if (tlen > 1 and any(t > 59 for t in tdesc)) or tlen > 3:
                 raise ValueError
         except ValueError:
-            self.fail('%s is not a valid time description' % value, param, ctx)
-        else:
-            time.reverse()
-            return sum(time[p] * 60 ** p for p in range(tlen))
+            self.fail("%s is not a valid time description" % value, param, ctx)
+
+        tdesc.reverse()
+        return sum(tdesc[p] * 60 ** p for p in range(tlen))
 
 
 CATT_TIME = CattTimeParamType()
@@ -88,88 +88,92 @@ def write_config(settings):
 @click.argument("video_url")
 @click.pass_obj
 def cast(settings, video_url):
-    cast = CastController(settings["device"], state_check=False)
-    cc_name = cast.cast.device.friendly_name
+    cst = CastController(settings["device"], state_check=False)
+    cc_name = cst.cast.device.friendly_name
 
     if "://" not in video_url:
         click.echo("Casting local file %s..." % video_url)
+
         if not os.path.isfile(video_url):
             click.echo("The chosen file does not exist.")
             return
-        local_ip = get_local_ip(cast.cast.host)
-        port = random.randrange(45000, 47000)
-        stream_info = {"url": "http://%s:%s/" % (local_ip, port), "title": os.path.basename(video_url)}
 
-        t = Thread(target=serve_file, args=(video_url, local_ip, port))
-        t.setDaemon(True)
-        t.start()
+        local_ip = get_local_ip(cst.cast.host)
+        port = random.randrange(45000, 47000)
+        stream_info = {"url": "http://%s:%s/" % (local_ip, port),
+                       "title": os.path.basename(video_url)}
+
+        thr = Thread(target=serve_file, args=(video_url, local_ip, port))
+        thr.setDaemon(True)
+        thr.start()
     else:
-        t = None
         click.echo("Casting remote file %s..." % video_url)
+
+        thr = None
         stream_info = get_stream_info(video_url)
 
     click.echo(u"Playing %s on %s..." % (stream_info["title"], cc_name))
-    cast.play_media(stream_info["url"])
+    cst.play_media(stream_info["url"])
 
-    if t:
+    if thr:
         click.echo("Serving local file, press Ctrl+C when done.")
-        while t.is_alive():
+        while thr.is_alive():
             time.sleep(1)
 
 
 @cli.command(short_help="Pause a video.")
 @click.pass_obj
 def pause(settings):
-    cast = CastController(settings["device"])
-    cast.pause()
+    cst = CastController(settings["device"])
+    cst.pause()
 
 
 @cli.command(short_help="Resume a video after it has been paused.")
 @click.pass_obj
 def play(settings):
-    cast = CastController(settings["device"])
-    cast.play()
+    cst = CastController(settings["device"])
+    cst.play()
 
 
 @cli.command(short_help="Stop playing.")
 @click.pass_obj
 def stop(settings):
-    cast = CastController(settings["device"], state_check=False)
-    cast.kill()
+    cst = CastController(settings["device"], state_check=False)
+    cst.kill()
 
 
 @cli.command(short_help="Rewind a video by TIME duration.")
-@click.argument("time", type=CATT_TIME,
+@click.argument("timedesc", type=CATT_TIME,
                 required=False, default="30", metavar="TIME")
 @click.pass_obj
-def rewind(settings, time):
-    cast = CastController(settings["device"])
-    cast.rewind(time)
+def rewind(settings, timedesc):
+    cst = CastController(settings["device"])
+    cst.rewind(timedesc)
 
 
 @cli.command(short_help="Fastforward a video by TIME duration.")
-@click.argument("time", type=CATT_TIME,
+@click.argument("timedesc", type=CATT_TIME,
                 required=False, default="30", metavar="TIME")
 @click.pass_obj
-def ffwd(settings, time):
-    cast = CastController(settings["device"])
-    cast.ffwd(time)
+def ffwd(settings, timedesc):
+    cst = CastController(settings["device"])
+    cst.ffwd(timedesc)
 
 
 @cli.command(short_help="Seek the video to TIME position.")
-@click.argument("time", type=CATT_TIME, metavar="TIME")
+@click.argument("timedesc", type=CATT_TIME, metavar="TIME")
 @click.pass_obj
-def seek(settings, time):
-    cast = CastController(settings["device"])
-    cast.seek(time)
+def seek(settings, timedesc):
+    cst = CastController(settings["device"])
+    cst.seek(timedesc)
 
 
 @cli.command(short_help="Set the volume to LVL [0-100].")
 @click.argument("level", type=click.IntRange(0, 100), metavar="LVL")
 @click.pass_obj
 def volume(settings, level):
-    cast = CastController(settings["device"], state_check=False)
-    cast.volume(level / 100.0)
+    cst = CastController(settings["device"], state_check=False)
+    cst.volume(level / 100.0)
 
 
 @cli.command(short_help="Turn up volume by a DELTA increment.")
@@ -177,8 +181,8 @@ def volume(settings, level):
                 required=False, default=10, metavar="DELTA")
 @click.pass_obj
 def volumeup(settings, delta):
-    cast = CastController(settings["device"], state_check=False)
-    cast.volumeup(delta / 100.0)
+    cst = CastController(settings["device"], state_check=False)
+    cst.volumeup(delta / 100.0)
 
 
 @cli.command(short_help="Turn down volume by a DELTA increment.")
@@ -186,27 +190,26 @@ def volumeup(settings, delta):
                 required=False, default=10, metavar="DELTA")
 @click.pass_obj
 def volumedown(settings, delta):
-    cast = CastController(settings["device"], state_check=False)
-    cast.volumedown(delta / 100.0)
+    cst = CastController(settings["device"], state_check=False)
+    cst.volumedown(delta / 100.0)
 
 
 @cli.command(short_help="Show some information about the currently-playing video.")
 @click.pass_obj
 def status(settings):
-    cast = CastController(settings["device"])
-    cast.status()
+    cst = CastController(settings["device"])
+    cst.status()
 
 
 @cli.command(short_help="Show complete information about the currently-playing video.")
 @click.pass_obj
 def info(settings):
-    cast = CastController(settings["device"])
-    cast.info()
+    cst = CastController(settings["device"])
+    cst.info()
 
 
 @cli.command(short_help="Scan the local network and show all Chromecasts and their IPs.")
-@click.pass_obj
-def scan(settings):
+def scan():
     click.echo("Scanning Chromecasts...")
     for device in get_chromecasts():
         click.echo("{0.host} - {0.device.friendly_name} - {0.device.manufacturer} {0.device.model_name}".format(device))
@@ -225,12 +228,13 @@ def writeconfig(settings):
 
     # Convert the conf dict into a ConfigParser instance.
     config = configparser.ConfigParser()
+
     for section, options in conf.items():
         config.add_section(section)
         for option, value in options.items():
             config.set(section, option, value)
 
-    with open(CONFIG_FILENAME, 'w') as configfile:
+    with open(CONFIG_FILENAME, "w") as configfile:
         config.write(configfile)
 
 
