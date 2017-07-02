@@ -69,7 +69,7 @@ def get_chromecast(device_name):
         try:
             return next(cc for cc in devices if cc.name == device_name)
         except StopIteration:
-            raise CattCastError("Specified device %s not found." % device_name)
+            raise CattCastError("Specified device \"%s\" not found." % device_name)
     else:
         return devices[0]
 
@@ -143,14 +143,15 @@ class Cache:
 
 
 class StatusListener:
-    def __init__(self, running_app, id="CC1AD845"):
-        self.id = id
+    def __init__(self, running_app, player_id="CC1AD845"):
+        self.player_id = player_id
         self.ready = threading.Event()
-        if running_app == self.id:
+
+        if running_app == self.player_id:
             self.ready.set()
 
     def new_cast_status(self, status):
-        if status.app_id == self.id:
+        if status.app_id == self.player_id:
             self.ready.set()
 
 
