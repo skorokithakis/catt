@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 import os
-import random
-import socket
 import time
 
 from threading import Thread
@@ -16,20 +14,14 @@ from .controllers import (
     Cache,
     CastController,
     get_chromecast,
-    get_chromecasts,
-    get_stream_info,
+    get_chromecasts
 )
 from .http_server import serve_file
+from .stream_info import StreamInfo
 
 
 CONFIG_DIR = click.get_app_dir("catt")
 CONFIG_FILENAME = os.path.join(CONFIG_DIR, "catt.cfg")
-
-
-def get_local_ip(cc_host):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.connect((cc_host, 0))
-    return sock.getsockname()[0]
 
 
 class CattCliError(click.ClickException):
@@ -90,30 +82,22 @@ def write_config(settings):
 def cast(settings, video_url):
     cst = CastController(settings["device"], state_check=False)
     cc_name = cst.cast.device.friendly_name
+    stream = StreamInfo(video_url, cst.cast.host)
 
-    if "://" not in video_url:
+    if stream.is_local_file:
         click.echo("Casting local file %s..." % video_url)
 
-        if not os.path.isfile(video_url):
-            click.echo("The chosen file does not exist.")
-            return
-
-        local_ip = get_local_ip(cst.cast.host)
-        port = random.randrange(45000, 47000)
-        stream_info = {"url": "http://%s:%s/" % (local_ip, port),
-                       "title": os.path.basename(video_url)}
-
-        thr = Thread(target=serve_file, args=(video_url, local_ip, port))
+        thr = Thread(target=serve_file,
+                     args=(video_url, stream.local_ip, stream.port))
         thr.setDaemon(True)
         thr.start()
     else:
         click.echo("Casting remote file %s..." % video_url)
-
+        
         thr = None
-        stream_info = get_stream_info(video_url)
-
-    click.echo(u"Playing %s on %s..." % (stream_info["title"], cc_name))
-    cst.play_media(stream_info["url"])
+    
+    click.echo(u"Playing %s on %s..." % (stream.title, cc_name))
+    cst.play_media(stream.url)
 
     if thr:
         click.echo("Serving local file, press Ctrl+C when done.")
