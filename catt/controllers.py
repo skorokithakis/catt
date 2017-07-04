@@ -6,6 +6,7 @@ import threading
 import time
 
 import pychromecast
+from pychromecast.controllers.youtube import YouTubeController
 
 from click import ClickException, echo
 
@@ -101,16 +102,29 @@ class Cache:
 
 
 class StatusListener:
-    def __init__(self, running_app, player_id="CC1AD845"):
-        self.player_id = player_id
-        self.ready = threading.Event()
+    def __init__(self, running_app):
+        self._dmc_app_id = "CC1AD845"
+        self._yt_app_id = "233637DE"
+        self.dmc_ready = threading.Event()
+        self.yt_ready = threading.Event()
+        self.queue_ready = threading.Event()
 
-        if running_app == self.player_id:
-            self.ready.set()
+        if running_app == self._dmc_app_id:
+            self.dmc_ready.set()
+        elif running_app == self._yt_app_id:
+            self.yt_ready.set()
 
     def new_cast_status(self, status):
-        if status.app_id == self.player_id:
-            self.ready.set()
+        if status.app_id == self._dmc_app_id:
+            self.dmc_ready.set()
+        elif status.app_id == self._yt_app_id:
+            self.yt_ready.set()
+
+    def new_media_status(self, status):
+        if status.player_state == "BUFFERING":
+            self.queue_ready.clear()
+        else:
+            self.queue_ready.set()
 
 
 class CastController:
@@ -127,7 +141,16 @@ class CastController:
             cache.set(self.cast.name, self.cast.host)
 
         self.cast.wait()
+
         self.listener = StatusListener(self.cast.app_id)
+        self.cast.register_status_listener(self.listener)
+        self.cast.media_controller.register_status_listener(self.listener)
+
+        # We need to create the ytc object in the constructor
+        # as the cli is calling add_to_yt_queue multiple times
+        # when the user is casting a youtube playlist
+        self.ytc = YouTubeController()
+        self.cast.register_handler(self.ytc)
 
         if state_check:
             self._check_state()
@@ -141,10 +164,17 @@ class CastController:
         if self.cast.media_controller.status.player_state in ["UNKNOWN", "IDLE"]:
             raise CattCastError("Nothing is currently playing.")
 
+    # The controller's start_new_session method
+    # needs a video id for some reason unknown to me
+    def _prep_yt(self, video_id):
+        if self.cast.app_id != "233637DE":
+            self.cast.start_app("233637DE")
+            self.listener.yt_ready.wait()
+            self.ytc.start_new_session(video_id)
+
     def play_media(self, url, content_type="video/mp4"):
-        self.cast.register_status_listener(self.listener)
         self.cast.play_media(url, content_type)
-        self.listener.ready.wait()
+        self.listener.dmc_ready.wait()
         self.cast.media_controller.block_until_active()
 
     def play(self):
@@ -195,3 +225,13 @@ class CastController:
 
     def kill(self):
         self.cast.quit_app()
+
+    def play_yt_video(self, video_id):
+        self._prep_yt(video_id)
+        self.ytc.play_video(video_id)
+
+    def add_to_yt_queue(self, video_id):
+        self._prep_yt(video_id)
+        # You can't add videos to the queue while the app is buffering
+        self.listener.queue_ready.wait()
+        self.ytc.add_to_queue(video_id)

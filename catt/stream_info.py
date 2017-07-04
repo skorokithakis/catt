@@ -28,22 +28,42 @@ class StreamInfo:
             self.local_ip = get_local_ip(host)
             self.port = random.randrange(45000, 47000)
             self.title = os.path.basename(video_url)
-            self.video_id = None
             self.is_local_file = True
         else:
             self._info = self._get_stream_info(video_url)
             self.local_ip = None
             self.port = None
             self.title = self._info["title"]
-            self.video_id = self._info["id"]
             self.is_local_file = False
+
+            if self.is_youtube_playlist:
+                self._playlist_items = [item["id"] for item in list(self._info["entries"])]
 
     @property
     def url(self):
         if self.is_local_file:
             return "http://%s:%s/" % (self.local_ip, self.port)
+        elif self.is_youtube_playlist or self.is_youtube_video:
+            return None
         else:
             return self._get_stream_url(self._info)
+
+    @property
+    def video_id(self):
+        if self.is_youtube_video:
+            return self._info["id"]
+        elif self.is_youtube_playlist:
+            return self._playlist_items[0]
+        else:
+            return None
+    
+    @property
+    def playlist(self):
+        return self._playlist_items if self.is_youtube_playlist else None
+
+    @property
+    def playlist_id(self):
+        return self._info["id"] if self.is_youtube_playlist else None
 
     @property
     def is_youtube_video(self):
