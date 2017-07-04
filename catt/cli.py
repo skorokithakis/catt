@@ -93,9 +93,9 @@ def cast(settings, video_url):
         thr.start()
     else:
         click.echo("Casting remote file %s..." % video_url)
-        
+
         thr = None
-    
+
     click.echo(u"Playing %s on %s..." % (stream.title, cc_name))
     cst.play_media(stream.url)
 

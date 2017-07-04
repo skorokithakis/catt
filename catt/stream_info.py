@@ -37,14 +37,14 @@ class StreamInfo:
             self.title = self._info["title"]
             self.video_id = self._info["id"]
             self.is_local_file = False
-    
+
     @property
     def url(self):
         if self.is_local_file:
             return "http://%s:%s/" % (self.local_ip, self.port)
         else:
-            return self._get_stream_url()
-        
+            return self._get_stream_url(self._info)
+
     @property
     def is_youtube_video(self):
         if self._info:
@@ -64,18 +64,18 @@ class StreamInfo:
             return self.ydl.extract_info(video_url, process=False)
         except youtube_dl.utils.DownloadError:
             raise CattInfoError("Remote resource not found.")
-    
-    def _get_stream_url(self):
+
+    def _get_stream_url(self, preinfo):
         try:
-            info = self.ydl.process_ie_result(self._info, download=False)
+            info = self.ydl.process_ie_result(preinfo, download=False)
         except (youtube_dl.utils.ExtractorError, youtube_dl.utils.DownloadError):
             raise CattInfoError("Youtube-dl extractor failed.")
-        
+
         format_selector = self.ydl.build_format_selector("best")
-        
+
         try:
             best_format = list(format_selector(info))[0]
         except KeyError:
             best_format = info
-        
+
         return best_format["url"]
