@@ -22,7 +22,6 @@ class StreamInfo:
             if not os.path.isfile(video_url):
                 raise CattInfoError("The chosen file does not exist.")
 
-            self._preinfo = None
             self._video_url = video_url
             self.local_ip = get_local_ip(host)
             self.port = random.randrange(45000, 47000)
@@ -82,21 +81,21 @@ class StreamInfo:
 
     @property
     def is_youtube_video(self):
-        if self._preinfo:
+        if not self.is_local_file:
             return True if self._preinfo["extractor"] == "youtube" else False
         else:
             return False
 
     @property
     def is_youtube_playlist(self):
-        if self._preinfo:
+        if not self.is_local_file:
             return True if self._preinfo["extractor"] == "youtube:playlist" else False
         else:
             return False
 
     @property
     def is_playlist(self):
-        if self._preinfo:
+        if not self.is_local_file:
             return True if "entries" in self._preinfo else False
         else:
             return False
