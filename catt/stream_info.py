@@ -18,8 +18,6 @@ class CattInfoError(click.ClickException):
 
 class StreamInfo:
     def __init__(self, video_url, host):
-        self.ydl = youtube_dl.YoutubeDL({"quiet": True, "no_warnings": True})
-
         if "://" not in video_url:
             if not os.path.isfile(video_url):
                 raise CattInfoError("The chosen file does not exist.")
@@ -30,6 +28,7 @@ class StreamInfo:
             self.title = os.path.basename(video_url)
             self.is_local_file = True
         else:
+            self._ydl = youtube_dl.YoutubeDL({"quiet": True, "no_warnings": True})
             self._info = self._get_stream_info(video_url)
             self.local_ip = None
             self.port = None
@@ -56,7 +55,7 @@ class StreamInfo:
             return self._playlist_items[0]
         else:
             return None
-    
+
     @property
     def playlist(self):
         return self._playlist_items if self.is_youtube_playlist else None
@@ -81,17 +80,17 @@ class StreamInfo:
 
     def _get_stream_info(self, video_url):
         try:
-            return self.ydl.extract_info(video_url, process=False)
+            return self._ydl.extract_info(video_url, process=False)
         except youtube_dl.utils.DownloadError:
             raise CattInfoError("Remote resource not found.")
 
     def _get_stream_url(self, preinfo):
         try:
-            info = self.ydl.process_ie_result(preinfo, download=False)
+            info = self._ydl.process_ie_result(preinfo, download=False)
         except (youtube_dl.utils.ExtractorError, youtube_dl.utils.DownloadError):
             raise CattInfoError("Youtube-dl extractor failed.")
 
-        format_selector = self.ydl.build_format_selector("best")
+        format_selector = self._ydl.build_format_selector("best")
 
         try:
             best_format = list(format_selector(info))[0]
