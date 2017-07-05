@@ -108,7 +108,8 @@ def cast(settings, video_url):
 
     click.echo(u"Playing %s on %s..." % (stream.title, cc_name))
 
-    if stream.is_youtube_video or stream.is_youtube_playlist:
+    if (stream.is_youtube_video or stream.is_youtube_playlist) \
+       and cc_type != "audio":
         cst.play_yt_video(stream.video_id)
 
         # When casting a playlist, we need to start playback of the first
