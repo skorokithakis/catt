@@ -145,16 +145,16 @@ class CastController:
 
         self.cast.wait()
 
-        self.listener = StatusListener(self.cast.app_id,
-                                       self.cast.media_controller.status.player_state)
-        self.cast.register_status_listener(self.listener)
-        self.cast.media_controller.register_status_listener(self.listener)
+        self._listener = StatusListener(self.cast.app_id,
+                                        self.cast.media_controller.status.player_state)
+        self.cast.register_status_listener(self._listener)
+        self.cast.media_controller.register_status_listener(self._listener)
 
         # We need to create the ytc object in the constructor
         # as the cli is calling add_to_yt_queue multiple times
         # when the user is casting a youtube playlist
-        self.ytc = YouTubeController()
-        self.cast.register_handler(self.ytc)
+        self._ytc = YouTubeController()
+        self.cast.register_handler(self._ytc)
 
         if state_check:
             self._check_state()
@@ -173,14 +173,14 @@ class CastController:
     def _prep_yt(self, video_id):
         if self.cast.app_id != "233637DE":
             self.cast.start_app("233637DE")
-            self.listener.yt_ready.wait()
+            self._listener.yt_ready.wait()
 
-        if not self.ytc.in_session:
-            self.ytc.start_new_session(video_id)
+        if not self._ytc.in_session:
+            self._ytc.start_new_session(video_id)
 
     def play_media(self, url, content_type="video/mp4"):
         self.cast.play_media(url, content_type)
-        self.listener.dmc_ready.wait()
+        self._listener.dmc_ready.wait()
         self.cast.media_controller.block_until_active()
 
     def play(self):
@@ -234,10 +234,10 @@ class CastController:
 
     def play_yt_video(self, video_id):
         self._prep_yt(video_id)
-        self.ytc.play_video(video_id)
+        self._ytc.play_video(video_id)
 
     def add_to_yt_queue(self, video_id):
         self._prep_yt(video_id)
         # You can't add videos to the queue while the app is buffering
-        self.listener.queue_ready.wait()
-        self.ytc.add_to_queue(video_id)
+        self._listener.queue_ready.wait()
+        self._ytc.add_to_queue(video_id)
