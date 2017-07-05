@@ -36,14 +36,16 @@ class StreamInfo:
             self.is_local_file = False
 
             if self.is_youtube_playlist:
-                self._playlist_items = [item["id"] for item in list(self._info["entries"])]
+                items = list(self._info["entries"])
+                self._playlist_items = [item["id"] for item in items]
+                self._entries_first_item = items[0]
 
     @property
-    def url(self):
+    def video_url(self):
         if self.is_local_file:
             return "http://%s:%s/" % (self.local_ip, self.port)
-        elif self.is_youtube_playlist or self.is_youtube_video:
-            return None
+        elif self.is_youtube_playlist:
+            return self._get_stream_url(self._entries_first_item)
         else:
             return self._get_stream_url(self._info)
 

@@ -119,7 +119,7 @@ def cast(settings, video_url):
                 click.echo("Adding YouTube video %s to queue..." % video_id)
                 cst.add_to_yt_queue(video_id)
     else:
-        cst.play_media(stream.url)
+        cst.play_media(stream.video_url)
 
     if thr:
         click.echo("Serving local file, press Ctrl+C when done.")
