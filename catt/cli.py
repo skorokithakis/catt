@@ -82,6 +82,7 @@ def write_config(settings):
 def cast(settings, video_url):
     cst = CastController(settings["device"], state_check=False)
     cc_name = cst.cast.device.friendly_name
+    cc_type = cst.cast.cast_type
     stream = StreamInfo(video_url, cst.cast.host)
 
     if stream.is_local_file:
@@ -91,14 +92,14 @@ def cast(settings, video_url):
                      args=(video_url, stream.local_ip, stream.port))
         thr.setDaemon(True)
         thr.start()
-    elif stream.is_youtube_video:
+    elif stream.is_youtube_video and cc_type != "audio":
         click.echo("Casting YouTube video %s..." % stream.video_id)
 
         thr = None
-    elif stream.is_youtube_playlist:
+    elif stream.is_youtube_playlist and cc_type != "audio":
         click.echo("Casting YouTube playlist %s..." % stream.playlist_id)
 
-        thr = None        
+        thr = None
     else:
         click.echo("Casting remote file %s..." % video_url)
 
@@ -115,7 +116,7 @@ def cast(settings, video_url):
         if stream.is_youtube_playlist:
             for video_id in stream.playlist[1:]:
                 click.echo("Adding YouTube video %s to queue..." % video_id)
-                cst.add_to_yt_queue(video_id)      
+                cst.add_to_yt_queue(video_id)
     else:
         cst.play_media(stream.url)
 
