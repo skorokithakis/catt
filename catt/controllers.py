@@ -102,7 +102,7 @@ class Cache:
 
 
 class StatusListener:
-    def __init__(self, running_app):
+    def __init__(self, running_app, state):
         self._dmc_app_id = "CC1AD845"
         self._yt_app_id = "233637DE"
         self.dmc_ready = threading.Event()
@@ -113,6 +113,9 @@ class StatusListener:
             self.dmc_ready.set()
         elif running_app == self._yt_app_id:
             self.yt_ready.set()
+
+        if state != "BUFFERING":
+            self.queue_ready.set()
 
     def new_cast_status(self, status):
         if status.app_id == self._dmc_app_id:
@@ -142,7 +145,8 @@ class CastController:
 
         self.cast.wait()
 
-        self.listener = StatusListener(self.cast.app_id)
+        self.listener = StatusListener(self.cast.app_id,
+                                       self.cast.media_controller.status.player_state)
         self.cast.register_status_listener(self.listener)
         self.cast.media_controller.register_status_listener(self.listener)
 
