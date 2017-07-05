@@ -170,7 +170,8 @@ class CastController:
         if self.cast.app_id != "233637DE":
             self.cast.start_app("233637DE")
             self.listener.yt_ready.wait()
-            self.ytc.start_new_session(video_id)
+
+        self.ytc.start_new_session(video_id)
 
     def play_media(self, url, content_type="video/mp4"):
         self.cast.play_media(url, content_type)

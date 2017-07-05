@@ -92,6 +92,7 @@ def cast(settings, video_url):
                      args=(video_url, stream.local_ip, stream.port))
         thr.setDaemon(True)
         thr.start()
+    # Google blocks Chromecast Audio devices from running the YouTube app
     elif stream.is_youtube_video and cc_type != "audio":
         click.echo("Casting YouTube video %s..." % stream.video_id)
 
@@ -124,6 +125,29 @@ def cast(settings, video_url):
         click.echo("Serving local file, press Ctrl+C when done.")
         while thr.is_alive():
             time.sleep(1)
+
+
+@cli.command(short_help="Send a video to the YouTube Queue.")
+@click.argument("video_url")
+@click.pass_obj
+def add(settings, video_url):
+    cst = CastController(settings["device"], state_check=False)
+    cc_name = cst.cast.device.friendly_name
+    cc_type = cst.cast.cast_type
+    stream = StreamInfo(video_url, cst.cast.host)
+
+    if not stream.is_youtube_video:
+        raise CattCliError("Not a valid YouTube video url.")
+    if cc_type == "audio":
+        raise CattCliError("YouTube Queue not supported on audio devices.")
+
+    click.echo("Adding YouTube video %s to queue..." % stream.video_id)
+
+    if cst.cast.app_id == "233637DE":
+        cst.add_to_yt_queue(stream.video_id)
+    else:
+        click.echo(u"Playing %s on %s..." % (stream.title, cc_name))
+        cst.play_yt_video(stream.video_id)
 
 
 @cli.command(short_help="Pause a video.")
