@@ -37,6 +37,8 @@ class StreamInfo:
                 items = list(self._preinfo["entries"])
                 self._entries_first_item = items[0]
 
+                # For non-supported playlists, we are obtaining "info" for
+                # first video only.
                 if self.is_youtube_playlist:
                     self._playlist_items = [item["id"] for item in items]
                 else:
@@ -48,6 +50,8 @@ class StreamInfo:
     def title(self):
         if self.is_local_file:
             return os.path.basename(self._video_url)
+        # For non-supported playlists, we are returning
+        # the title of the first video.
         elif self.is_playlist and not self.is_youtube_playlist:
             return self._info["title"]
         else:
@@ -58,6 +62,11 @@ class StreamInfo:
         if self.is_local_file:
             return "http://%s:%s/" % (self.local_ip, self.port)
         elif self.is_youtube_playlist:
+            # We are doing this, so that we can avoid calling _get_stream_info
+            # in the contructor, when the user is casting a YouTube playlist
+            # to a non-audio device (where "info" is not needed).
+            # The below return statement is only used when the user tries to
+            # cast a YouTube playlist to an audio device.
             return self._get_stream_url(self._get_stream_info(self._entries_first_item))
         else:
             return self._get_stream_url(self._info)
