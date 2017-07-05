@@ -24,12 +24,14 @@ class StreamInfo:
 
             self._preinfo = None
             self._video_url = video_url
-            self._local_ip = get_local_ip(host)
-            self._port = random.randrange(45000, 47000)
+            self.local_ip = get_local_ip(host)
+            self.port = random.randrange(45000, 47000)
             self.is_local_file = True
         else:
             self._ydl = youtube_dl.YoutubeDL({"quiet": True, "no_warnings": True})
             self._preinfo = self._get_stream_preinfo(video_url)
+            self.local_ip = None
+            self.port = None
             self.is_local_file = False
 
             if self.is_playlist:
@@ -55,7 +57,7 @@ class StreamInfo:
     @property
     def video_url(self):
         if self.is_local_file:
-            return "http://%s:%s/" % (self._local_ip, self._port)
+            return "http://%s:%s/" % (self.local_ip, self.port)
         elif self.is_youtube_playlist:
             return self._get_stream_url(self._get_stream_info(self._entries_first_item))
         else:
