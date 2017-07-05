@@ -22,37 +22,49 @@ class StreamInfo:
             if not os.path.isfile(video_url):
                 raise CattInfoError("The chosen file does not exist.")
 
-            self._info = None
-            self.local_ip = get_local_ip(host)
-            self.port = random.randrange(45000, 47000)
-            self.title = os.path.basename(video_url)
+            self._preinfo = None
+            self._video_url = video_url
+            self._local_ip = get_local_ip(host)
+            self._port = random.randrange(45000, 47000)
             self.is_local_file = True
         else:
             self._ydl = youtube_dl.YoutubeDL({"quiet": True, "no_warnings": True})
-            self._info = self._get_stream_info(video_url)
-            self.local_ip = None
-            self.port = None
-            self.title = self._info["title"]
+            self._preinfo = self._get_stream_preinfo(video_url)
             self.is_local_file = False
 
-            if self.is_youtube_playlist:
-                items = list(self._info["entries"])
-                self._playlist_items = [item["id"] for item in items]
+            if self.is_playlist:
+                items = list(self._preinfo["entries"])
                 self._entries_first_item = items[0]
+
+                if self.is_youtube_playlist:
+                    self._playlist_items = [item["id"] for item in items]
+                else:
+                    self._info = self._get_stream_info(self._entries_first_item)
+            else:
+                self._info = self._get_stream_info(self._preinfo)
+
+    @property
+    def title(self):
+        if self.is_local_file:
+            return os.path.basename(self._video_url)
+        elif self.is_playlist and not self.is_youtube_playlist:
+            return self._info["title"]
+        else:
+            return self._preinfo["title"]
 
     @property
     def video_url(self):
         if self.is_local_file:
-            return "http://%s:%s/" % (self.local_ip, self.port)
+            return "http://%s:%s/" % (self._local_ip, self._port)
         elif self.is_youtube_playlist:
-            return self._get_stream_url(self._entries_first_item)
+            return self._get_stream_url(self._get_stream_info(self._entries_first_item))
         else:
             return self._get_stream_url(self._info)
 
     @property
     def video_id(self):
         if self.is_youtube_video:
-            return self._info["id"]
+            return self._preinfo["id"]
         elif self.is_youtube_playlist:
             return self._playlist_items[0]
         else:
@@ -64,34 +76,42 @@ class StreamInfo:
 
     @property
     def playlist_id(self):
-        return self._info["id"] if self.is_youtube_playlist else None
+        return self._preinfo["id"] if self.is_youtube_playlist else None
 
     @property
     def is_youtube_video(self):
-        if self._info:
-            return True if self._info["extractor"] == "youtube" else False
+        if self._preinfo:
+            return True if self._preinfo["extractor"] == "youtube" else False
         else:
             return False
 
     @property
     def is_youtube_playlist(self):
-        if self._info:
-            return True if self._info["extractor"] == "youtube:playlist" else False
+        if self._preinfo:
+            return True if self._preinfo["extractor"] == "youtube:playlist" else False
         else:
             return False
 
-    def _get_stream_info(self, video_url):
+    @property
+    def is_playlist(self):
+        if self._preinfo:
+            return True if "entries" in self._preinfo else False
+        else:
+            return False
+
+    def _get_stream_preinfo(self, video_url):
         try:
             return self._ydl.extract_info(video_url, process=False)
         except youtube_dl.utils.DownloadError:
             raise CattInfoError("Remote resource not found.")
 
-    def _get_stream_url(self, preinfo):
+    def _get_stream_info(self, preinfo):
         try:
-            info = self._ydl.process_ie_result(preinfo, download=False)
+            return self._ydl.process_ie_result(preinfo, download=False)
         except (youtube_dl.utils.ExtractorError, youtube_dl.utils.DownloadError):
             raise CattInfoError("Youtube-dl extractor failed.")
 
+    def _get_stream_url(self, info):
         format_selector = self._ydl.build_format_selector("best")
 
         try:

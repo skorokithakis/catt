@@ -106,6 +106,14 @@ def cast(settings, video_url):
 
         thr = None
 
+    if stream.is_playlist:
+        if cc_type == "audio":
+            click.echo("Warning: Playlists not supported on audio devices, playing first video.",
+                       err=True)
+        elif not stream.is_youtube_playlist:
+            click.echo("Warning: Only YouTube playlists are supported, playing first video.",
+                       err=True)
+
     click.echo(u"Playing %s on %s..." % (stream.title, cc_name))
 
     if (stream.is_youtube_video or stream.is_youtube_playlist) \
