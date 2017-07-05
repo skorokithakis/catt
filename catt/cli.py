@@ -92,7 +92,7 @@ def cast(settings, video_url):
                      args=(video_url, stream.local_ip, stream.port))
         thr.setDaemon(True)
         thr.start()
-    # Google blocks Chromecast Audio devices from running the YouTube app
+    # Google blocks Chromecast Audio devices from running the YouTube app.
     elif stream.is_youtube_video and cc_type != "audio":
         click.echo("Casting YouTube video %s..." % stream.video_id)
 
@@ -122,7 +122,7 @@ def cast(settings, video_url):
 
         # When casting a playlist, we need to start playback of the first
         # video immediately, as the controller's play_video method clears
-        # the queue for some reason
+        # the queue for some reason.
         if stream.is_youtube_playlist:
             for video_id in stream.playlist[1:]:
                 click.echo("Adding YouTube video %s to queue..." % video_id)

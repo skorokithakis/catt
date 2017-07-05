@@ -152,7 +152,7 @@ class CastController:
 
         # We need to create the ytc object in the constructor
         # as the cli is calling add_to_yt_queue multiple times
-        # when the user is casting a youtube playlist
+        # when the user is casting a youtube playlist.
         self._ytc = YouTubeController()
         self.cast.register_handler(self._ytc)
 
@@ -169,7 +169,7 @@ class CastController:
             raise CattCastError("Nothing is currently playing.")
 
     # The controller's start_new_session method
-    # needs a video id for some reason unknown to me
+    # needs a video id for some reason unknown to me.
     def _prep_yt(self, video_id):
         if self.cast.app_id != "233637DE":
             self.cast.start_app("233637DE")
@@ -238,6 +238,6 @@ class CastController:
 
     def add_to_yt_queue(self, video_id):
         self._prep_yt(video_id)
-        # You can't add videos to the queue while the app is buffering
+        # You can't add videos to the queue while the app is buffering.
         self._listener.queue_ready.wait()
         self._ytc.add_to_queue(video_id)
