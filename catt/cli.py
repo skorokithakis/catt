@@ -114,7 +114,7 @@ def cast(settings, video_url):
             click.echo("Warning: Only YouTube playlists are supported, playing first video.",
                        err=True)
 
-    click.echo(u"Playing %s on %s..." % (stream.title, cc_name))
+    click.echo(u"Playing %s on \"%s\"..." % (stream.title, cc_name))
 
     if (stream.is_youtube_video or stream.is_youtube_playlist) \
        and cc_type != "audio":
@@ -155,7 +155,7 @@ def add(settings, video_url):
     if cst.cast.app_id == "233637DE":
         cst.add_to_yt_queue(stream.video_id)
     else:
-        click.echo(u"Playing %s on %s..." % (stream.title, cc_name))
+        click.echo(u"Playing %s on \"%s\"..." % (stream.title, cc_name))
         cst.play_yt_video(stream.video_id)
 
 
