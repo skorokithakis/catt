@@ -55,7 +55,12 @@ class StreamInfo:
         elif self.is_playlist and not self.is_youtube_playlist:
             return self._info["title"]
         else:
-            return self._preinfo["title"]
+            # "preinfo" does not contain a "title" key, when the user casts
+            # an url that points directly to a media file.
+            try:
+                return self._preinfo["title"]
+            except KeyError:
+                return self._preinfo["webpage_url_basename"]
 
     @property
     def video_url(self):
