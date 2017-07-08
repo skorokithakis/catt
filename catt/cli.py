@@ -106,28 +106,29 @@ def cast(settings, video_url):
 
         thr = None
 
-    if stream.is_playlist:
+    if stream.is_playlist and (cc_type == "audio" or not stream.is_youtube_playlist):
         if cc_type == "audio":
             click.echo("Warning: Playlists not supported on audio devices, playing first video.",
                        err=True)
-        elif not stream.is_youtube_playlist:
+        else:
             click.echo("Warning: Only YouTube playlists are supported, playing first video.",
                        err=True)
-
-    click.echo(u"Playing %s on \"%s\"..." % (stream.title, cc_name))
-
-    if (stream.is_youtube_video or stream.is_youtube_playlist) \
-       and cc_type != "audio":
+        click.echo(u"Playing %s on \"%s\"..." % (stream.first_entry_title, cc_name))
+        cst.play_media(stream.first_entry_url)
+    elif stream.is_youtube_video:
+        click.echo(u"Playing %s on \"%s\"..." % (stream.video_title, cc_name))
         cst.play_yt_video(stream.video_id)
-
+    elif stream.is_youtube_playlist:
+        click.echo(u"Playing %s on \"%s\"..." % (stream.playlist_title, cc_name))
+        cst.play_yt_video(stream.playlist[0])
         # When casting a playlist, we need to start playback of the first
         # video immediately, as the controller's play_video method clears
         # the queue for some reason.
-        if stream.is_youtube_playlist:
-            for video_id in stream.playlist[1:]:
-                click.echo("Adding YouTube video %s to queue..." % video_id)
-                cst.add_to_yt_queue(video_id)
+        for video_id in stream.playlist[1:]:
+            click.echo("Adding YouTube video %s to queue..." % video_id)
+            cst.add_to_yt_queue(video_id)
     else:
+        click.echo(u"Playing %s on \"%s\"..." % (stream.video_title, cc_name))
         cst.play_media(stream.video_url)
 
     if thr:
