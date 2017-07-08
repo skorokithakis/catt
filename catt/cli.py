@@ -115,7 +115,7 @@ def cast(settings, video_url):
                        err=True)
         click.echo("Playing %s on \"%s\"..." % (stream.first_entry_title, cc_name))
         cst.play_media(stream.first_entry_url)
-    elif stream.is_youtube_video:
+    elif stream.is_youtube_video and cc_type != "audio":
         click.echo("Playing %s on \"%s\"..." % (stream.video_title, cc_name))
         cst.play_yt_video(stream.video_id)
     elif stream.is_youtube_playlist:
