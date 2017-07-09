@@ -88,19 +88,22 @@ def cast(settings, video_url):
     if stream.is_local_file:
         click.echo("Casting local file %s..." % video_url)
         click.echo("Playing %s on \"%s\"..." % (stream.video_title, cc_name))
-        cst.play_media(stream.video_url)
 
         thr = Thread(target=serve_file,
                      args=(video_url, stream.local_ip, stream.port))
+
         thr.setDaemon(True)
         thr.start()
+        cst.play_media(stream.video_url)
+        click.echo("Serving local file, press Ctrl+C when done.")
+        while thr.is_alive():
+            time.sleep(1)
     # Google blocks Chromecast Audio devices from running the YouTube app.
     elif stream.is_youtube_video and cc_type != "audio":
         click.echo("Casting YouTube video %s..." % stream.video_id)
         click.echo("Playing %s on \"%s\"..." % (stream.video_title, cc_name))
         cst.play_yt_video(stream.video_id)
 
-        thr = None
     elif stream.is_youtube_playlist and cc_type != "audio":
         click.echo("Casting YouTube playlist %s..." % stream.playlist_id)
         click.echo("Playing %s on \"%s\"..." % (stream.playlist_title, cc_name))
@@ -108,38 +111,26 @@ def cast(settings, video_url):
         # When casting a playlist, we need to start playback of the first
         # video immediately, as the controller's play_video method clears
         # the queue for some reason.
-        for video_id in stream.playlist[1:]:
-            click.echo("Adding YouTube video %s to queue..." % video_id)
-            cst.add_to_yt_queue(video_id)
+        if len(stream.playlist) > 1:
+            for video_id in stream.playlist[1:]:
+                click.echo("Adding YouTube video %s to queue..." % video_id)
+                cst.add_to_yt_queue(video_id)
 
-        thr = None
-    elif stream.is_playlist and cc_type == "audio":
+    elif stream.is_playlist and (cc_type == "audio" or not stream.is_youtube_playlist):
         click.echo("Casting remote file %s..." % video_url)
-        click.echo("Warning: Playlists not supported on audio devices, playing first video.",
-                   err=True)
+        if cc_type == "audio":
+            click.echo("Warning: Playlists not supported on audio devices, playing first video.",
+                       err=True)
+        else:
+            click.echo("Warning: Only YouTube playlists are supported, playing first video.",
+                       err=True)    
         click.echo("Playing %s on \"%s\"..." % (stream.first_entry_title, cc_name))
         cst.play_media(stream.first_entry_url)
 
-        thr = None
-    elif stream.is_playlist and not stream.is_youtube_playlist:
-        click.echo("Casting remote file %s..." % video_url)
-        click.echo("Warning: Only YouTube playlists are supported, playing first video.",
-                   err=True)
-        click.echo("Playing %s on \"%s\"..." % (stream.first_entry_title, cc_name))
-        cst.play_media(stream.first_entry_url)
-
-        thr = None
     else:
         click.echo("Casting remote file %s..." % video_url)
         click.echo("Playing %s on \"%s\"..." % (stream.video_title, cc_name))
         cst.play_media(stream.video_url)
-
-        thr = None
-
-    if thr:
-        click.echo("Serving local file, press Ctrl+C when done.")
-        while thr.is_alive():
-            time.sleep(1)
 
 
 @cli.command(short_help="Send a video to the YouTube Queue.")
