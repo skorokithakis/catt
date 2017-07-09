@@ -87,6 +87,8 @@ def cast(settings, video_url):
 
     if stream.is_local_file:
         click.echo("Casting local file %s..." % video_url)
+        click.echo("Playing %s on \"%s\"..." % (stream.video_title, cc_name))
+        cst.play_media(stream.video_url)
 
         thr = Thread(target=serve_file,
                      args=(video_url, stream.local_ip, stream.port))
@@ -95,30 +97,12 @@ def cast(settings, video_url):
     # Google blocks Chromecast Audio devices from running the YouTube app.
     elif stream.is_youtube_video and cc_type != "audio":
         click.echo("Casting YouTube video %s..." % stream.video_id)
+        click.echo("Playing %s on \"%s\"..." % (stream.video_title, cc_name))
+        cst.play_yt_video(stream.video_id)
 
         thr = None
     elif stream.is_youtube_playlist and cc_type != "audio":
         click.echo("Casting YouTube playlist %s..." % stream.playlist_id)
-
-        thr = None
-    else:
-        click.echo("Casting remote file %s..." % video_url)
-
-        thr = None
-
-    if stream.is_playlist and (cc_type == "audio" or not stream.is_youtube_playlist):
-        if cc_type == "audio":
-            click.echo("Warning: Playlists not supported on audio devices, playing first video.",
-                       err=True)
-        else:
-            click.echo("Warning: Only YouTube playlists are supported, playing first video.",
-                       err=True)
-        click.echo("Playing %s on \"%s\"..." % (stream.first_entry_title, cc_name))
-        cst.play_media(stream.first_entry_url)
-    elif stream.is_youtube_video and cc_type != "audio":
-        click.echo("Playing %s on \"%s\"..." % (stream.video_title, cc_name))
-        cst.play_yt_video(stream.video_id)
-    elif stream.is_youtube_playlist:
         click.echo("Playing %s on \"%s\"..." % (stream.playlist_title, cc_name))
         cst.play_yt_video(stream.playlist[0])
         # When casting a playlist, we need to start playback of the first
@@ -127,9 +111,30 @@ def cast(settings, video_url):
         for video_id in stream.playlist[1:]:
             click.echo("Adding YouTube video %s to queue..." % video_id)
             cst.add_to_yt_queue(video_id)
+
+        thr = None
+    elif stream.is_playlist and cc_type == "audio":
+        click.echo("Casting remote file %s..." % video_url)
+        click.echo("Warning: Playlists not supported on audio devices, playing first video.",
+                   err=True)
+        click.echo("Playing %s on \"%s\"..." % (stream.first_entry_title, cc_name))
+        cst.play_media(stream.first_entry_url)
+
+        thr = None
+    elif stream.is_playlist and not stream.is_youtube_playlist:
+        click.echo("Casting remote file %s..." % video_url)
+        click.echo("Warning: Only YouTube playlists are supported, playing first video.",
+                   err=True)
+        click.echo("Playing %s on \"%s\"..." % (stream.first_entry_title, cc_name))
+        cst.play_media(stream.first_entry_url)
+
+        thr = None
     else:
+        click.echo("Casting remote file %s..." % video_url)
         click.echo("Playing %s on \"%s\"..." % (stream.video_title, cc_name))
         cst.play_media(stream.video_url)
+
+        thr = None
 
     if thr:
         click.echo("Serving local file, press Ctrl+C when done.")

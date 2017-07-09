@@ -35,7 +35,7 @@ class StreamInfo:
 
             if self.is_playlist:
                 items = list(self._preinfo["entries"])
-                self._first_entry_info = items[0]
+                self._first_entry_info = self._get_stream_info(items[0])
 
                 if self.is_youtube_playlist:
                     self._playlist_items = [item["id"] for item in items]
@@ -84,11 +84,11 @@ class StreamInfo:
     @property
     def first_entry_title(self):
         return self._first_entry_info["title"] if self.is_playlist else None
-    
+
     @property
     def first_entry_url(self):
         if self.is_playlist:
-            return self._get_stream_url(self._get_stream_info(self._first_entry_info))
+            return self._get_stream_url(self._first_entry_info)
         else:
             return None
 
