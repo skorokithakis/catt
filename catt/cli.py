@@ -83,7 +83,7 @@ def cast(settings, video_url):
     cst = CastController(settings["device"], state_check=False)
     cc_name = cst.cast.device.friendly_name
     cc_type = cst.cast.cast_type
-    stream = StreamInfo(video_url, cst.cast.host)
+    stream = StreamInfo(video_url, host=cst.cast.host)
 
     if stream.is_local_file:
         click.echo("Casting local file %s..." % video_url)
@@ -140,7 +140,7 @@ def add(settings, video_url):
     cst = CastController(settings["device"], state_check=False)
     cc_name = cst.cast.device.friendly_name
     cc_type = cst.cast.cast_type
-    stream = StreamInfo(video_url, cst.cast.host)
+    stream = StreamInfo(video_url)
 
     if not stream.is_youtube_video:
         raise CattCliError("Not a valid YouTube video url.")

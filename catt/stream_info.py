@@ -17,8 +17,8 @@ class CattInfoError(click.ClickException):
 
 
 class StreamInfo:
-    def __init__(self, video_url, host):
-        if "://" not in video_url:
+    def __init__(self, video_url, host=None):
+        if "://" not in video_url and host:
             if not os.path.isfile(video_url):
                 raise CattInfoError("The chosen file does not exist.")
 
