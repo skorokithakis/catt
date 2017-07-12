@@ -114,19 +114,24 @@ class StatusListener:
         elif running_app == self._yt_app_id:
             self.yt_ready.set()
 
-        if state != "BUFFERING":
+        if state != "BUFFERING" and self.yt_ready.is_set():
             self.queue_ready.set()
 
     def new_cast_status(self, status):
         if status.app_id == self._dmc_app_id:
             self.dmc_ready.set()
+            self.yt_ready.clear()
         elif status.app_id == self._yt_app_id:
             self.yt_ready.set()
+            self.dmc_ready.clear()
+        else:
+            self.dmc_ready.clear()
+            self.yt_ready.clear()
 
     def new_media_status(self, status):
         if status.player_state == "BUFFERING":
             self.queue_ready.clear()
-        else:
+        elif self.yt_ready.is_set():
             self.queue_ready.set()
 
 
