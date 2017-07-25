@@ -123,7 +123,7 @@ def cast(settings, video_url):
                        err=True)
         else:
             click.echo("Warning: Only YouTube playlists are supported, playing first video.",
-                       err=True)    
+                       err=True)
         click.echo("Playing %s on \"%s\"..." % (stream.first_entry_title, cc_name))
         cst.play_media(stream.first_entry_url)
 
