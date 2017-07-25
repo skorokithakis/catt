@@ -6,9 +6,10 @@ import threading
 import time
 
 import pychromecast
-from pychromecast.controllers.youtube import YouTubeController
 
 from click import ClickException, echo
+
+from .youtube import YouTubeController
 
 
 def get_chromecasts():
