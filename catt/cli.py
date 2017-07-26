@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 import os
-import random
-import socket
 import time
 
 from threading import Thread
@@ -16,20 +14,14 @@ from .controllers import (
     Cache,
     CastController,
     get_chromecast,
-    get_chromecasts,
-    get_stream_info,
+    get_chromecasts
 )
 from .http_server import serve_file
+from .stream_info import StreamInfo
 
 
 CONFIG_DIR = click.get_app_dir("catt")
 CONFIG_FILENAME = os.path.join(CONFIG_DIR, "catt.cfg")
-
-
-def get_local_ip(cc_host):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.connect((cc_host, 0))
-    return sock.getsockname()[0]
 
 
 class CattCliError(click.ClickException):
@@ -90,35 +82,79 @@ def write_config(settings):
 def cast(settings, video_url):
     cst = CastController(settings["device"], state_check=False)
     cc_name = cst.cast.device.friendly_name
+    cc_type = cst.cast.cast_type
+    stream = StreamInfo(video_url, host=cst.cast.host)
 
-    if "://" not in video_url:
+    if stream.is_local_file:
         click.echo("Casting local file %s..." % video_url)
+        click.echo("Playing %s on \"%s\"..." % (stream.video_title, cc_name))
 
-        if not os.path.isfile(video_url):
-            click.echo("The chosen file does not exist.")
-            return
+        thr = Thread(target=serve_file,
+                     args=(video_url, stream.local_ip, stream.port))
 
-        local_ip = get_local_ip(cst.cast.host)
-        port = random.randrange(45000, 47000)
-        stream_info = {"url": "http://%s:%s/" % (local_ip, port),
-                       "title": os.path.basename(video_url)}
-
-        thr = Thread(target=serve_file, args=(video_url, local_ip, port))
         thr.setDaemon(True)
         thr.start()
-    else:
-        click.echo("Casting remote file %s..." % video_url)
-
-        thr = None
-        stream_info = get_stream_info(video_url)
-
-    click.echo(u"Playing %s on %s..." % (stream_info["title"], cc_name))
-    cst.play_media(stream_info["url"])
-
-    if thr:
+        cst.play_media(stream.video_url)
         click.echo("Serving local file, press Ctrl+C when done.")
         while thr.is_alive():
             time.sleep(1)
+    # Google blocks Chromecast Audio devices from running the YouTube app.
+    elif stream.is_youtube_video and cc_type != "audio":
+        click.echo("Casting YouTube video %s..." % stream.video_id)
+        click.echo("Playing %s on \"%s\"..." % (stream.video_title, cc_name))
+        cst.play_yt_video(stream.video_id)
+
+    elif stream.is_youtube_playlist and cc_type != "audio":
+        click.echo("Casting YouTube playlist %s..." % stream.playlist_id)
+        click.echo("Playing %s on \"%s\"..." % (stream.playlist_title, cc_name))
+        cst.play_yt_video(stream.playlist[0])
+        # When casting a playlist, we need to start playback of the first
+        # video immediately, as the controller's play_video method clears
+        # the queue for some reason.
+        if len(stream.playlist) > 1:
+            for video_id in stream.playlist[1:]:
+                click.echo("Adding YouTube video %s to queue..." % video_id)
+                cst.add_to_yt_queue(video_id)
+
+    elif stream.is_playlist and (cc_type == "audio" or not stream.is_youtube_playlist):
+        click.echo("Casting remote file %s..." % video_url)
+        if cc_type == "audio":
+            click.echo("Warning: Playlists not supported on audio devices, playing first video.",
+                       err=True)
+        else:
+            click.echo("Warning: Only YouTube playlists are supported, playing first video.",
+                       err=True)
+        click.echo("Playing %s on \"%s\"..." % (stream.first_entry_title, cc_name))
+        cst.play_media(stream.first_entry_url)
+
+    else:
+        click.echo("Casting remote file %s..." % video_url)
+        click.echo("Playing %s on \"%s\"..." % (stream.video_title, cc_name))
+        cst.play_media(stream.video_url)
+
+
+@cli.command(short_help="Send a video to the YouTube Queue.")
+@click.argument("video_url")
+@click.pass_obj
+def add(settings, video_url):
+    cst = CastController(settings["device"], state_check=False)
+    cc_name = cst.cast.device.friendly_name
+    cc_type = cst.cast.cast_type
+    stream = StreamInfo(video_url)
+
+    if not stream.is_youtube_video:
+        raise CattCliError("Not a valid YouTube video url.")
+    if cc_type == "audio":
+        raise CattCliError("YouTube Queue not supported on audio devices.")
+
+    click.echo("Adding YouTube video %s to queue..." % stream.video_id)
+
+    if (cst.cast.app_id == "233637DE" and
+            cst.cast.media_controller.status.player_state != "IDLE"):
+        cst.add_to_yt_queue(stream.video_id)
+    else:
+        click.echo("Playing %s on \"%s\"..." % (stream.video_title, cc_name))
+        cst.play_yt_video(stream.video_id)
 
 
 @cli.command(short_help="Pause a video.")
