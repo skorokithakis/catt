@@ -149,7 +149,8 @@ def add(settings, video_url):
 
     click.echo("Adding YouTube video %s to queue..." % stream.video_id)
 
-    if cst.cast.app_id == "233637DE":
+    if (cst.cast.app_id == "233637DE"
+            and cst.cast.media_controller.status.player_state != "IDLE"):
         cst.add_to_yt_queue(stream.video_id)
     else:
         click.echo("Playing %s on \"%s\"..." % (stream.video_title, cc_name))
