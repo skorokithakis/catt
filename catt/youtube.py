@@ -4,7 +4,10 @@ Controller to interface with the YouTube-app.
 
 import re
 import threading
-from json import JSONDecodeError
+try:
+    from json import JSONDecodeError
+except ImportError:
+    JSONDecodeError = ValueError
 
 import requests
 
