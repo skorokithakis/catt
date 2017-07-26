@@ -24,7 +24,7 @@ BASE_REQUEST_PARAMS = {"device": "REMOTE_CONTROL", "id": RANDOM_ID, "name": "Des
                        "CVER": 1}
 
 SET_PLAYLIST_METHOD = {"method": "setPlaylist", "params": VIDEO_ID_PARAM, "TYPE": None}
-REQUEST_PARAMS_SET_PLAYLIST = {**BASE_REQUEST_PARAMS, **SET_PLAYLIST_METHOD}
+REQUEST_PARAMS_SET_PLAYLIST = dict(**dict(BASE_REQUEST_PARAMS, **SET_PLAYLIST_METHOD))
 
 REQUEST_DATA_SET_PLAYLIST = "count=0"
 REQUEST_DATA_ADD_TO_PLAYLIST = "count=1&ofs=%d&req0__sc=addVideo&req0_videoId=%s"
