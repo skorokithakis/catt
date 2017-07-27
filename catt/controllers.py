@@ -205,10 +205,10 @@ class CastController:
     def ffwd(self, seconds):
         pos = self.cast.media_controller.status.current_time
         self.seek(pos + seconds)
-    
+
     def skip(self):
         status = self.cast.media_controller.status.__dict__
-        
+
         if status["duration"]:
             self.seek(int(status["duration"]) + 1)
         else:
