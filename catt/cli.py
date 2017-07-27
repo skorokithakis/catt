@@ -204,6 +204,13 @@ def seek(settings, timedesc):
     cst.seek(timedesc)
 
 
+@cli.command(short_help="Skip to end of video.")
+@click.pass_obj
+def skip(settings):
+    cst = CastController(settings["device"])
+    cst.skip()
+
+
 @cli.command(short_help="Set the volume to LVL [0-100].")
 @click.argument("level", type=click.IntRange(0, 100), metavar="LVL")
 @click.pass_obj
