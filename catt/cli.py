@@ -204,6 +204,15 @@ def seek(settings, timedesc):
     cst.seek(timedesc)
 
 
+@cli.command(short_help="Skip to next video in YouTube Queue.")
+@click.pass_obj
+def skip(settings):
+    cst = CastController(settings["device"])
+    if cst.cast.app_id != "233637DE":
+        raise CattCliError("YouTube Queue is currently not active.")
+    cst.skip()
+
+
 @cli.command(short_help="Set the volume to LVL [0-100].")
 @click.argument("level", type=click.IntRange(0, 100), metavar="LVL")
 @click.pass_obj
