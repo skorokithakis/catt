@@ -6,6 +6,11 @@ import click
 import youtube_dl
 
 
+ULTRA_MODELS = ["?"]
+ULTRA_FORMAT = "best[width <=? 3840][height <=? 2160]"
+STANDARD_FORMAT = "best[width <=? 1920][height <=? 1080]"
+
+
 def get_local_ip(cc_host):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.connect((cc_host, 0))
@@ -17,7 +22,7 @@ class CattInfoError(click.ClickException):
 
 
 class StreamInfo:
-    def __init__(self, video_url, host=None):
+    def __init__(self, video_url, model=None, host=None):
         if "://" not in video_url and host:
             if not os.path.isfile(video_url):
                 raise CattInfoError("The chosen file does not exist.")
@@ -27,6 +32,7 @@ class StreamInfo:
             self.port = random.randrange(45000, 47000)
             self.is_local_file = True
         else:
+            self._best_format = ULTRA_FORMAT if model in ULTRA_MODELS else STANDARD_FORMAT
             self._ydl = youtube_dl.YoutubeDL({"quiet": True, "no_warnings": True})
             self._preinfo = self._get_stream_preinfo(video_url)
             self.local_ip = None
@@ -126,7 +132,7 @@ class StreamInfo:
             raise CattInfoError("Youtube-dl extractor failed.")
 
     def _get_stream_url(self, info):
-        format_selector = self._ydl.build_format_selector("best")
+        format_selector = self._ydl.build_format_selector(self._best_format)
 
         try:
             best_format = list(format_selector(info))[0]
