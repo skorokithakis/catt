@@ -83,7 +83,8 @@ def cast(settings, video_url):
     cst = CastController(settings["device"], state_check=False)
     cc_name = cst.cast.device.friendly_name
     cc_type = cst.cast.cast_type
-    stream = StreamInfo(video_url, model=cst.cast.model_name, host=cst.cast.host)
+    cc_info = (cst.cast.device.manufacturer, cst.cast.model_name)
+    stream = StreamInfo(video_url, model=cc_info, host=cst.cast.host)
 
     if stream.is_local_file:
         click.echo("Casting local file %s..." % video_url)

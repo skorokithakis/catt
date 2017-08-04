@@ -6,7 +6,7 @@ import click
 import youtube_dl
 
 
-ULTRA_MODELS = ["?"]
+ULTRA_MODELS = [("Xiaomi", "MIBOX3")]
 ULTRA_FORMAT = "best[width <=? 3840][height <=? 2160]"
 STANDARD_FORMAT = "best[width <=? 1920][height <=? 1080]"
 
