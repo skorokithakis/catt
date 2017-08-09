@@ -146,7 +146,8 @@ class CastController:
                 raise ValueError
             self.cast = pychromecast.Chromecast(cached_ip)
         except (pychromecast.error.ChromecastConnectionError, ValueError):
-            self.cast = get_chromecast(device_name)
+            cast = get_chromecast(device_name)
+            self.cast = pychromecast.Chromecast(cast.host)
             cache.set(self.cast.name, self.cast.host)
 
         self.cast.wait()
