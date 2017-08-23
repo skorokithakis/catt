@@ -6,7 +6,9 @@ import click
 import youtube_dl
 
 
+AUDIO_MODELS = [("Google Inc.", "Chromecast Audio")]
 ULTRA_MODELS = [("Xiaomi", "MIBOX3")]
+AUDIO_FORMAT = "bestaudio"
 ULTRA_FORMAT = "best[width <=? 3840][height <=? 2160]"
 STANDARD_FORMAT = "best[width <=? 1920][height <=? 1080]"
 
@@ -32,12 +34,19 @@ class StreamInfo:
             self.port = random.randrange(45000, 47000)
             self.is_local_file = True
         else:
-            self._best_format = ULTRA_FORMAT if model in ULTRA_MODELS else STANDARD_FORMAT
             self._ydl = youtube_dl.YoutubeDL({"quiet": True, "no_warnings": True})
             self._preinfo = self._get_stream_preinfo(video_url)
             self.local_ip = None
             self.port = None
             self.is_local_file = False
+
+            if model in AUDIO_MODELS and (self.is_youtube_video or
+                                          self.is_youtube_playlist):
+                self._best_format = AUDIO_FORMAT
+            elif model in ULTRA_MODELS:
+                self._best_format = ULTRA_FORMAT
+            else:
+                self._best_format = STANDARD_FORMAT
 
             if self.is_playlist:
                 items = list(self._preinfo["entries"])
