@@ -19,7 +19,8 @@ def get_chromecasts():
         raise CattCastError("No devices found.")
 
     devices.sort(key=lambda cc: cc.name)
-    return devices
+    # We need to ensure that all Chromecast objects contain DIAL info.
+    return [pychromecast.Chromecast(cc.host) for cc in devices]
 
 
 def get_chromecast(device_name):
@@ -146,8 +147,7 @@ class CastController:
                 raise ValueError
             self.cast = pychromecast.Chromecast(cached_ip)
         except (pychromecast.error.ChromecastConnectionError, ValueError):
-            cast = get_chromecast(device_name)
-            self.cast = pychromecast.Chromecast(cast.host)
+            self.cast = get_chromecast(device_name)
             cache.set(self.cast.name, self.cast.host)
 
         self.cast.wait()
