@@ -86,7 +86,6 @@ Info
 ----
 
 * Free software: BSD license
-* Documentation: https://catt.readthedocs.org.
 
 Features
 --------
