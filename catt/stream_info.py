@@ -146,9 +146,11 @@ class StreamInfo:
 
         try:
             best_format = list(format_selector(info))[0]
-        # This is thrown when "bestaudio" returns nothing.
         except IndexError:
-            best_format = list(fallback_format_selector(info))[0]
+            if self._best_format == AUDIO_FORMAT:
+                best_format = list(fallback_format_selector(info))[0]
+            else:
+                raise CattInfoError("No suitable format was found.")
         # This is thrown when url points directly to media file.
         except KeyError:
             best_format = info
