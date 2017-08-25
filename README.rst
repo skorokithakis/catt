@@ -91,4 +91,4 @@ Features
 --------
 
 * Casts videos to Chromecast.
-* From many, many online sources.
+* From `many, many online sources <http://rg3.github.io/youtube-dl/supportedsites.html>`_.
