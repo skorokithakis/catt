@@ -8,8 +8,7 @@ import youtube_dl
 
 AUDIO_MODELS = [("Google Inc.", "Chromecast Audio")]
 ULTRA_MODELS = [("Xiaomi", "MIBOX3")]
-AUDIO_FORMAT = "bestaudio"
-AUDIO_FALLBACK_FORMAT = "best"
+AUDIO_FORMAT = "bestaudio/best"
 ULTRA_FORMAT = "best[width <=? 3840][height <=? 2160]"
 STANDARD_FORMAT = "best[width <=? 1920][height <=? 1080]"
 
@@ -142,15 +141,11 @@ class StreamInfo:
 
     def _get_stream_url(self, info):
         format_selector = self._ydl.build_format_selector(self._best_format)
-        fallback_format_selector = self._ydl.build_format_selector(AUDIO_FALLBACK_FORMAT)
 
         try:
-            best_format = list(format_selector(info))[0]
-        except IndexError:
-            if self._best_format == AUDIO_FORMAT:
-                best_format = list(fallback_format_selector(info))[0]
-            else:
-                raise CattInfoError("No suitable format was found.")
+            best_format = next(format_selector(info))
+        except StopIteration:
+            raise CattInfoError("No suitable format was found.")
         # This is thrown when url points directly to media file.
         except KeyError:
             best_format = info
