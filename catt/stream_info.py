@@ -10,7 +10,10 @@ AUDIO_MODELS = [("Google Inc.", "Chromecast Audio")]
 ULTRA_MODELS = [("Xiaomi", "MIBOX3")]
 AUDIO_FORMAT = "bestaudio/best"
 ULTRA_FORMAT = "best[width <=? 3840][height <=? 2160]"
-STANDARD_FORMAT = "best[width <=? 1920][height <=? 1080]"
+STANDARD_FORMAT = ("best"
+                   "[width <=? 1920][height <=? 1080]"
+                   "[fps <=? 50]"
+                   "[format_id != 1080p60__source_][format_id != 720p60]") #twitch
 
 
 def get_local_ip(cc_host):
