@@ -57,11 +57,9 @@ def setup_cast(device_name, video_url=None, prep=None):
     if video_url:
         cc_info = (cast.device.manufacturer, cast.model_name)
         stream = StreamInfo(video_url, model=cc_info, host=cast.host)
-        try:
-            if stream.is_local_file:
-                raise ValueError
+        if stream.extractor in APP_IDS and not stream.is_local_file:
             app_id = APP_IDS[stream.extractor]
-        except (KeyError, ValueError):
+        else:
             app_id = DEFAULT_APP_ID
     else:
         stream = None
