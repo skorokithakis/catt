@@ -320,9 +320,7 @@ class YoutubeCastController(CastController):
                 self.add(video_id)
 
     def add(self, video_id):
-        # The echo statement should ideally be in cli, but that does not seem
-        # feasible as long as we can't add playlists in one go.
-        echo("Adding video with id \"%s\" to the queue." % video_id)
+        echo("Adding video id \"%s\" to the queue." % video_id)
         self._prep_yt(video_id)
         # You can't add videos to the queue while the app is buffering.
         self._listener.not_buffering.wait()
