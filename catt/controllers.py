@@ -57,12 +57,13 @@ def setup_cast(device_name, video_url=None, prep=None):
     if video_url:
         cc_info = (cast.device.manufacturer, cast.model_name)
         stream = StreamInfo(video_url, model=cc_info, host=cast.host)
-        try:
-            if stream.is_local_file:
-                raise ValueError
-            app = next(a for a in APP_INFO if a["app_name"] == stream.extractor)
-        except (StopIteration, ValueError):
+        if stream.is_local_file:
             app = DEFAULT_APP
+        else:
+            try:
+                app = next(a for a in APP_INFO if a["app_name"] == stream.extractor)
+            except StopIteration:
+                app = DEFAULT_APP
     else:
         stream = None
         try:
@@ -217,6 +218,9 @@ class CastController:
     def play_media_id(self, video_id):
         raise PlaybackError
 
+    def play_playlist(self, playlist_id):
+        raise PlaybackError
+
     def play(self):
         self.cast.media_controller.play()
 
@@ -272,9 +276,6 @@ class CastController:
 
     def kill(self):
         self.cast.quit_app()
-
-    def play_playlist(self, playlist_id):
-        raise PlaybackError
 
     def _not_supported(self):
         if self.cast.media_controller.status.player_state in ["UNKNOWN", "IDLE"]:
