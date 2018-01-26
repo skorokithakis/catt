@@ -14,7 +14,8 @@ from .controllers import (
     get_chromecast,
     get_chromecasts,
     setup_cast,
-    Cache
+    Cache,
+    PlaybackError
 )
 from .http_server import serve_file
 
@@ -91,28 +92,33 @@ def cast(settings, video_url):
 
         thr.setDaemon(True)
         thr.start()
-        cst.play_media(stream.video_url)
+        cst.play_content(stream.video_url)
         click.echo("Serving local file, press Ctrl+C when done.")
         while thr.is_alive():
             time.sleep(1)
 
-    elif stream.is_video and cst.name != "default":
-        click.echo("Casting %s video %s..." % (cst.name, stream.video_id))
-        click.echo("Playing %s on \"%s\"..." % (stream.video_title, cc_name))
-        cst.play_media(stream.video_id)
-
-    elif stream.is_playlist and cst.name != "default":
-        click.echo("Casting %s playlist %s..." % (cst.name, stream.playlist_id))
+    elif stream.is_playlist:
+        click.echo("Casting remote file %s..." % video_url)
         click.echo("Playing %s on \"%s\"..." % (stream.playlist_title, cc_name))
-        cst.play_playlist(stream.playlist)
+        try:
+            cst.play_playlist(stream.playlist)
+        except PlaybackError:
+            click.echo("Playlist playback not possible, playing first video.", err=True)
+            if cst.info_type == "url":
+                cst.play_media_url(stream.first_entry_url)
+            elif cst.info_type == "id":
+                cst.play_media_id(stream.first_entry_id)
 
     else:
         click.echo("Casting remote file %s..." % video_url)
         click.echo("Playing %s on \"%s\"..." % (stream.video_title, cc_name))
-        cst.play_media(stream.video_url)
+        if cst.info_type == "url":
+            cst.play_media_url(stream.video_url)
+        elif cst.info_type == "id":
+            cst.play_media_id(stream.video_id)
 
 
-@cli.command(short_help="Send a video to the YouTube Queue.")
+@cli.command(short_help="Add a video to the queue.")
 @click.argument("video_url")
 @click.pass_obj
 def add(settings, video_url):

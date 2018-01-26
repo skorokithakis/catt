@@ -13,8 +13,8 @@ from .stream_info import StreamInfo
 from .youtube import YouTubeController
 
 
-APP_IDS = {"youtube": "233637DE"}
-DEFAULT_APP_ID = "CC1AD845"
+APP_INFO = [{"app_name": "youtube", "app_id": "233637DE", "supported_devices": ["cast"]}]
+DEFAULT_APP = {"app_name": "default", "app_id": "CC1AD845"}
 BACKDROP_APP_ID = "E8C28D3C"
 
 
@@ -57,22 +57,38 @@ def setup_cast(device_name, video_url=None, prep=None):
     if video_url:
         cc_info = (cast.device.manufacturer, cast.model_name)
         stream = StreamInfo(video_url, model=cc_info, host=cast.host)
-        if stream.extractor in APP_IDS and not stream.is_local_file:
-            app_id = APP_IDS[stream.extractor]
-        else:
-            app_id = DEFAULT_APP_ID
+        try:
+            if stream.is_local_file:
+                raise ValueError
+            app = next(a for a in APP_INFO if a["app_name"] == stream.extractor)
+        except (StopIteration, ValueError):
+            app = DEFAULT_APP
     else:
         stream = None
-        app_id = cast.app_id
+        try:
+            app = next(a for a in APP_INFO if a["app_id"] == cast.app_id)
+        except StopIteration:
+            app = DEFAULT_APP
 
-    if app_id == APP_IDS["youtube"] and cast.cast_type != "audio":
-        controller = YoutubeCastController(cast, "YouTube", APP_IDS["youtube"], prep=prep)
+    if app["app_name"] != "default":
+        if cast.cast_type not in app["supported_devices"]:
+            if stream:
+                echo("The %s app is not available for this device." % app["app_name"].capitalize(),
+                     err=True)
+            app = DEFAULT_APP
+
+    if app["app_name"] == "youtube":
+        controller = YoutubeCastController(cast, app["app_name"], app["app_id"], prep=prep)
     else:
-        controller = DefaultCastController(cast, "default", DEFAULT_APP_ID, prep=prep)
+        controller = DefaultCastController(cast, app["app_name"], app["app_id"], prep=prep)
     return (controller, stream) if stream else controller
 
 
 class CattCastError(ClickException):
+    pass
+
+
+class PlaybackError(Exception):
     pass
 
 
@@ -163,7 +179,8 @@ class StatusListener:
 class CastController:
     def __init__(self, cast, name, app_id, prep=None):
         self.cast = cast
-        self.name = name
+        self._name = name
+        self.info_type = None
         self._listener = StatusListener(app_id, self.cast.app_id,
                                         self.cast.media_controller.status.player_state)
         self.cast.register_status_listener(self._listener)
@@ -194,8 +211,11 @@ class CastController:
     def _human_time(self, seconds):
         return time.strftime("%H:%M:%S", time.gmtime(seconds))
 
-    def play_media(self, *args):
-        raise NotImplementedError
+    def play_media_url(self, video_url):
+        raise PlaybackError
+
+    def play_media_id(self, video_id):
+        raise PlaybackError
 
     def play(self):
         self.cast.media_controller.play()
@@ -253,50 +273,55 @@ class CastController:
     def kill(self):
         self.cast.quit_app()
 
+    def play_playlist(self, playlist_id):
+        raise PlaybackError
+
     def _not_supported(self):
         if self.cast.media_controller.status.player_state in ["UNKNOWN", "IDLE"]:
             self.kill()
-        raise CattCastError("This action is not supported by the %s controller." % self.name)
+        raise CattCastError("This action is not supported by the %s controller." % self._name.capitalize())
 
-    def play_playlist(self, *args):
-        self._not_supported()
-
-    def add(self, *args):
+    def add(self, video_id):
         self._not_supported()
 
 
 class DefaultCastController(CastController):
     def __init__(self, cast, name, app_id, prep=None):
-        super(DefaultCastController, self).__init__(cast, name, app_id, prep)
+        super(DefaultCastController, self).__init__(cast, name, app_id, prep=prep)
+        self.info_type = "url"
 
-    def play_media(self, url, content_type="video/mp4"):
-        self._controller.play_media(url, content_type)
+    def play_media_url(self, video_url):
+        self._controller.play_media(video_url, "video/mp4")
         self._controller.block_until_active()
 
 
 class YoutubeCastController(CastController):
     def __init__(self, cast, name, app_id, prep=None):
         self._controller = YouTubeController()
-        super(YoutubeCastController, self).__init__(cast, name, app_id, prep)
+        super(YoutubeCastController, self).__init__(cast, name, app_id, prep=prep)
+        self.info_type = "id"
 
     # The controller's start_new_session method needs a video id.
     def _prep_yt(self, video_id):
         if not self._controller.in_session:
             self._controller.start_new_session(video_id)
 
-    def play_media(self, video_id):
+    def play_media_id(self, video_id):
         self._prep_yt(video_id)
         self._controller.play_video(video_id)
 
     def play_playlist(self, playlist):
         if not playlist:
             raise CattCastError("Playlist is empty.")
-        self.play_media(playlist[0])
+        self.play_media_id(playlist[0])
         if len(playlist) > 1:
             for video_id in playlist[1:]:
                 self.add(video_id)
 
     def add(self, video_id):
+        # The echo statement should ideally be in cli, but that does not seem
+        # feasible as long as we can't add playlists in one go.
+        echo("Adding video with id \"%s\" to the queue." % video_id)
         self._prep_yt(video_id)
         # You can't add videos to the queue while the app is buffering.
         self._listener.not_buffering.wait()

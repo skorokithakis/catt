@@ -119,6 +119,10 @@ class StreamInfo:
         else:
             return None
 
+    @property
+    def first_entry_id(self):
+        return self._playlist_items[0] if self.is_playlist else None
+
     def _get_local_ip(self, cc_host):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.connect((cc_host, 0))
