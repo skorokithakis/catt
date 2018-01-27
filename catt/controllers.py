@@ -13,7 +13,7 @@ from .stream_info import StreamInfo
 from .youtube import YouTubeController
 
 
-APP_INFO = [{"app_name": "youtube", "app_id": "233637DE", "supported_devices": ["cast"]}]
+APP_INFO = [{"app_name": "youtube", "app_id": "233637DE", "supported_device_types": ["cast"]}]
 DEFAULT_APP = {"app_name": "default", "app_id": "CC1AD845"}
 BACKDROP_APP_ID = "E8C28D3C"
 
@@ -71,12 +71,11 @@ def setup_cast(device_name, video_url=None, prep=None):
         except StopIteration:
             app = DEFAULT_APP
 
-    if app["app_name"] != "default":
-        if cast.cast_type not in app["supported_devices"]:
-            if stream:
-                echo("The %s app is not available for this device." % app["app_name"].capitalize(),
-                     err=True)
-            app = DEFAULT_APP
+    if app["app_name"] != "default" and cast.cast_type not in app["supported_device_types"]:
+        if stream:
+            echo("The %s app is not available for this device." % app["app_name"].capitalize(),
+                 err=True)
+        app = DEFAULT_APP
 
     if app["app_name"] == "youtube":
         controller = YoutubeCastController(cast, app["app_name"], app["app_id"], prep=prep)

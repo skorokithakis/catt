@@ -173,12 +173,10 @@ def seek(settings, timedesc):
     cst.seek(timedesc)
 
 
-@cli.command(short_help="Skip to next video in YouTube Queue.")
+@cli.command(short_help="Skip to next video in queue (if any).")
 @click.pass_obj
 def skip(settings):
-    cst = setup_cast(settings["device"])
-    if cst.cast.app_id != "233637DE":
-        raise CattCliError("YouTube Queue is currently not active.")
+    cst = setup_cast(settings["device"], prep="control")
     cst.skip()
 
 
