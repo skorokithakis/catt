@@ -122,7 +122,7 @@ def cast(settings, video_url):
 @click.argument("video_url")
 @click.pass_obj
 def add(settings, video_url):
-    cst, stream = setup_cast(settings["device"], video_url=video_url, prep="app")
+    cst, stream = setup_cast(settings["device"], video_url=video_url, prep="control")
     cst.add(stream.video_id)
 
 

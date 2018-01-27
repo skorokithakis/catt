@@ -44,6 +44,7 @@ def get_chromecast(device_name):
 def setup_cast(device_name, video_url=None, prep=None):
     cache = Cache()
     cached_ip = cache.get(device_name)
+    stream = None
 
     try:
         if not cached_ip:
@@ -57,6 +58,7 @@ def setup_cast(device_name, video_url=None, prep=None):
     if video_url:
         cc_info = (cast.device.manufacturer, cast.model_name)
         stream = StreamInfo(video_url, model=cc_info, host=cast.host)
+    if stream and prep == "app":
         if stream.is_local_file:
             app = DEFAULT_APP
         else:
@@ -65,7 +67,6 @@ def setup_cast(device_name, video_url=None, prep=None):
             except StopIteration:
                 app = DEFAULT_APP
     else:
-        stream = None
         try:
             app = next(a for a in APP_INFO if a["app_id"] == cast.app_id)
         except StopIteration:
