@@ -123,7 +123,7 @@ def cast(settings, video_url):
 @click.pass_obj
 def add(settings, video_url):
     cst, stream = setup_cast(settings["device"], video_url=video_url, prep="control")
-    if cst.name == "default" or cst.name != stream.extractor:
+    if cst.name != "default" and cst.name != stream.extractor:
         raise CattCliError("This url cannot be added to the queue.")
     cst.add(stream.video_id)
 
