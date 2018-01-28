@@ -202,7 +202,7 @@ class StatusListener:
 class CastController:
     def __init__(self, cast, name, app_id, prep=None):
         self.cast = cast
-        self._name = name
+        self.name = name
         self.info_type = None
         self._listener = StatusListener(app_id, self.cast.app_id,
                                         self.cast.media_controller.status.player_state)
@@ -306,7 +306,7 @@ class CastController:
     def _not_supported(self):
         if self.cast.media_controller.status.player_state in ["UNKNOWN", "IDLE"]:
             self.kill()
-        raise CattCastError("This action is not supported by the %s controller." % self._name.capitalize())
+        raise CattCastError("This action is not supported by the %s controller." % self.name.capitalize())
 
     def add(self, video_id):
         self._not_supported()
