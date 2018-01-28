@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
 import time
-
 from threading import Thread
+
 try:
     import ConfigParser as configparser
 except ImportError:
@@ -11,11 +11,11 @@ except ImportError:
 import click
 
 from .controllers import (
+    Cache,
     get_chromecast,
     get_chromecasts,
-    setup_cast,
-    Cache,
-    PlaybackError
+    PlaybackError,
+    setup_cast
 )
 from .http_server import serve_file
 

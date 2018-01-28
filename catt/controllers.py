@@ -6,7 +6,6 @@ import threading
 import time
 
 import pychromecast
-
 from click import ClickException, echo
 
 from .stream_info import StreamInfo
