@@ -103,7 +103,7 @@ def cast(settings, video_url):
         try:
             cst.play_playlist(stream.playlist)
         except PlaybackError:
-            click.echo("Playlist playback not possible, playing first video.", err=True)
+            click.echo("Warning: Playlist playback not possible, playing first video.", err=True)
             if cst.info_type == "url":
                 cst.play_media_url(stream.first_entry_url)
             elif cst.info_type == "id":
