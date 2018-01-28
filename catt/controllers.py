@@ -220,11 +220,15 @@ class CastController:
             self._prep_control()
 
     def _prep_app(self):
+        """Make shure desired chromecast app is running."""
+
         if not self._listener.app_ready.is_set():
             self.cast.start_app(self._listener.app_id)
             self._listener.app_ready.wait()
 
     def _prep_control(self):
+        """Make shure chromecast is in an active state."""
+        
         if self.cast.app_id == BACKDROP_APP_ID or not self.cast.app_id:
             raise CattCastError("Chromecast is inactive.")
         self.cast.media_controller.block_until_active(1.0)
