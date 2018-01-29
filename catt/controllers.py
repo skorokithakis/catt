@@ -267,7 +267,7 @@ class CastController:
         status = self.cast.media_controller.status.__dict__
 
         if status["duration"]:
-            self.seek(status["duration"] - 0.1)
+            self.seek(status["duration"] - 0.3)
         else:
             raise CattCastError("Cannot skip live stream.")
 
