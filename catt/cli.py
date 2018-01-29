@@ -232,7 +232,7 @@ def scan():
 def writeconfig(settings):
     try:
         os.mkdir(CONFIG_DIR)
-    except:
+    except:  # noqa
         pass
 
     # Put all the standalone options from the settings into an "options" key.

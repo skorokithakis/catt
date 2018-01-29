@@ -120,7 +120,7 @@ class Cache:
         self.cache_dir = cache_dir
         try:
             os.mkdir(cache_dir)
-        except:
+        except:  # noqa
             pass
 
         self.cache_filename = os.path.join(cache_dir, "chromecast_hosts")
@@ -170,7 +170,7 @@ class Cache:
     def clear(self):
         try:
             shutil.rmtree(self.cache_dir)
-        except:
+        except:  # noqa
             pass
 
 
