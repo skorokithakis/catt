@@ -341,8 +341,11 @@ class YoutubeCastController(CastController):
             raise CattCastError("Playlist is empty.")
         self.play_media_id(playlist[0])
         if len(playlist) > 1:
-            for video_id in playlist[1:]:
-                self.add(video_id)
+            try:
+                for video_id in playlist[1:]:
+                    self.add(video_id)
+            except pychromecast.error.UnsupportedNamespace:
+                raise CattCastError("Queue operation has been interrupted.")
 
     def add(self, video_id):
         echo("Adding video id \"%s\" to the queue." % video_id)
