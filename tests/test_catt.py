@@ -13,19 +13,22 @@ class TestThings(unittest.TestCase):
         stream = StreamInfo("https://www.youtube.com/watch?v=VZMfhtKa-wo")
         self.assertIn("https://", stream.video_url)
         self.assertEqual(stream.video_id, "VZMfhtKa-wo")
-        self.assertTrue(stream.is_youtube_video)
+        self.assertTrue(stream.is_video)
+        self.assertEqual(stream.extractor, "youtube")
 
     def test_stream_info_youtube_playlist(self):
         stream = StreamInfo("https://www.youtube.com/playlist?list=PL9Z0stL3aRykWNoVQW96JFIkelka_93Sc")
         self.assertIsNone(stream.video_url)
         self.assertEqual(stream.playlist_id, "PL9Z0stL3aRykWNoVQW96JFIkelka_93Sc")
-        self.assertTrue(stream.is_youtube_playlist)
+        self.assertTrue(stream.is_playlist)
+        self.assertEqual(stream.extractor, "youtube")
 
     def test_stream_info_other_video(self):
-        stream = StreamInfo("http://www.bbc.com/travel/story/20170719-a-new-life-for-bermudas-shipwrecks")
+        stream = StreamInfo("https://vimeo.com/225888984")
         self.assertIn("https://", stream.video_url)
-        self.assertFalse(stream.is_youtube_video)
-        self.assertFalse(stream.is_youtube_playlist)
+        self.assertEqual(stream.video_id, "225888984")
+        self.assertTrue(stream.is_video)
+        self.assertEqual(stream.extractor, "vimeo")
 
     def test_cache(self):
         cache = Cache()

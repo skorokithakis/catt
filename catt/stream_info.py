@@ -16,12 +16,6 @@ STANDARD_FORMAT = ("best"
                    "[format_id != 1080p60__source_][format_id != 720p60]")  # twitch
 
 
-def get_local_ip(cc_host):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.connect((cc_host, 0))
-    return sock.getsockname()[0]
-
-
 class CattInfoError(click.ClickException):
     pass
 
@@ -33,7 +27,7 @@ class StreamInfo:
                 raise CattInfoError("The chosen file does not exist.")
 
             self._video_url = video_url
-            self.local_ip = get_local_ip(host)
+            self.local_ip = self._get_local_ip(host)
             self.port = random.randrange(45000, 47000)
             self.is_local_file = True
         else:
@@ -53,11 +47,27 @@ class StreamInfo:
             if self.is_playlist:
                 items = list(self._preinfo["entries"])
                 self._first_entry_info = self._get_stream_info(items[0])
-
-                if self.is_youtube_playlist:
-                    self._playlist_items = [item["id"] for item in items]
+                self._playlist_items = [item["id"] for item in items]
             else:
                 self._info = self._get_stream_info(self._preinfo)
+
+    @property
+    def is_video(self):
+        return True if not self.is_local_file and not self.is_playlist else False
+
+    @property
+    def is_playlist(self):
+        if not self.is_local_file:
+            return True if "entries" in self._preinfo else False
+        else:
+            return False
+
+    @property
+    def extractor(self):
+        if not self.is_local_file:
+            return self._preinfo["extractor"].split(":")[0]
+        else:
+            return None
 
     @property
     def video_title(self):
@@ -84,19 +94,19 @@ class StreamInfo:
 
     @property
     def video_id(self):
-        return self._preinfo["id"] if self.is_youtube_video else None
+        return self._preinfo["id"] if self.is_video else None
 
     @property
     def playlist(self):
-        return self._playlist_items if self.is_youtube_playlist else None
+        return self._playlist_items if self.is_playlist else None
 
     @property
     def playlist_title(self):
-        return self._preinfo["title"] if self.is_youtube_playlist else None
+        return self._preinfo["title"] if self.is_playlist else None
 
     @property
     def playlist_id(self):
-        return self._preinfo["id"] if self.is_youtube_playlist else None
+        return self._preinfo["id"] if self.is_playlist else None
 
     @property
     def first_entry_title(self):
@@ -110,25 +120,13 @@ class StreamInfo:
             return None
 
     @property
-    def is_youtube_video(self):
-        if not self.is_local_file:
-            return True if self._preinfo["extractor"] == "youtube" else False
-        else:
-            return False
+    def first_entry_id(self):
+        return self._playlist_items[0] if self.is_playlist else None
 
-    @property
-    def is_youtube_playlist(self):
-        if not self.is_local_file:
-            return True if self._preinfo["extractor"] == "youtube:playlist" else False
-        else:
-            return False
-
-    @property
-    def is_playlist(self):
-        if not self.is_local_file:
-            return True if "entries" in self._preinfo else False
-        else:
-            return False
+    def _get_local_ip(self, cc_host):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.connect((cc_host, 0))
+        return sock.getsockname()[0]
 
     def _get_stream_preinfo(self, video_url):
         try:

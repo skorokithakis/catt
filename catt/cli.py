@@ -1,23 +1,23 @@
 # -*- coding: utf-8 -*-
 import os
 import time
-
 from threading import Thread
+
 try:
     import ConfigParser as configparser
-except:
+except ImportError:
     import configparser
 
 import click
 
 from .controllers import (
     Cache,
-    CastController,
     get_chromecast,
-    get_chromecasts
+    get_chromecasts,
+    PlaybackError,
+    setup_cast
 )
 from .http_server import serve_file
-from .stream_info import StreamInfo
 
 
 CONFIG_DIR = click.get_app_dir("catt")
@@ -80,11 +80,8 @@ def write_config(settings):
 @click.argument("video_url")
 @click.pass_obj
 def cast(settings, video_url):
-    cst = CastController(settings["device"], state_check=False)
+    cst, stream = setup_cast(settings["device"], video_url=video_url, prep="app")
     cc_name = cst.cast.device.friendly_name
-    cc_type = cst.cast.cast_type
-    cc_info = (cst.cast.device.manufacturer, cst.cast.model_name)
-    stream = StreamInfo(video_url, model=cc_info, host=cst.cast.host)
 
     if stream.is_local_file:
         click.echo("Casting local file %s..." % video_url)
@@ -95,87 +92,60 @@ def cast(settings, video_url):
 
         thr.setDaemon(True)
         thr.start()
-        cst.play_media(stream.video_url)
+        cst.play_media_url(stream.video_url)
         click.echo("Serving local file, press Ctrl+C when done.")
         while thr.is_alive():
             time.sleep(1)
-    # Google blocks Chromecast Audio devices from running the YouTube app.
-    elif stream.is_youtube_video and cc_type != "audio":
-        click.echo("Casting YouTube video %s..." % stream.video_id)
-        click.echo("Playing %s on \"%s\"..." % (stream.video_title, cc_name))
-        cst.play_yt_video(stream.video_id)
 
-    elif stream.is_youtube_playlist and cc_type != "audio":
-        click.echo("Casting YouTube playlist %s..." % stream.playlist_id)
-        click.echo("Playing %s on \"%s\"..." % (stream.playlist_title, cc_name))
-        cst.play_yt_video(stream.playlist[0])
-        # When casting a playlist, we need to start playback of the first
-        # video immediately, as the controller's play_video method clears
-        # the queue for some reason.
-        if len(stream.playlist) > 1:
-            for video_id in stream.playlist[1:]:
-                click.echo("Adding YouTube video %s to queue..." % video_id)
-                cst.add_to_yt_queue(video_id)
-
-    elif stream.is_playlist and (cc_type == "audio" or not stream.is_youtube_playlist):
+    elif stream.is_playlist:
         click.echo("Casting remote file %s..." % video_url)
-        if cc_type == "audio":
-            click.echo("Warning: Playlists not supported on audio devices, playing first video.",
-                       err=True)
-        else:
-            click.echo("Warning: Only YouTube playlists are supported, playing first video.",
-                       err=True)
-        click.echo("Playing %s on \"%s\"..." % (stream.first_entry_title, cc_name))
-        cst.play_media(stream.first_entry_url)
+        click.echo("Playing %s on \"%s\"..." % (stream.playlist_title, cc_name))
+        try:
+            cst.play_playlist(stream.playlist)
+        except PlaybackError:
+            click.echo("Warning: Playlist playback not possible, playing first video.", err=True)
+            if cst.info_type == "url":
+                cst.play_media_url(stream.first_entry_url)
+            elif cst.info_type == "id":
+                cst.play_media_id(stream.first_entry_id)
 
     else:
         click.echo("Casting remote file %s..." % video_url)
         click.echo("Playing %s on \"%s\"..." % (stream.video_title, cc_name))
-        cst.play_media(stream.video_url)
+        if cst.info_type == "url":
+            cst.play_media_url(stream.video_url)
+        elif cst.info_type == "id":
+            cst.play_media_id(stream.video_id)
 
 
-@cli.command(short_help="Send a video to the YouTube Queue.")
+@cli.command(short_help="Add a video to the queue.")
 @click.argument("video_url")
 @click.pass_obj
 def add(settings, video_url):
-    cst = CastController(settings["device"], state_check=False)
-    cc_name = cst.cast.device.friendly_name
-    cc_type = cst.cast.cast_type
-    stream = StreamInfo(video_url)
-
-    if not stream.is_youtube_video:
-        raise CattCliError("Not a valid YouTube video url.")
-    if cc_type == "audio":
-        raise CattCliError("YouTube Queue not supported on audio devices.")
-
-    click.echo("Adding YouTube video %s to queue..." % stream.video_id)
-
-    if (cst.cast.app_id == "233637DE" and
-            cst.cast.media_controller.status.player_state != "IDLE"):
-        cst.add_to_yt_queue(stream.video_id)
-    else:
-        click.echo("Playing %s on \"%s\"..." % (stream.video_title, cc_name))
-        cst.play_yt_video(stream.video_id)
+    cst, stream = setup_cast(settings["device"], video_url=video_url, prep="control")
+    if cst.name != "default" and cst.name != stream.extractor:
+        raise CattCliError("This url cannot be added to the queue.")
+    cst.add(stream.video_id)
 
 
 @cli.command(short_help="Pause a video.")
 @click.pass_obj
 def pause(settings):
-    cst = CastController(settings["device"])
+    cst = setup_cast(settings["device"], prep="control")
     cst.pause()
 
 
 @cli.command(short_help="Resume a video after it has been paused.")
 @click.pass_obj
 def play(settings):
-    cst = CastController(settings["device"])
+    cst = setup_cast(settings["device"], prep="control")
     cst.play()
 
 
 @cli.command(short_help="Stop playing.")
 @click.pass_obj
 def stop(settings):
-    cst = CastController(settings["device"], state_check=False)
+    cst = setup_cast(settings["device"])
     cst.kill()
 
 
@@ -184,7 +154,7 @@ def stop(settings):
                 required=False, default="30", metavar="TIME")
 @click.pass_obj
 def rewind(settings, timedesc):
-    cst = CastController(settings["device"])
+    cst = setup_cast(settings["device"], prep="control")
     cst.rewind(timedesc)
 
 
@@ -193,7 +163,7 @@ def rewind(settings, timedesc):
                 required=False, default="30", metavar="TIME")
 @click.pass_obj
 def ffwd(settings, timedesc):
-    cst = CastController(settings["device"])
+    cst = setup_cast(settings["device"], prep="control")
     cst.ffwd(timedesc)
 
 
@@ -201,16 +171,14 @@ def ffwd(settings, timedesc):
 @click.argument("timedesc", type=CATT_TIME, metavar="TIME")
 @click.pass_obj
 def seek(settings, timedesc):
-    cst = CastController(settings["device"])
+    cst = setup_cast(settings["device"], prep="control")
     cst.seek(timedesc)
 
 
-@cli.command(short_help="Skip to next video in YouTube Queue.")
+@cli.command(short_help="Skip to next video in queue (if any).")
 @click.pass_obj
 def skip(settings):
-    cst = CastController(settings["device"])
-    if cst.cast.app_id != "233637DE":
-        raise CattCliError("YouTube Queue is currently not active.")
+    cst = setup_cast(settings["device"], prep="control")
     cst.skip()
 
 
@@ -218,7 +186,7 @@ def skip(settings):
 @click.argument("level", type=click.IntRange(0, 100), metavar="LVL")
 @click.pass_obj
 def volume(settings, level):
-    cst = CastController(settings["device"], state_check=False)
+    cst = setup_cast(settings["device"])
     cst.volume(level / 100.0)
 
 
@@ -227,7 +195,7 @@ def volume(settings, level):
                 required=False, default=10, metavar="DELTA")
 @click.pass_obj
 def volumeup(settings, delta):
-    cst = CastController(settings["device"], state_check=False)
+    cst = setup_cast(settings["device"])
     cst.volumeup(delta / 100.0)
 
 
@@ -236,21 +204,21 @@ def volumeup(settings, delta):
                 required=False, default=10, metavar="DELTA")
 @click.pass_obj
 def volumedown(settings, delta):
-    cst = CastController(settings["device"], state_check=False)
+    cst = setup_cast(settings["device"])
     cst.volumedown(delta / 100.0)
 
 
 @cli.command(short_help="Show some information about the currently-playing video.")
 @click.pass_obj
 def status(settings):
-    cst = CastController(settings["device"])
+    cst = setup_cast(settings["device"], prep="control")
     cst.status()
 
 
 @cli.command(short_help="Show complete information about the currently-playing video.")
 @click.pass_obj
 def info(settings):
-    cst = CastController(settings["device"])
+    cst = setup_cast(settings["device"], prep="control")
     cst.info()
 
 
@@ -264,7 +232,7 @@ def scan():
 def writeconfig(settings):
     try:
         os.mkdir(CONFIG_DIR)
-    except:
+    except:  # noqa
         pass
 
     # Put all the standalone options from the settings into an "options" key.
