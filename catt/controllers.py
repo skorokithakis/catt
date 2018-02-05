@@ -182,8 +182,8 @@ class StatusListener:
 
         if app_id == active_app_id:
             self.app_ready.set()
-            if state != "BUFFERING":
-                self.not_buffering.set()
+        if state != "BUFFERING":
+            self.not_buffering.set()
 
     def new_cast_status(self, status):
         if status.app_id == self.app_id:
@@ -192,10 +192,10 @@ class StatusListener:
             self.app_ready.clear()
 
     def new_media_status(self, status):
-        if status.player_state == "BUFFERING":
-            self.not_buffering.clear()
-        elif self.app_ready.is_set():
+        if status.player_state != "BUFFERING":
             self.not_buffering.set()
+        else:
+            self.not_buffering.clear()
 
 
 class CastController:
@@ -341,8 +341,11 @@ class YoutubeCastController(CastController):
             raise CattCastError("Playlist is empty.")
         self.play_media_id(playlist[0])
         if len(playlist) > 1:
-            for video_id in playlist[1:]:
-                self.add(video_id)
+            try:
+                for video_id in playlist[1:]:
+                    self.add(video_id)
+            except pychromecast.error.UnsupportedNamespace:
+                raise CattCastError("Queue operation has been interrupted.")
 
     def add(self, video_id):
         echo("Adding video id \"%s\" to the queue." % video_id)
