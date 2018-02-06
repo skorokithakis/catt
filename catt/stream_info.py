@@ -7,13 +7,18 @@ import youtube_dl
 
 
 AUDIO_MODELS = [("Google Inc.", "Chromecast Audio")]
-ULTRA_MODELS = [("Xiaomi", "MIBOX3")]
-AUDIO_FORMAT = "bestaudio/best"
-ULTRA_FORMAT = "best[width <=? 3840][height <=? 2160]"
-STANDARD_FORMAT = ("best"
-                   "[width <=? 1920][height <=? 1080]"
-                   "[fps <=? 50]"
-                   "[format_id != 1080p60__source_][format_id != 720p60]")  # twitch
+ULTRA_MODELS = [("Xiaomi", "MIBOX3"), ("Google Inc.", "Chromecast Ultra")]
+
+BEST_MAX_2K = "best[width <=? 1920][height <=? 1080]"
+BEST_MAX_4K = "best[width <=? 3840][height <=? 2160]"
+BEST_ONLY_AUDIO = "bestaudio"
+BEST_FALLBACK = "/best"
+MAX_50FPS = "[fps <=? 50]"
+TWITCH_NO_60FPS = "[format_id != 1080p60__source_][format_id != 720p60]"
+MIXCLOUD_NO_DASH = "[format_id != dash-a1-x3]"
+AUDIO_FORMAT = BEST_ONLY_AUDIO + MIXCLOUD_NO_DASH + BEST_FALLBACK
+ULTRA_FORMAT = BEST_MAX_4K
+STANDARD_FORMAT = BEST_MAX_2K + MAX_50FPS + TWITCH_NO_60FPS
 
 
 class CattInfoError(click.ClickException):
