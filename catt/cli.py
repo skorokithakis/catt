@@ -52,8 +52,11 @@ def process_url(ctx, param, value):
             value = stdin_text.read().strip()
         else:
             raise CattCliError("No input received from stdin.")
-    if "://" not in value and not os.path.isfile(value):
-        raise CattCliError("The chosen file does not exist.")
+    if "://" not in value:
+        if ctx.info_name != "cast":
+            raise CattCliError("Local file not allowed as argument to this command.")
+        if not os.path.isfile(value):
+            raise CattCliError("The chosen file does not exist.")
     return value
 
 
