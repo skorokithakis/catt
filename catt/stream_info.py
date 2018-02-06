@@ -27,10 +27,7 @@ class CattInfoError(click.ClickException):
 
 class StreamInfo:
     def __init__(self, video_url, model=None, host=None):
-        if "://" not in video_url and host:
-            if not os.path.isfile(video_url):
-                raise CattInfoError("The chosen file does not exist.")
-
+        if "://" not in video_url:
             self._video_url = video_url
             self.local_ip = self._get_local_ip(host)
             self.port = random.randrange(45000, 47000)

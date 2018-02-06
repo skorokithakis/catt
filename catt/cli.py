@@ -45,6 +45,21 @@ class CattTimeParamType(click.ParamType):
 CATT_TIME = CattTimeParamType()
 
 
+def process_url(ctx, param, value):
+    if value.strip() == "-":
+        stdin_text = click.get_text_stream('stdin')
+        if not stdin_text.isatty():
+            value = stdin_text.read().strip()
+        else:
+            raise CattCliError("No input received from stdin.")
+    if "://" not in value:
+        if ctx.info_name != "cast":
+            raise CattCliError("Local file not allowed as argument to this command.")
+        if not os.path.isfile(value):
+            raise CattCliError("The chosen file does not exist.")
+    return value
+
+
 def get_device(ctx, param, value):
     try:
         return ctx.default_map["aliases"][value]
@@ -77,7 +92,7 @@ def write_config(settings):
 
 
 @cli.command(short_help="Send a video to a Chromecast for playing.")
-@click.argument("video_url")
+@click.argument("video_url", callback=process_url)
 @click.pass_obj
 def cast(settings, video_url):
     cst, stream = setup_cast(settings["device"], video_url=video_url, prep="app")
@@ -119,7 +134,7 @@ def cast(settings, video_url):
 
 
 @cli.command(short_help="Add a video to the queue.")
-@click.argument("video_url")
+@click.argument("video_url", callback=process_url)
 @click.pass_obj
 def add(settings, video_url):
     cst, stream = setup_cast(settings["device"], video_url=video_url, prep="control")
