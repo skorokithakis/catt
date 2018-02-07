@@ -107,7 +107,7 @@ def cast(settings, video_url):
 
         thr.setDaemon(True)
         thr.start()
-        cst.play_media_url(stream.video_url)
+        cst.play_media_url(stream.video_url, stream.video_title, stream.video_thumbnail)
         click.echo("Serving local file, press Ctrl+C when done.")
         while thr.is_alive():
             time.sleep(1)
