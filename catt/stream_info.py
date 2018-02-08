@@ -49,6 +49,9 @@ class StreamInfo:
             if self.is_playlist:
                 items = list(self._preinfo["entries"])
                 self._first_entry_info = self._get_stream_info(items[0])
+                # Some playlist extractors does not provide an id key with entries,
+                # so we need to tolerate that. _playlist_items is only required by
+                # custom controllers anyway.
                 try:
                     self._playlist_items = [item["id"] for item in items]
                 except KeyError:
