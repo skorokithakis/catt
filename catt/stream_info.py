@@ -100,7 +100,7 @@ class StreamInfo:
 
     @property
     def video_thumbnail(self):
-        return self._preinfo["thumbnail"] if self.is_video else None
+        return self._preinfo.get("thumbnail") if self.is_video else None
 
     @property
     def playlist(self):
