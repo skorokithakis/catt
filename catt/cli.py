@@ -107,7 +107,7 @@ def cast(settings, video_url):
 
         thr.setDaemon(True)
         thr.start()
-        cst.play_media_url(stream.video_url)
+        cst.play_media_url(stream.video_url, title=stream.video_title)
         click.echo("Serving local file, press Ctrl+C when done.")
         while thr.is_alive():
             time.sleep(1)
@@ -120,7 +120,8 @@ def cast(settings, video_url):
         except PlaybackError:
             click.echo("Warning: Playlist playback not possible, playing first video.", err=True)
             if cst.info_type == "url":
-                cst.play_media_url(stream.first_entry_url)
+                cst.play_media_url(stream.first_entry_url, title=stream.first_entry_title,
+                                   thumb=stream.first_entry_thumbnail)
             elif cst.info_type == "id":
                 cst.play_media_id(stream.first_entry_id)
 
@@ -128,7 +129,8 @@ def cast(settings, video_url):
         click.echo("Casting remote file %s..." % video_url)
         click.echo("Playing %s on \"%s\"..." % (stream.video_title, cc_name))
         if cst.info_type == "url":
-            cst.play_media_url(stream.video_url)
+            cst.play_media_url(stream.video_url, title=stream.video_title,
+                               thumb=stream.video_thumbnail)
         elif cst.info_type == "id":
             cst.play_media_id(stream.video_id)
 

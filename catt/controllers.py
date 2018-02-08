@@ -11,7 +11,6 @@ from click import ClickException, echo
 from .stream_info import StreamInfo
 from .youtube import YouTubeController
 
-
 APP_INFO = [{"app_name": "youtube", "app_id": "233637DE", "supported_device_types": ["cast"]}]
 DEFAULT_APP = {"app_name": "default", "app_id": "CC1AD845"}
 BACKDROP_APP_ID = "E8C28D3C"
@@ -237,7 +236,7 @@ class CastController:
     def _human_time(self, seconds):
         return time.strftime("%H:%M:%S", time.gmtime(seconds))
 
-    def play_media_url(self, video_url):
+    def play_media_url(self, video_url, **kwargs):
         raise PlaybackError
 
     def play_media_id(self, video_id):
@@ -316,8 +315,9 @@ class DefaultCastController(CastController):
         super(DefaultCastController, self).__init__(cast, name, app_id, prep=prep)
         self.info_type = "url"
 
-    def play_media_url(self, video_url):
-        self._controller.play_media(video_url, "video/mp4")
+    def play_media_url(self, video_url, **kwargs):
+        self._controller.play_media(video_url, "video/mp4",
+                                    title=kwargs.get("title"), thumb=kwargs.get("thumb"))
         self._controller.block_until_active()
 
 

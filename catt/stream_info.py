@@ -99,6 +99,10 @@ class StreamInfo:
         return self._preinfo["id"] if self.is_video else None
 
     @property
+    def video_thumbnail(self):
+        return self._preinfo.get("thumbnail") if self.is_video else None
+
+    @property
     def playlist(self):
         return self._playlist_items if self.is_playlist else None
 
@@ -124,6 +128,10 @@ class StreamInfo:
     @property
     def first_entry_id(self):
         return self._playlist_items[0] if self.is_playlist else None
+
+    @property
+    def first_entry_thumbnail(self):
+        return self._first_entry_info.get("thumbnail") if self.is_playlist else None
 
     def _get_local_ip(self, cc_host):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
