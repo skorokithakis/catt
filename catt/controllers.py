@@ -236,7 +236,7 @@ class CastController:
     def _human_time(self, seconds):
         return time.strftime("%H:%M:%S", time.gmtime(seconds))
 
-    def play_media_url(self, video_url, *args):
+    def play_media_url(self, video_url, **kwargs):
         raise PlaybackError
 
     def play_media_id(self, video_id):
@@ -315,8 +315,9 @@ class DefaultCastController(CastController):
         super(DefaultCastController, self).__init__(cast, name, app_id, prep=prep)
         self.info_type = "url"
 
-    def play_media_url(self, video_url, title, thumb):
-        self._controller.play_media(video_url, "video/mp4", title=title, thumb=thumb)
+    def play_media_url(self, video_url, **kwargs):
+        self._controller.play_media(video_url, "video/mp4",
+                                    title=kwargs.get("title"), thumb=kwargs.get("thumb"))
         self._controller.block_until_active()
 
 
