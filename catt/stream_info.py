@@ -131,7 +131,7 @@ class StreamInfo:
 
     @property
     def first_entry_thumbnail(self):
-        return self._first_entry_info["thumbnail"] if self.is_playlist else None
+        return self._first_entry_info.get("thumbnail") if self.is_playlist else None
 
     def _get_local_ip(self, cc_host):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
