@@ -11,6 +11,7 @@ from click import ClickException, echo
 from .stream_info import StreamInfo
 from .youtube import YouTubeController
 
+
 APP_INFO = [{"app_name": "youtube", "app_id": "233637DE", "supported_device_types": ["cast"]}]
 DEFAULT_APP = {"app_name": "default", "app_id": "CC1AD845"}
 BACKDROP_APP_ID = "E8C28D3C"
@@ -103,6 +104,22 @@ def setup_cast(device_name, video_url=None, prep=None):
     else:
         controller = DefaultCastController(cast, app["app_name"], app["app_id"], prep=prep)
     return (controller, stream) if stream else controller
+
+
+def catch_namespace_error(func):
+    """
+    Use this decorator for methods in CastController subclasses where the intended
+    action is dependant on the chromecast being in a particular state (such as not
+    buffering). If the cc app is then iterrupted during catt waiting for this state,
+    we fail in a nice way.
+    """
+
+    def wrapper(*args, **kwargs):
+        try:
+            func(*args, **kwargs)
+        except pychromecast.error.UnsupportedNamespace:
+            raise CattCastError("Chromecast app operation was interrupted.")
+    return wrapper
 
 
 class CattCastError(ClickException):
@@ -345,12 +362,10 @@ class YoutubeCastController(CastController):
             raise CattCastError("Playlist is empty.")
         self.play_media_id(playlist[0])
         if len(playlist) > 1:
-            try:
-                for video_id in playlist[1:]:
-                    self.add(video_id)
-            except pychromecast.error.UnsupportedNamespace:
-                raise CattCastError("Queue operation has been interrupted.")
+            for video_id in playlist[1:]:
+                self.add(video_id)
 
+    @catch_namespace_error
     def add(self, video_id):
         echo("Adding video id \"%s\" to the queue." % video_id)
         self._prep_yt(video_id)
