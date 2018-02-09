@@ -11,6 +11,7 @@ from click import ClickException, echo
 from .stream_info import StreamInfo
 from .youtube import YouTubeController
 
+
 APP_INFO = [{"app_name": "youtube", "app_id": "233637DE", "supported_device_types": ["cast"]}]
 DEFAULT_APP = {"app_name": "default", "app_id": "CC1AD845"}
 BACKDROP_APP_ID = "E8C28D3C"
@@ -105,6 +106,22 @@ def setup_cast(device_name, video_url=None, prep=None):
     return (controller, stream) if stream else controller
 
 
+def catch_namespace_error(func):
+    """
+    Use this decorator for methods in CastController subclasses where the intended
+    action is dependant on the chromecast being in a particular state (such as not
+    buffering). If the cc app is then interrupted while catt is waiting for this state,
+    we fail in a nice way.
+    """
+
+    def wrapper(*args, **kwargs):
+        try:
+            func(*args, **kwargs)
+        except pychromecast.error.UnsupportedNamespace:
+            raise CattCastError("Chromecast app operation was interrupted.")
+    return wrapper
+
+
 class CattCastError(ClickException):
     pass
 
@@ -173,22 +190,25 @@ class Cache:
             pass
 
 
-class StatusListener:
-    def __init__(self, app_id, active_app_id, state):
+class CastStatusListener:
+    def __init__(self, app_id, active_app_id):
         self.app_id = app_id
         self.app_ready = threading.Event()
-        self.not_buffering = threading.Event()
-
         if app_id == active_app_id:
             self.app_ready.set()
-        if state != "BUFFERING":
-            self.not_buffering.set()
 
     def new_cast_status(self, status):
         if status.app_id == self.app_id:
             self.app_ready.set()
         else:
             self.app_ready.clear()
+
+
+class MediaStatusListener:
+    def __init__(self, state):
+        self.not_buffering = threading.Event()
+        if state != "BUFFERING":
+            self.not_buffering.set()
 
     def new_media_status(self, status):
         if status.player_state != "BUFFERING":
@@ -202,10 +222,10 @@ class CastController:
         self.cast = cast
         self.name = name
         self.info_type = None
-        self._listener = StatusListener(app_id, self.cast.app_id,
-                                        self.cast.media_controller.status.player_state)
-        self.cast.register_status_listener(self._listener)
-        self.cast.media_controller.register_status_listener(self._listener)
+        self._cast_listener = CastStatusListener(app_id, self.cast.app_id)
+        self.cast.register_status_listener(self._cast_listener)
+        self._media_listener = MediaStatusListener(self.cast.media_controller.status.player_state)
+        self.cast.media_controller.register_status_listener(self._media_listener)
 
         try:
             self.cast.register_handler(self._controller)
@@ -220,9 +240,9 @@ class CastController:
     def _prep_app(self):
         """Make shure desired chromecast app is running."""
 
-        if not self._listener.app_ready.is_set():
-            self.cast.start_app(self._listener.app_id)
-            self._listener.app_ready.wait()
+        if not self._cast_listener.app_ready.is_set():
+            self.cast.start_app(self._cast_listener.app_id)
+            self._cast_listener.app_ready.wait()
 
     def _prep_control(self):
         """Make shure chromecast is in an active state."""
@@ -345,15 +365,13 @@ class YoutubeCastController(CastController):
             raise CattCastError("Playlist is empty.")
         self.play_media_id(playlist[0])
         if len(playlist) > 1:
-            try:
-                for video_id in playlist[1:]:
-                    self.add(video_id)
-            except pychromecast.error.UnsupportedNamespace:
-                raise CattCastError("Queue operation has been interrupted.")
+            for video_id in playlist[1:]:
+                self.add(video_id)
 
+    @catch_namespace_error
     def add(self, video_id):
         echo("Adding video id \"%s\" to the queue." % video_id)
         self._prep_yt(video_id)
         # You can't add videos to the queue while the app is buffering.
-        self._listener.not_buffering.wait()
+        self._media_listener.not_buffering.wait()
         self._controller.add_to_queue(video_id)
