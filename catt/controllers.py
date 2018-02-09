@@ -190,22 +190,25 @@ class Cache:
             pass
 
 
-class StatusListener:
-    def __init__(self, app_id, active_app_id, state):
+class CastStatusListener:
+    def __init__(self, app_id, active_app_id):
         self.app_id = app_id
         self.app_ready = threading.Event()
-        self.not_buffering = threading.Event()
-
         if app_id == active_app_id:
             self.app_ready.set()
-        if state != "BUFFERING":
-            self.not_buffering.set()
 
     def new_cast_status(self, status):
         if status.app_id == self.app_id:
             self.app_ready.set()
         else:
             self.app_ready.clear()
+
+
+class MediaStatusListener:
+    def __init__(self, state):
+        self.not_buffering = threading.Event()
+        if state != "BUFFERING":
+            self.not_buffering.set()
 
     def new_media_status(self, status):
         if status.player_state != "BUFFERING":
@@ -219,10 +222,10 @@ class CastController:
         self.cast = cast
         self.name = name
         self.info_type = None
-        self._listener = StatusListener(app_id, self.cast.app_id,
-                                        self.cast.media_controller.status.player_state)
-        self.cast.register_status_listener(self._listener)
-        self.cast.media_controller.register_status_listener(self._listener)
+        self._cast_listener = CastStatusListener(app_id, self.cast.app_id)
+        self.cast.register_status_listener(self._cast_listener)
+        self._media_listener = MediaStatusListener(self.cast.media_controller.status.player_state)
+        self.cast.media_controller.register_status_listener(self._media_listener)
 
         try:
             self.cast.register_handler(self._controller)
@@ -237,9 +240,9 @@ class CastController:
     def _prep_app(self):
         """Make shure desired chromecast app is running."""
 
-        if not self._listener.app_ready.is_set():
-            self.cast.start_app(self._listener.app_id)
-            self._listener.app_ready.wait()
+        if not self._cast_listener.app_ready.is_set():
+            self.cast.start_app(self._cast_listener.app_id)
+            self._cast_listener.app_ready.wait()
 
     def _prep_control(self):
         """Make shure chromecast is in an active state."""
@@ -370,5 +373,5 @@ class YoutubeCastController(CastController):
         echo("Adding video id \"%s\" to the queue." % video_id)
         self._prep_yt(video_id)
         # You can't add videos to the queue while the app is buffering.
-        self._listener.not_buffering.wait()
+        self._media_listener.not_buffering.wait()
         self._controller.add_to_queue(video_id)
