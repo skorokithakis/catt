@@ -110,7 +110,7 @@ def catch_namespace_error(func):
     """
     Use this decorator for methods in CastController subclasses where the intended
     action is dependant on the chromecast being in a particular state (such as not
-    buffering). If the cc app is then iterrupted during catt waiting for this state,
+    buffering). If the cc app is then interrupted while catt is waiting for this state,
     we fail in a nice way.
     """
 
