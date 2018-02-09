@@ -300,18 +300,21 @@ class CastController:
         self.cast.volume_down(delta)
 
     def status(self):
-        status = self.cast.media_controller.status.__dict__
+        status = self.cast.media_controller.status
 
-        if status["duration"]:
-            dur, cur = int(status["duration"]), int(status["current_time"])
+        if status.title:
+            echo("Title: %s" % status.title)
+
+        if status.duration:
+            dur, cur = int(status.duration), int(status.current_time)
             duration, current = self._human_time(dur), self._human_time(cur)
             remaining = self._human_time(dur - cur)
             progress = int((1.0 * cur / dur) * 100)
-
             echo("Time: %s / %s (%s%%)" % (current, duration, progress))
             echo("Remaining time: %s" % remaining)
 
-        echo("State: %s" % status["player_state"])
+        echo("State: %s" % status.player_state)
+        echo("Volume: %s" % int(self.cast.status.volume_level * 100))
 
     def info(self):
         # Values in media_controller.status for the keys "volume_level" and "volume_muted"
