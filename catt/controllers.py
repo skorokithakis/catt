@@ -294,7 +294,11 @@ class CastController:
         echo("State: %s" % status["player_state"])
 
     def info(self):
-        status = self.cast.media_controller.status.__dict__
+        # Values in media_controller.status for the keys "volume_level" and "volume_muted"
+        # are always the same, regardless of actual state, so we discard those.
+        status = {k: v for k, v in self.cast.media_controller.status.__dict__.items()
+                  if "volume" not in k}
+        status.update(self.cast.status._asdict())
         for (key, value) in status.items():
             echo("%s: %s" % (key, value))
 
