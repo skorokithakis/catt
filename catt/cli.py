@@ -96,11 +96,10 @@ def write_config(settings):
 @click.pass_obj
 def cast(settings, video_url):
     cst, stream = setup_cast(settings["device"], video_url=video_url, prep="app")
-    cc_name = cst.cast.device.friendly_name
 
     if stream.is_local_file:
         click.echo("Casting local file %s..." % video_url)
-        click.echo("Playing %s on \"%s\"..." % (stream.video_title, cc_name))
+        click.echo("Playing %s on \"%s\"..." % (stream.video_title, cst.cc_name))
 
         thr = Thread(target=serve_file,
                      args=(video_url, stream.local_ip, stream.port))
@@ -114,7 +113,7 @@ def cast(settings, video_url):
 
     elif stream.is_playlist:
         click.echo("Casting remote file %s..." % video_url)
-        click.echo("Playing %s on \"%s\"..." % (stream.playlist_title, cc_name))
+        click.echo("Playing %s on \"%s\"..." % (stream.playlist_title, cst.cc_name))
         try:
             cst.play_playlist(stream.playlist)
         except PlaybackError:
@@ -127,7 +126,7 @@ def cast(settings, video_url):
 
     else:
         click.echo("Casting remote file %s..." % video_url)
-        click.echo("Playing %s on \"%s\"..." % (stream.video_title, cc_name))
+        click.echo("Playing %s on \"%s\"..." % (stream.video_title, cst.cc_name))
         if cst.info_type == "url":
             cst.play_media_url(stream.video_url, title=stream.video_title,
                                thumb=stream.video_thumbnail)
