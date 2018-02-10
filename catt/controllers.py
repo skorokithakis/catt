@@ -219,38 +219,42 @@ class MediaStatusListener:
 
 class CastController:
     def __init__(self, cast, name, app_id, prep=None):
-        self.cast = cast
+        self._cast = cast
         self.name = name
         self.info_type = None
-        self._cast_listener = CastStatusListener(app_id, self.cast.app_id)
-        self.cast.register_status_listener(self._cast_listener)
-        self._media_listener = MediaStatusListener(self.cast.media_controller.status.player_state)
-        self.cast.media_controller.register_status_listener(self._media_listener)
+        self._cast_listener = CastStatusListener(app_id, self._cast.app_id)
+        self._cast.register_status_listener(self._cast_listener)
+        self._media_listener = MediaStatusListener(self._cast.media_controller.status.player_state)
+        self._cast.media_controller.register_status_listener(self._media_listener)
 
         try:
-            self.cast.register_handler(self._controller)
+            self._cast.register_handler(self._controller)
         except AttributeError:
-            self._controller = self.cast.media_controller
+            self._controller = self._cast.media_controller
 
         if prep == "app":
             self._prep_app()
         elif prep == "control":
             self._prep_control()
 
+    @property
+    def cc_name(self):
+        return self._cast.device.friendly_name
+
     def _prep_app(self):
         """Make shure desired chromecast app is running."""
 
         if not self._cast_listener.app_ready.is_set():
-            self.cast.start_app(self._cast_listener.app_id)
+            self._cast.start_app(self._cast_listener.app_id)
             self._cast_listener.app_ready.wait()
 
     def _prep_control(self):
         """Make shure chromecast is in an active state."""
 
-        if self.cast.app_id == BACKDROP_APP_ID or not self.cast.app_id:
+        if self._cast.app_id == BACKDROP_APP_ID or not self._cast.app_id:
             raise CattCastError("Chromecast is inactive.")
-        self.cast.media_controller.block_until_active(1.0)
-        if self.cast.media_controller.status.player_state in ["UNKNOWN", "IDLE"]:
+        self._cast.media_controller.block_until_active(1.0)
+        if self._cast.media_controller.status.player_state in ["UNKNOWN", "IDLE"]:
             raise CattCastError("Nothing is currently playing.")
 
     def _human_time(self, seconds):
@@ -266,24 +270,24 @@ class CastController:
         raise PlaybackError
 
     def play(self):
-        self.cast.media_controller.play()
+        self._cast.media_controller.play()
 
     def pause(self):
-        self.cast.media_controller.pause()
+        self._cast.media_controller.pause()
 
     def seek(self, seconds):
-        self.cast.media_controller.seek(seconds)
+        self._cast.media_controller.seek(seconds)
 
     def rewind(self, seconds):
-        pos = self.cast.media_controller.status.current_time
+        pos = self._cast.media_controller.status.current_time
         self.seek(pos - seconds)
 
     def ffwd(self, seconds):
-        pos = self.cast.media_controller.status.current_time
+        pos = self._cast.media_controller.status.current_time
         self.seek(pos + seconds)
 
     def skip(self):
-        status = self.cast.media_controller.status.__dict__
+        status = self._cast.media_controller.status.__dict__
 
         if status["duration"]:
             self.seek(status["duration"] - 0.3)
@@ -291,16 +295,16 @@ class CastController:
             raise CattCastError("Cannot skip live stream.")
 
     def volume(self, level):
-        self.cast.set_volume(level)
+        self._cast.set_volume(level)
 
     def volumeup(self, delta):
-        self.cast.volume_up(delta)
+        self._cast.volume_up(delta)
 
     def volumedown(self, delta):
-        self.cast.volume_down(delta)
+        self._cast.volume_down(delta)
 
     def status(self):
-        status = self.cast.media_controller.status
+        status = self._cast.media_controller.status
 
         if status.title:
             echo("Title: %s" % status.title)
@@ -314,22 +318,22 @@ class CastController:
             echo("Remaining time: %s" % remaining)
 
         echo("State: %s" % status.player_state)
-        echo("Volume: %s" % int(self.cast.status.volume_level * 100))
+        echo("Volume: %s" % int(self._cast.status.volume_level * 100))
 
     def info(self):
         # Values in media_controller.status for the keys "volume_level" and "volume_muted"
         # are always the same, regardless of actual state, so we discard those.
-        status = {k: v for k, v in self.cast.media_controller.status.__dict__.items()
+        status = {k: v for k, v in self._cast.media_controller.status.__dict__.items()
                   if "volume" not in k}
-        status.update(self.cast.status._asdict())
+        status.update(self._cast.status._asdict())
         for (key, value) in status.items():
             echo("%s: %s" % (key, value))
 
     def kill(self):
-        self.cast.quit_app()
+        self._cast.quit_app()
 
     def _not_supported(self):
-        if self.cast.media_controller.status.player_state in ["UNKNOWN", "IDLE"]:
+        if self._cast.media_controller.status.player_state in ["UNKNOWN", "IDLE"]:
             self.kill()
         raise CattCastError("This action is not supported by the %s controller." % self.name.capitalize())
 
