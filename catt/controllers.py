@@ -318,7 +318,7 @@ class CastController:
             echo("Remaining time: %s" % remaining)
 
         echo("State: %s" % status.player_state)
-        echo("Volume: %s" % int(self._cast.status.volume_level * 100))
+        echo("Volume: %s" % round(self._cast.status.volume_level * 100))
 
     def info(self):
         # Values in media_controller.status for the keys "volume_level" and "volume_muted"
