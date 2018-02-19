@@ -12,7 +12,8 @@ from .stream_info import StreamInfo
 from .youtube import YouTubeController
 
 
-APP_INFO = [{"app_name": "youtube", "app_id": "233637DE", "supported_device_types": ["cast"]}]
+APP_INFO = [{"app_name": "youtube", "app_id": "233637DE",
+             "supported_device_types": ["cast"], "supported_subextractors": ["playlist"]}]
 DEFAULT_APP = {"app_name": "default", "app_id": "CC1AD845"}
 BACKDROP_APP_ID = "E8C28D3C"
 
@@ -93,11 +94,14 @@ def setup_cast(device_name, video_url=None, prep=None):
         except StopIteration:
             app = DEFAULT_APP
 
-    if app["app_name"] != "default" and cast.cast_type not in app["supported_device_types"]:
-        if stream:
-            echo("Warning: The %s app is not available for this device." % app["app_name"].capitalize(),
-                 err=True)
-        app = DEFAULT_APP
+    if app["app_name"] != "default":
+        capp = app["app_name"].capitalize()
+        if stream and stream.subextractor and stream.subextractor not in app["supported_subextractors"]:
+            raise CattCastError("This type of %s url can currently not be handled." % capp)
+        if cast.cast_type not in app["supported_device_types"]:
+            if stream:
+                echo("Warning: The %s app is not available for this device." % capp, err=True)
+            app = DEFAULT_APP
 
     if app["app_name"] == "youtube":
         controller = YoutubeCastController(cast, app["app_name"], app["app_id"], prep=prep)

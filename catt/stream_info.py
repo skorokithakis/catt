@@ -78,6 +78,14 @@ class StreamInfo:
             return None
 
     @property
+    def subextractor(self):
+        if not self.is_local_file:
+            subx = self._preinfo["extractor"].split(":")
+            return subx[1] if len(subx) > 1 else None
+        else:
+            return None
+
+    @property
     def video_title(self):
         if self.is_local_file:
             return os.path.basename(self._video_url)
