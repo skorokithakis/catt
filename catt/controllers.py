@@ -94,17 +94,11 @@ def setup_cast(device_name, video_url=None, prep=None):
         except StopIteration:
             app = DEFAULT_APP
 
-    if app["app_name"] != "default":
-        aname = app["app_name"]
+    if app["app_name"] != "default" and cast.cast_type not in app["supported_device_types"]:
         if stream:
-            if stream.extractor != aname:
-                raise CattCastError("Invalid url for use with the %s app." % aname.capitalize())
-            if stream.subextractor and stream.subextractor not in app["supported_subextractors"]:
-                raise CattCastError("This type of %s url can currently not be handled." % aname.capitalize())
-        if cast.cast_type not in app["supported_device_types"]:
-            if stream:
-                echo("Warning: The %s app is not available for this device." % aname.capitalize(), err=True)
-            app = DEFAULT_APP
+            echo("Warning: The %s app is not available for this device." % app["app_name"].capitalize(),
+                 err=True)
+        app = DEFAULT_APP
 
     if app["app_name"] == "youtube":
         controller = YoutubeCastController(cast, app["app_name"], app["app_id"], prep=prep)
