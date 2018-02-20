@@ -61,7 +61,7 @@ class StreamInfo:
 
     @property
     def is_video(self):
-        return True if not self.is_local_file and not self.is_playlist else False
+        return True if not self.is_local_file and not self.is_playlist and "id" in self._preinfo else False
 
     @property
     def is_playlist(self):
@@ -69,6 +69,10 @@ class StreamInfo:
             return True if "entries" in self._preinfo else False
         else:
             return False
+
+    @property
+    def is_valid(self):
+        return True if self.is_local_file or self.is_playlist or self.is_video else False
 
     @property
     def extractor(self):

@@ -80,6 +80,8 @@ def setup_cast(device_name, video_url=None, prep=None):
     if video_url:
         cc_info = (cast.device.manufacturer, cast.model_name)
         stream = StreamInfo(video_url, model=cc_info, host=cast.host)
+        if not stream.is_valid:
+            raise CattCastError("Extracted info is insufficient.")
     if stream and prep == "app":
         if stream.is_local_file:
             app = DEFAULT_APP
@@ -95,12 +97,15 @@ def setup_cast(device_name, video_url=None, prep=None):
             app = DEFAULT_APP
 
     if app["app_name"] != "default":
-        capp = app["app_name"].capitalize()
-        if stream and stream.subextractor and stream.subextractor not in app["supported_subextractors"]:
-            raise CattCastError("This type of %s url can currently not be handled." % capp)
+        aname = app["app_name"]
+        if stream:
+            if stream.extractor != aname:
+                raise CattCastError("Invalid url for use with the %s app." % aname.capitalize())
+            if stream.subextractor and stream.subextractor not in app["supported_subextractors"]:
+                raise CattCastError("This type of %s url can currently not be handled." % aname.capitalize())
         if cast.cast_type not in app["supported_device_types"]:
             if stream:
-                echo("Warning: The %s app is not available for this device." % capp, err=True)
+                echo("Warning: The %s app is not available for this device." % aname.capitalize(), err=True)
             app = DEFAULT_APP
 
     if app["app_name"] == "youtube":
