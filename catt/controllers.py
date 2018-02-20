@@ -12,8 +12,7 @@ from .stream_info import StreamInfo
 from .youtube import YouTubeController
 
 
-APP_INFO = [{"app_name": "youtube", "app_id": "233637DE",
-             "supported_device_types": ["cast"], "supported_subextractors": ["playlist"]}]
+APP_INFO = [{"app_name": "youtube", "app_id": "233637DE", "supported_device_types": ["cast"]}]
 DEFAULT_APP = {"app_name": "default", "app_id": "CC1AD845"}
 BACKDROP_APP_ID = "E8C28D3C"
 
