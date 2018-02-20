@@ -35,6 +35,9 @@ class StreamInfo:
         else:
             self._ydl = youtube_dl.YoutubeDL({"quiet": True, "no_warnings": True})
             self._preinfo = self._get_stream_preinfo(video_url)
+            # Some playlist urls needs to be re-processed (such as youtube channel urls).
+            if self._preinfo.get("ie_key"):
+                self._preinfo = self._get_stream_preinfo(self._preinfo["url"])
             self.local_ip = None
             self.port = None
             self.is_local_file = False
@@ -49,19 +52,13 @@ class StreamInfo:
             if self.is_playlist:
                 items = list(self._preinfo["entries"])
                 self._first_entry_info = self._get_stream_info(items[0])
-                # Some playlist extractors do not provide an id key with entries,
-                # so we need to tolerate that. _playlist_items is only required by
-                # custom controllers anyway.
-                try:
-                    self._playlist_items = [item["id"] for item in items]
-                except KeyError:
-                    self._playlist_items = None
+                self._playlist_items = [item["id"] for item in items]
             else:
                 self._info = self._get_stream_info(self._preinfo)
 
     @property
     def is_video(self):
-        return True if not self.is_local_file and not self.is_playlist and "id" in self._preinfo else False
+        return True if not self.is_local_file and not self.is_playlist else False
 
     @property
     def is_playlist(self):
@@ -69,10 +66,6 @@ class StreamInfo:
             return True if "entries" in self._preinfo else False
         else:
             return False
-
-    @property
-    def is_valid(self):
-        return True if self.is_local_file or self.is_playlist or self.is_video else False
 
     @property
     def extractor(self):

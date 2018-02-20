@@ -80,8 +80,6 @@ def setup_cast(device_name, video_url=None, prep=None):
     if video_url:
         cc_info = (cast.device.manufacturer, cast.model_name)
         stream = StreamInfo(video_url, model=cc_info, host=cast.host)
-        if not stream.is_valid:
-            raise CattCastError("Extracted info is insufficient.")
     if stream and prep == "app":
         if stream.is_local_file:
             app = DEFAULT_APP
