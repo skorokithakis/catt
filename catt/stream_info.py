@@ -35,6 +35,9 @@ class StreamInfo:
         else:
             self._ydl = youtube_dl.YoutubeDL({"quiet": True, "no_warnings": True})
             self._preinfo = self._get_stream_preinfo(video_url)
+            # Some playlist urls needs to be re-processed (such as youtube channel urls).
+            if self._preinfo.get("ie_key"):
+                self._preinfo = self._get_stream_preinfo(self._preinfo["url"])
             self.local_ip = None
             self.port = None
             self.is_local_file = False

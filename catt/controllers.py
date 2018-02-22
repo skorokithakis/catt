@@ -109,7 +109,7 @@ def setup_cast(device_name, video_url=None, prep=None):
 def catch_namespace_error(func):
     """
     Use this decorator for methods in CastController subclasses where the intended
-    action is dependant on the chromecast being in a particular state (such as not
+    action is dependent on the chromecast being in a particular state (such as not
     buffering). If the cc app is then interrupted while catt is waiting for this state,
     we fail in a nice way.
     """
@@ -217,7 +217,7 @@ class MediaStatusListener:
             self.not_buffering.clear()
 
 
-class CastController:
+class CastController(object):
     def __init__(self, cast, name, app_id, prep=None):
         self._cast = cast
         self.name = name
@@ -318,7 +318,7 @@ class CastController:
             echo("Remaining time: %s" % remaining)
 
         echo("State: %s" % status.player_state)
-        echo("Volume: %s" % round(self._cast.status.volume_level * 100))
+        echo("Volume: %s" % int(round(self._cast.status.volume_level, 2) * 100))
 
     def info(self):
         # Values in media_controller.status for the keys "volume_level" and "volume_muted"
