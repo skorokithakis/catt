@@ -217,7 +217,7 @@ class MediaStatusListener:
             self.not_buffering.clear()
 
 
-class CastController:
+class CastController(object):
     def __init__(self, cast, name, app_id, prep=None):
         self._cast = cast
         self.name = name
