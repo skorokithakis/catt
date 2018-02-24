@@ -42,18 +42,18 @@ You can also control your Chromecast through ``catt`` commands, for example with
 Configuration file
 """"""""""""""""""
 
-CATT can utilize a config-file stored at ``~/.config/catt/catt.cfg``
+CATT can utilize a config-file stored at ``~/.config/catt/catt.cfg`` (``%APPDATA%\catt\catt.cfg`` on Windows).
 
 The format is as following::
 
     [options]
     device = chromecast_one
-    
+
     [aliases]
     one = chromecast_one
     two = chromecast_two
 
-In the ``[options]`` section, ``device`` denotes the default device that will 
+In the ``[options]`` section, ``device`` denotes the default device that will
 be selected, when you have not selected a device via the cli.
 
 You can write your choice of default device to ``catt.cfg`` by doing::
