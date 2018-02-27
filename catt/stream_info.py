@@ -92,7 +92,7 @@ class StreamInfo:
             try:
                 return self._preinfo["title"]
             except KeyError:
-                return self._preinfo["webpage_url_basename"]
+                return self._preinfo["webpage_url_basename"].split(".")[0]
 
     @property
     def video_url(self):
