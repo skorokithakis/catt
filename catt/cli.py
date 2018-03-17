@@ -1,12 +1,8 @@
 # -*- coding: utf-8 -*-
+import configparser
 import os
 import time
 from threading import Thread
-
-try:
-    import ConfigParser as configparser
-except ImportError:
-    import configparser
 
 import click
 
