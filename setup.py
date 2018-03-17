@@ -14,8 +14,7 @@ with open('README.rst') as readme_file:
 
 requirements = [
     "youtube-dl>=2017.3.15",
-    "PyChromecast==1.0.3",
-    "zeroconf==0.19.1",
+    "PyChromecast>=2.0.0",
     "Click>=5.0",
 ]
 
@@ -41,16 +40,14 @@ setup(
     zip_safe=False,
     keywords="chromecast cast catt cast_all_the_things",
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 3 - Alpha',
         'Intended Audience :: End Users/Desktop',
         'License :: OSI Approved :: BSD License',
         'Natural Language :: English',
-        "Programming Language :: Python :: 2",
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
     ],
     test_suite='tests',
     tests_require=test_requirements,
