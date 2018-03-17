@@ -244,7 +244,7 @@ def scan():
 def writeconfig(settings):
     try:
         os.mkdir(CONFIG_DIR)
-    except:  # noqa
+    except FileExistsError:
         pass
 
     # Put all the standalone options from the settings into an "options" key.
