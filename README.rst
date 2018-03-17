@@ -21,6 +21,11 @@ You can install Cast All The Things with pip::
 
     pip install catt
 
+
+``catt`` is only compatible with Python 3. If you need a Python 2-compatible
+version, please install ``0.5.5``, the last py2-compatible release.
+
+
 Usage
 -----
 
