@@ -24,11 +24,11 @@ class TestThings(unittest.TestCase):
         self.assertEqual(stream.extractor, "youtube")
 
     def test_stream_info_other_video(self):
-        stream = StreamInfo("https://vimeo.com/225888984")
+        stream = StreamInfo("http://www.dailymotion.com/video/x6fotne")
         self.assertIn("https://", stream.video_url)
-        self.assertEqual(stream.video_id, "225888984")
+        self.assertEqual(stream.video_id, "x6fotne")
         self.assertTrue(stream.is_video)
-        self.assertEqual(stream.extractor, "vimeo")
+        self.assertEqual(stream.extractor, "dailymotion")
 
     def test_cache(self):
         cache = Cache()
