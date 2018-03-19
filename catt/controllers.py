@@ -40,7 +40,7 @@ def get_chromecast(device_name):
         return devices[0]
 
 
-def setup_cast(device_name, video_url=None, prep=None):
+def setup_cast(device_name, video_url=None, prep=None, force_default=False):
     """
     Prepares selected chromecast and/or media file.
 
@@ -79,7 +79,10 @@ def setup_cast(device_name, video_url=None, prep=None):
     if video_url:
         cc_info = (cast.device.manufacturer, cast.model_name)
         stream = StreamInfo(video_url, model=cc_info, host=cast.host)
-    if stream and prep == "app":
+
+    if force_default:
+        app = DEFAULT_APP
+    elif stream and prep == "app":
         if stream.is_local_file:
             app = DEFAULT_APP
         else:
