@@ -90,7 +90,7 @@ def write_config(settings):
 @cli.command(short_help="Send a video to a Chromecast for playing.")
 @click.argument("video_url", callback=process_url)
 @click.option("-f", "--force-default", is_flag=True,
-              help="Force use of the default controller.")
+              help="Force use of the default Chromecast app (use if a custom app doesn't work).")
 @click.pass_obj
 def cast(settings, video_url, force_default):
     cst, stream = setup_cast(settings["device"], video_url=video_url,
