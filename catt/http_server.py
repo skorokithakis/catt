@@ -1,14 +1,8 @@
 import os
+import socketserver
 import time
 import traceback
-try:
-    import SocketServer
-except ImportError:
-    import socketserver as SocketServer
-try:
-    from BaseHTTPServer import BaseHTTPRequestHandler
-except ImportError:
-    from http.server import BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler
 
 
 def serve_file(filename, address="", port=45114):
@@ -43,6 +37,6 @@ def serve_file(filename, address="", port=45114):
 
             file.close()
 
-    httpd = SocketServer.TCPServer((address, port), FileHandler)
+    httpd = socketserver.TCPServer((address, port), FileHandler)
     httpd.serve_forever()
     httpd.server_close()

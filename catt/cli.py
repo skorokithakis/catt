@@ -1,12 +1,8 @@
 # -*- coding: utf-8 -*-
+import configparser
 import os
 import time
 from threading import Thread
-
-try:
-    import ConfigParser as configparser
-except ImportError:
-    import configparser
 
 import click
 
@@ -248,7 +244,7 @@ def scan():
 def writeconfig(settings):
     try:
         os.mkdir(CONFIG_DIR)
-    except:  # noqa
+    except FileExistsError:
         pass
 
     # Put all the standalone options from the settings into an "options" key.

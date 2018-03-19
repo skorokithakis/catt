@@ -136,7 +136,7 @@ class Cache:
         self.cache_dir = cache_dir
         try:
             os.mkdir(cache_dir)
-        except:  # noqa
+        except FileExistsError:
             pass
 
         self.cache_filename = os.path.join(cache_dir, "chromecast_hosts")
@@ -186,7 +186,7 @@ class Cache:
     def clear(self):
         try:
             shutil.rmtree(self.cache_dir)
-        except:  # noqa
+        except FileNotFoundError:
             pass
 
 
@@ -217,7 +217,7 @@ class MediaStatusListener:
             self.not_buffering.clear()
 
 
-class CastController(object):
+class CastController:
     def __init__(self, cast, name, app_id, prep=None):
         self._cast = cast
         self.name = name
