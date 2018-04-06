@@ -300,7 +300,10 @@ class CastController:
         self.seek(pos + seconds)
 
     def skip(self):
-        self._cast.media_controller.skip()
+        if self._is_seekable:
+            self._cast.media_controller.skip()
+        else:
+            raise CattCastError("Stream is not skippable.")
 
     def volume(self, level):
         self._cast.set_volume(level)
