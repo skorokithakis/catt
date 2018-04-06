@@ -244,6 +244,13 @@ class CastController:
     def cc_name(self):
         return self._cast.device.friendly_name
 
+    @property
+    def _is_seekable(self):
+        status = self._cast.media_controller.status
+        # Some seekable streams are reported as having a duration of 0.
+        return True if (status.duration is not None and
+                        status.stream_type == "BUFFERED") else False
+
     def _prep_app(self):
         """Make shure desired chromecast app is running."""
 
@@ -279,7 +286,10 @@ class CastController:
         self._cast.media_controller.pause()
 
     def seek(self, seconds):
-        self._cast.media_controller.seek(seconds)
+        if self._is_seekable:
+            self._cast.media_controller.seek(seconds)
+        else:
+            raise CattCastError("Stream is not seekable.")
 
     def rewind(self, seconds):
         pos = self._cast.media_controller.status.current_time
@@ -290,12 +300,7 @@ class CastController:
         self.seek(pos + seconds)
 
     def skip(self):
-        status = self._cast.media_controller.status
-
-        if status.duration:
-            self.seek(status.duration - 0.3)
-        else:
-            raise CattCastError("Cannot skip live stream.")
+        self._cast.media_controller.skip()
 
     def volume(self, level):
         self._cast.set_volume(level)
@@ -312,7 +317,7 @@ class CastController:
         if status.title:
             echo("Title: %s" % status.title)
 
-        if status.duration:
+        if self._is_seekable:
             dur, cur = int(status.duration), int(status.current_time)
             duration, current = self._human_time(dur), self._human_time(cur)
             remaining = self._human_time(dur - cur)
