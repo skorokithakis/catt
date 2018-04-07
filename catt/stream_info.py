@@ -51,7 +51,7 @@ class StreamInfo:
 
             if self.is_playlist:
                 items = list(self._preinfo["entries"])
-                self._first_entry_info = self._get_stream_info(items[0])
+                self._first_entry_info = self._get_stream_info(items[0]) if items else None
                 # Some playlist extractors do not provide an id key with entries,
                 # so we need to tolerate that. _playlist_items is only required by
                 # custom controllers anyway.
