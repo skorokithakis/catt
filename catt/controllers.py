@@ -146,11 +146,11 @@ class Cache:
             self._write_cache({d.name: d.host for d in devices})
 
     def _read_cache(self):
-        with open(self.cache_file, "r") as cache:
+        with self.cache_file.open() as cache:
             return json.load(cache)
 
     def _write_cache(self, data):
-        with open(self.cache_file, "w") as cache:
+        with self.cache_file.open("w") as cache:
             json.dump(data, cache)
 
     def get(self, name):

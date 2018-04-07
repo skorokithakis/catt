@@ -263,7 +263,7 @@ def writeconfig(settings):
         for option, value in options.items():
             config.set(section, option, value)
 
-    with open(CONFIG_FILE, "w") as configfile:
+    with CONFIG_FILE.open("w") as configfile:
         config.write(configfile)
 
 
