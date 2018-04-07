@@ -1,9 +1,8 @@
 import json
-import os
-import shutil
 import tempfile
 import threading
 import time
+from pathlib import Path
 
 import pychromecast
 from click import ClickException, echo
@@ -134,40 +133,28 @@ class PlaybackError(Exception):
 
 
 class Cache:
-    def __init__(self, duration=3 * 24 * 3600,
-                 cache_dir=os.path.join(tempfile.gettempdir(), "catt_cache")):
-        self.cache_dir = cache_dir
+    def __init__(self):
+        self.cache_dir = Path(tempfile.gettempdir(), "catt_cache")
         try:
-            os.mkdir(cache_dir)
+            self.cache_dir.mkdir()
         except FileExistsError:
             pass
+        self.cache_file = Path(self.cache_dir, "chromecast_hosts")
 
-        self.cache_filename = os.path.join(cache_dir, "chromecast_hosts")
-
-        if os.path.exists(self.cache_filename):
-            if os.path.getctime(self.cache_filename) + duration < time.time():
-                self._initialize_cache()
-        else:
-            self._initialize_cache()
-
-    def _initialize_cache(self):
-        data = {}
-        devices = pychromecast.get_chromecasts()
-        for device in devices:
-            data[device.name] = device.host
-        self._write_cache(data)
+        if not self.cache_file.exists():
+            devices = pychromecast.get_chromecasts()
+            self._write_cache({d.name: d.host for d in devices})
 
     def _read_cache(self):
-        with open(self.cache_filename, "r") as cache:
+        with self.cache_file.open() as cache:
             return json.load(cache)
 
     def _write_cache(self, data):
-        with open(self.cache_filename, "w") as cache:
+        with self.cache_file.open("w") as cache:
             json.dump(data, cache)
 
     def get(self, name):
         data = self._read_cache()
-
         # In the case that cache has been initialized with no cc's on the
         # network, we need to ensure auto-discovery.
         if not data:
@@ -176,10 +163,7 @@ class Cache:
         # to consistently return the same IP, thus the alphabetical sorting.
         if not name:
             return data[min(data, key=str)]
-        try:
-            return data[name]
-        except KeyError:
-            return None
+        return data.get(name)
 
     def set(self, name, value):
         data = self._read_cache()
@@ -188,7 +172,8 @@ class Cache:
 
     def clear(self):
         try:
-            shutil.rmtree(self.cache_dir)
+            self.cache_file.unlink()
+            self.cache_dir.rmdir()
         except FileNotFoundError:
             pass
 
