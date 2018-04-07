@@ -111,6 +111,9 @@ def cast(settings, video_url, force_default):
             time.sleep(1)
 
     elif stream.is_playlist:
+        if not stream.playlist:
+            cst.kill()
+            raise CattCliError("Playlist is empty.")
         click.echo("Casting remote file %s..." % video_url)
         click.echo("Playing %s on \"%s\"..." % (stream.playlist_title, cst.cc_name))
         try:
