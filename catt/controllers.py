@@ -1,9 +1,9 @@
 import json
-import os
 import shutil
 import tempfile
 import threading
 import time
+from pathlib import Path
 
 import pychromecast
 from click import ClickException, echo
@@ -135,23 +135,23 @@ class PlaybackError(Exception):
 
 class Cache:
     def __init__(self):
-        self.cache_dir = os.path.join(tempfile.gettempdir(), "catt_cache")
+        self.cache_dir = Path(tempfile.gettempdir(), "catt_cache")
         try:
-            os.mkdir(self.cache_dir)
+            self.cache_dir.mkdir()
         except FileExistsError:
             pass
-        self.cache_filename = os.path.join(self.cache_dir, "chromecast_hosts")
+        self.cache_file = Path(self.cache_dir, "chromecast_hosts")
 
-        if not os.path.exists(self.cache_filename):
+        if not self.cache_file.exists():
             devices = pychromecast.get_chromecasts()
             self._write_cache({d.name: d.host for d in devices})
 
     def _read_cache(self):
-        with open(self.cache_filename, "r") as cache:
+        with open(self.cache_file, "r") as cache:
             return json.load(cache)
 
     def _write_cache(self, data):
-        with open(self.cache_filename, "w") as cache:
+        with open(self.cache_file, "w") as cache:
             json.dump(data, cache)
 
     def get(self, name):

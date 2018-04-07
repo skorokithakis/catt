@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import configparser
-import os
 import time
+from pathlib import Path
 from threading import Thread
 
 import click
@@ -16,8 +16,8 @@ from .controllers import (
 from .http_server import serve_file
 
 
-CONFIG_DIR = click.get_app_dir("catt")
-CONFIG_FILENAME = os.path.join(CONFIG_DIR, "catt.cfg")
+CONFIG_DIR = Path(click.get_app_dir("catt"))
+CONFIG_FILE = Path(CONFIG_DIR, "catt.cfg")
 
 
 class CattCliError(click.ClickException):
@@ -51,7 +51,7 @@ def process_url(ctx, param, value):
     if "://" not in value:
         if ctx.info_name != "cast":
             raise CattCliError("Local file not allowed as argument to this command.")
-        if not os.path.isfile(value):
+        if not Path(value).exists():
             raise CattCliError("The chosen file does not exist.")
     return value
 
@@ -246,7 +246,7 @@ def scan():
 
 def writeconfig(settings):
     try:
-        os.mkdir(CONFIG_DIR)
+        CONFIG_DIR.mkdir()
     except FileExistsError:
         pass
 
@@ -263,7 +263,7 @@ def writeconfig(settings):
         for option, value in options.items():
             config.set(section, option, value)
 
-    with open(CONFIG_FILENAME, "w") as configfile:
+    with open(CONFIG_FILE, "w") as configfile:
         config.write(configfile)
 
 
@@ -276,7 +276,7 @@ def readconfig():
          "aliases": {"device1": "device_name"}}
     """
     config = configparser.ConfigParser()
-    config.read(CONFIG_FILENAME)
+    config.read(CONFIG_FILE)
     conf_dict = {section: dict(config.items(section)) for section in config.sections()}
 
     conf = conf_dict.get("options", {})
