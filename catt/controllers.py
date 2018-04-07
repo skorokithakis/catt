@@ -1,5 +1,4 @@
 import json
-import shutil
 import tempfile
 import threading
 import time
@@ -173,7 +172,8 @@ class Cache:
 
     def clear(self):
         try:
-            shutil.rmtree(self.cache_dir)
+            self.cache_file.unlink()
+            self.cache_dir.rmdir()
         except FileNotFoundError:
             pass
 
