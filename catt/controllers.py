@@ -134,28 +134,17 @@ class PlaybackError(Exception):
 
 
 class Cache:
-    def __init__(self, duration=3 * 24 * 3600,
-                 cache_dir=os.path.join(tempfile.gettempdir(), "catt_cache")):
-        self.cache_dir = cache_dir
+    def __init__(self):
+        self.cache_dir = os.path.join(tempfile.gettempdir(), "catt_cache")
         try:
-            os.mkdir(cache_dir)
+            os.mkdir(self.cache_dir)
         except FileExistsError:
             pass
+        self.cache_filename = os.path.join(self.cache_dir, "chromecast_hosts")
 
-        self.cache_filename = os.path.join(cache_dir, "chromecast_hosts")
-
-        if os.path.exists(self.cache_filename):
-            if os.path.getctime(self.cache_filename) + duration < time.time():
-                self._initialize_cache()
-        else:
-            self._initialize_cache()
-
-    def _initialize_cache(self):
-        data = {}
-        devices = pychromecast.get_chromecasts()
-        for device in devices:
-            data[device.name] = device.host
-        self._write_cache(data)
+        if not os.path.exists(self.cache_filename):
+            devices = pychromecast.get_chromecasts()
+            self._write_cache({d.name: d.host for d in devices})
 
     def _read_cache(self):
         with open(self.cache_filename, "r") as cache:
@@ -167,7 +156,6 @@ class Cache:
 
     def get(self, name):
         data = self._read_cache()
-
         # In the case that cache has been initialized with no cc's on the
         # network, we need to ensure auto-discovery.
         if not data:
@@ -176,10 +164,7 @@ class Cache:
         # to consistently return the same IP, thus the alphabetical sorting.
         if not name:
             return data[min(data, key=str)]
-        try:
-            return data[name]
-        except KeyError:
-            return None
+        return data.get(name)
 
     def set(self, name, value):
         data = self._read_cache()

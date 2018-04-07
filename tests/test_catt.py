@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import time
 import unittest
 
 from catt.controllers import Cache
@@ -35,11 +34,6 @@ class TestThings(unittest.TestCase):
         cache.set("key", "value")
         self.assertEqual(cache.get("key"), "value")
 
-        time.sleep(1.2)
-        cache = Cache(duration=1)
-        self.assertEqual(cache.get("key"), None)
-
-        cache.set("key", "value")
         cache.clear()
         cache = Cache()
         self.assertEqual(cache.get("key"), None)
