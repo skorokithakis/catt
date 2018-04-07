@@ -306,12 +306,17 @@ class CastController:
             echo("Title: %s" % status.title)
 
         if self._is_seekable:
-            dur, cur = int(status.duration), int(status.current_time)
-            duration, current = self._human_time(dur), self._human_time(cur)
-            remaining = self._human_time(dur - cur)
-            progress = int((1.0 * cur / dur) * 100)
-            echo("Time: %s / %s (%s%%)" % (current, duration, progress))
-            echo("Remaining time: %s" % remaining)
+            cur = int(status.current_time)
+            current = self._human_time(cur)
+            if status.duration:
+                dur = int(status.duration)
+                duration = self._human_time(dur)
+                remaining = self._human_time(dur - cur)
+                progress = int((1.0 * cur / dur) * 100)
+                echo("Time: %s / %s (%s%%)" % (current, duration, progress))
+                echo("Remaining time: %s" % remaining)
+            else:
+                echo("Time: %s" % current)
 
         echo("State: %s" % status.player_state)
         echo("Volume: %s" % int(round(self._cast.status.volume_level, 2) * 100))
