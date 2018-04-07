@@ -369,8 +369,6 @@ class YoutubeCastController(CastController):
         self._controller.play_video(video_id)
 
     def play_playlist(self, playlist):
-        if not playlist:
-            raise CattCastError("Playlist is empty.")
         self.play_media_id(playlist[0])
         if len(playlist) > 1:
             for video_id in playlist[1:]:
