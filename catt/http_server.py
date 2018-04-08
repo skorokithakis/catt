@@ -1,33 +1,33 @@
-import os
 import socketserver
 import time
 import traceback
 from http.server import BaseHTTPRequestHandler
+from pathlib import Path
 
 
 def serve_file(filename, address="", port=45114):
     class FileHandler(BaseHTTPRequestHandler):
         def do_GET(self):  # noqa
             try:
-                file = open(filename, "rb")
-                stat = os.fstat(file.fileno())
-                length = stat.st_size
+                mediapath = Path(filename)
+                length = mediapath.stat().st_size
+                mtime = mediapath.stat().st_mtime
+                mediafile = open(str(mediapath), "rb")
 
                 self.send_response(200)
                 self.send_header("Content-type", "video/mp4")
                 self.send_header("Content-Length", length)
-                self.send_header("Accept-Ranges", "bytes")
                 self.send_header(
                     "Last-Modified",
                     time.strftime(
                         "%a %d %b %Y %H:%M:%S GMT",
-                        time.localtime(os.path.getmtime(filename))
+                        time.localtime(mtime)
                     )
                 )
                 self.end_headers()
 
                 while True:
-                    data = file.read(100 * 1024)
+                    data = mediafile.read(100 * 1024)
 
                     if not data:
                         break
@@ -35,7 +35,7 @@ def serve_file(filename, address="", port=45114):
             except:  # noqa
                 traceback.print_exc()
 
-            file.close()
+            mediafile.close()
 
     httpd = socketserver.TCPServer((address, port), FileHandler)
     httpd.serve_forever()

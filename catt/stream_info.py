@@ -1,6 +1,6 @@
-import os
 import random
 import socket
+from pathlib import Path
 
 import click
 import youtube_dl
@@ -28,7 +28,7 @@ class CattInfoError(click.ClickException):
 class StreamInfo:
     def __init__(self, video_url, model=None, host=None):
         if "://" not in video_url:
-            self._video_url = video_url
+            self._local_file = video_url
             self.local_ip = self._get_local_ip(host)
             self.port = random.randrange(45000, 47000)
             self.is_local_file = True
@@ -83,7 +83,7 @@ class StreamInfo:
     @property
     def video_title(self):
         if self.is_local_file:
-            return os.path.basename(self._video_url)
+            return Path(self._local_file).name
         elif self.is_playlist:
             return None
         else:
