@@ -63,7 +63,7 @@ def setup_cast(device_name, video_url=None, prep=None, force_default=False):
     """
 
     cache = Cache()
-    cached_ip = cache.get(device_name)
+    cached_ip = cache.get_data(device_name)
     stream = None
 
     try:
@@ -132,29 +132,49 @@ class PlaybackError(Exception):
     pass
 
 
-class Cache:
-    def __init__(self):
-        self.cache_dir = Path(tempfile.gettempdir(), "catt_cache")
+class CattStore:
+    def __init__(self, store_dir, store_filename):
+        self.store_dir = store_dir
         try:
-            self.cache_dir.mkdir()
+            self.store_dir.mkdir()
         except FileExistsError:
             pass
-        self.cache_file = Path(self.cache_dir, "chromecast_hosts")
+        self.store_file = Path(self.store_dir, store_filename)
 
-        if not self.cache_file.exists():
+    def _read_store(self):
+        with self.store_file.open() as store:
+            return json.load(store)
+
+    def _write_store(self, data):
+        with self.store_file.open("w") as store:
+            json.dump(data, store)
+
+    def get_data(self, *args):
+        raise NotImplementedError
+
+    def set_data(self, *args):
+        raise NotImplementedError
+
+    def clear(self):
+        try:
+            self.store_file.unlink()
+            self.store_dir.rmdir()
+        except FileNotFoundError:
+            pass
+
+
+class Cache(CattStore):
+    def __init__(self):
+        cache_dir = Path(tempfile.gettempdir(), "catt_cache")
+        cache_filename = Path("chromecast_hosts")
+        super(Cache, self).__init__(cache_dir, cache_filename)
+
+        if not self.store_file.exists():
             devices = pychromecast.get_chromecasts()
-            self._write_cache({d.name: d.host for d in devices})
+            self._write_store({d.name: d.host for d in devices})
 
-    def _read_cache(self):
-        with self.cache_file.open() as cache:
-            return json.load(cache)
-
-    def _write_cache(self, data):
-        with self.cache_file.open("w") as cache:
-            json.dump(data, cache)
-
-    def get(self, name):
-        data = self._read_cache()
+    def get_data(self, name):
+        data = self._read_store()
         # In the case that cache has been initialized with no cc's on the
         # network, we need to ensure auto-discovery.
         if not data:
@@ -165,17 +185,10 @@ class Cache:
             return data[min(data, key=str)]
         return data.get(name)
 
-    def set(self, name, value):
-        data = self._read_cache()
+    def set_data(self, name, value):
+        data = self._read_store()
         data[name] = value
-        self._write_cache(data)
-
-    def clear(self):
-        try:
-            self.cache_file.unlink()
-            self.cache_dir.rmdir()
-        except FileNotFoundError:
-            pass
+        self._write_store(data)
 
 
 class CastStatusListener:
