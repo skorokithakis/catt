@@ -39,7 +39,7 @@ def get_chromecast(device_name):
         return devices[0]
 
 
-def setup_cast(device_name, video_url=None, prep=None, force_default=False):
+def setup_cast(device_name, video_url=None, prep=None, controller=None):
     """
     Prepares selected chromecast and/or media file.
 
@@ -79,8 +79,11 @@ def setup_cast(device_name, video_url=None, prep=None, force_default=False):
         cc_info = (cast.device.manufacturer, cast.model_name)
         stream = StreamInfo(video_url, model=cc_info, host=cast.host)
 
-    if force_default:
-        app = DEFAULT_APP
+    if controller:
+        if controller == "default":
+            app = DEFAULT_APP
+        else:
+            next(a for a in APP_INFO if a["app_name"] == controller)
     elif stream and prep == "app":
         if stream.is_local_file:
             app = DEFAULT_APP
@@ -152,8 +155,10 @@ class CattStore:
     def get_data(self, *args):
         raise NotImplementedError
 
-    def set_data(self, *args):
-        raise NotImplementedError
+    def set_data(self, name, value):
+        data = self._read_store()
+        data[name] = value
+        self._write_store(data)
 
     def clear(self):
         try:
@@ -185,10 +190,17 @@ class Cache(CattStore):
             return data[min(data, key=str)]
         return data.get(name)
 
-    def set_data(self, name, value):
+
+class CastState(CattStore):
+    def __init__(self, state_dir, state_filename):
+        super(CastState, self).__init__(state_dir, state_filename)
+
+        if not self.store_file.exists():
+            self._write_store({})
+
+    def get_data(self, name):
         data = self._read_store()
-        data[name] = value
-        self._write_store(data)
+        return data.get(name)
 
 
 class CastStatusListener:
@@ -249,6 +261,15 @@ class CastController:
         return True if (status.duration is not None and
                         status.stream_type == "BUFFERED") else False
 
+    @property
+    def save_data(self):
+        """Should return the data that the restore method needs to recreate state."""
+
+        raise NotImplementedError
+
+    def restore(self, data):
+        raise NotImplementedError
+
     def _prep_app(self):
         """Make shure desired chromecast app is running."""
 
@@ -269,10 +290,20 @@ class CastController:
         return time.strftime("%H:%M:%S", time.gmtime(seconds))
 
     def play_media_url(self, video_url, **kwargs):
-        raise PlaybackError
+        """
+        CastController subclasses needs to implement
+        either play_media_url or play_media_id
+        """
+
+        raise NotImplementedError
 
     def play_media_id(self, video_id):
-        raise PlaybackError
+        """
+        CastController subclasses needs to implement
+        either play_media_url or play_media_id
+        """
+
+        raise NotImplementedError
 
     def play_playlist(self, playlist_id):
         raise PlaybackError
@@ -362,8 +393,20 @@ class DefaultCastController(CastController):
 
     def play_media_url(self, video_url, **kwargs):
         self._controller.play_media(video_url, "video/mp4",
+                                    current_time=kwargs.get("time"),
                                     title=kwargs.get("title"), thumb=kwargs.get("thumb"))
         self._controller.block_until_active()
+
+    @property
+    def save_data(self):
+        status = self._cast.media_controller.status
+        return {"url": status.content_id,
+                "time": status.current_time, "title": status.title,
+                "thumb": status.images[0].url if status.images else None}
+
+    def restore(self, data):
+        self.play_media_url(data["url"], time=data["time"],
+                            title=data["title"], thumb=data["thumb"])
 
 
 class YoutubeCastController(CastController):

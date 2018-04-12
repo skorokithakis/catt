@@ -8,6 +8,7 @@ import click
 
 from .controllers import (
     Cache,
+    CastState,
     get_chromecast,
     get_chromecasts,
     PlaybackError,
@@ -18,6 +19,7 @@ from .http_server import serve_file
 
 CONFIG_DIR = Path(click.get_app_dir("catt"))
 CONFIG_FILE = Path(CONFIG_DIR, "catt.cfg")
+STATE_FILENAME = Path("state.json")
 
 
 class CattCliError(click.ClickException):
@@ -93,8 +95,9 @@ def write_config(settings):
               help="Force use of the default Chromecast app (use if a custom app doesn't work).")
 @click.pass_obj
 def cast(settings, video_url, force_default):
+    controller = "default" if force_default else None
     cst, stream = setup_cast(settings["device"], video_url=video_url,
-                             prep="app", force_default=force_default)
+                             prep="app", controller=controller)
 
     if stream.is_local_file:
         click.echo("Casting local file %s..." % video_url)
@@ -245,6 +248,24 @@ def scan():
     click.echo("Scanning Chromecasts...")
     for device in get_chromecasts():
         click.echo("{0.host} - {0.device.friendly_name} - {0.device.manufacturer} {0.device.model_name}".format(device))
+
+
+@cli.command(short_help="Save the current state of the Chromecast for later use.")
+@click.pass_obj
+def save(settings):
+    cst = setup_cast(settings["device"], prep="control")
+    state = CastState(CONFIG_DIR, STATE_FILENAME)
+    state.set_data(cst.cc_name, {"controller": cst.name, "data": cst.save_data})
+
+
+@cli.command(short_help="Return Chromecast to saved state.")
+@click.pass_obj
+def restore(settings):
+    device = settings["device"]
+    state = CastState(CONFIG_DIR, STATE_FILENAME)
+    data = state.get_data(device)
+    cst = setup_cast(device, prep="app", controller=data["controller"])
+    cst.restore(data["data"])
 
 
 def writeconfig(settings):
