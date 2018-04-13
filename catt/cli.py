@@ -254,6 +254,12 @@ def scan():
 @click.pass_obj
 def save(settings):
     cst = setup_cast(settings["device"], prep="control")
+    if not cst.save_capability:
+        raise CattCliError("Saving state of this Chromecast app is not supported.")
+    elif cst.save_capability == "partial":
+        click.echo("Warning: Please be advised that playlist data will not be saved.",
+                   err=True)
+
     state = CastState(CONFIG_DIR, STATE_FILENAME)
     state.set_data(cst.cc_name, {"controller": cst.name, "data": cst.save_data})
 
@@ -261,10 +267,13 @@ def save(settings):
 @cli.command(short_help="Return Chromecast to saved state.")
 @click.pass_obj
 def restore(settings):
-    device = settings["device"]
+    cst = setup_cast(settings["device"])
     state = CastState(CONFIG_DIR, STATE_FILENAME)
-    data = state.get_data(device)
-    cst = setup_cast(device, prep="app", controller=data["controller"])
+    data = state.get_data(cst.cc_name)
+    if not data:
+        raise CattCliError("No save data found for this device.")
+
+    cst = setup_cast(settings["device"], prep="app", controller=data["controller"])
     cst.restore(data["data"])
 
 

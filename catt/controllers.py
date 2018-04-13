@@ -235,6 +235,8 @@ class CastController:
         self._cast = cast
         self.name = name
         self.info_type = None
+        self.save_capability = None
+
         self._cast_listener = CastStatusListener(app_id, self._cast.app_id)
         self._cast.register_status_listener(self._cast_listener)
         self._media_listener = MediaStatusListener(self._cast.media_controller.status.player_state)
@@ -263,11 +265,26 @@ class CastController:
 
     @property
     def save_data(self):
-        """Should return the data that the restore method needs to recreate state."""
+        status = self._cast.media_controller.status
+        return {"url_or_id": status.content_id,
+                "time": status.current_time, "title": status.title,
+                "thumb": status.images[0].url if status.images else None}
 
-        raise NotImplementedError
+    @property
+    def save_data_aux(self):
+        """
+        Returns playlist data or any other auxiliary data.
+        Subclasses that provide such data can override this.
+        """
+
+        return None
 
     def restore(self, data):
+        """
+        Recreate Chromecast state from save data.
+        Subclasses must implement this.
+        """
+
         raise NotImplementedError
 
     def _prep_app(self):
@@ -390,6 +407,7 @@ class DefaultCastController(CastController):
     def __init__(self, cast, name, app_id, prep=None):
         super(DefaultCastController, self).__init__(cast, name, app_id, prep=prep)
         self.info_type = "url"
+        self.save_capability = "complete" if self._cast.app_id == DEFAULT_APP["app_id"]) else None
 
     def play_media_url(self, video_url, **kwargs):
         self._controller.play_media(video_url, "video/mp4",
@@ -397,15 +415,8 @@ class DefaultCastController(CastController):
                                     title=kwargs.get("title"), thumb=kwargs.get("thumb"))
         self._controller.block_until_active()
 
-    @property
-    def save_data(self):
-        status = self._cast.media_controller.status
-        return {"url": status.content_id,
-                "time": status.current_time, "title": status.title,
-                "thumb": status.images[0].url if status.images else None}
-
     def restore(self, data):
-        self.play_media_url(data["url"], time=data["time"],
+        self.play_media_url(data["url_or_id"], time=data["time"],
                             title=data["title"], thumb=data["thumb"])
 
 
@@ -414,6 +425,7 @@ class YoutubeCastController(CastController):
         self._controller = YouTubeController()
         super(YoutubeCastController, self).__init__(cast, name, app_id, prep=prep)
         self.info_type = "id"
+        self.save_capability = "partial"
 
     # The controller's start_new_session method needs a video id.
     def _prep_yt(self, video_id):
