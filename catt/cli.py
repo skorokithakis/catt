@@ -260,6 +260,7 @@ def save(settings):
         click.echo("Warning: Please be advised that playlist data will not be saved.",
                    err=True)
 
+    click.echo("Title: {title}\nTime: {time}\nSaving data...".format(**cst.save_data))
     state = CastState(CONFIG_DIR, STATE_FILENAME)
     state.set_data(cst.cc_name, {"controller": cst.name, "data": cst.save_data})
 
@@ -273,6 +274,7 @@ def restore(settings):
     if not data:
         raise CattCliError("No save data found for this device.")
 
+    click.echo("Title: {title}\nTime: {time}\nRestoring data...".format(**data["data"]))
     cst = setup_cast(settings["device"], prep="app", controller=data["controller"])
     cst.restore(data["data"])
 
