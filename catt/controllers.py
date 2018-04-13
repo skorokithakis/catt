@@ -83,7 +83,7 @@ def setup_cast(device_name, video_url=None, prep=None, controller=None):
         if controller == "default":
             app = DEFAULT_APP
         else:
-            next(a for a in APP_INFO if a["app_name"] == controller)
+            app = next(a for a in APP_INFO if a["app_name"] == controller)
     elif stream and prep == "app":
         if stream.is_local_file:
             app = DEFAULT_APP
@@ -220,14 +220,22 @@ class CastStatusListener:
 class MediaStatusListener:
     def __init__(self, state):
         self.not_buffering = threading.Event()
+        self.playing = threading.Event()
         if state != "BUFFERING":
             self.not_buffering.set()
+        elif state == "PLAYING":
+            self.playing.set()
 
     def new_media_status(self, status):
-        if status.player_state != "BUFFERING":
-            self.not_buffering.set()
-        else:
+        if status.player_state == "BUFFERING":
             self.not_buffering.clear()
+            self.playing.clear()
+        elif status.player_state == "PLAYING":
+            self.not_buffering.set()
+            self.playing.set()
+        else:
+            self.not_buffering.set()
+            self.playing.clear()
 
 
 class CastController:
@@ -270,15 +278,6 @@ class CastController:
                 "time": status.current_time, "title": status.title,
                 "thumb": status.images[0].url if status.images else None}
 
-    @property
-    def save_data_aux(self):
-        """
-        Returns playlist data or any other auxiliary data.
-        Subclasses that provide such data can override this.
-        """
-
-        return None
-
     def restore(self, data):
         """
         Recreate Chromecast state from save data.
@@ -308,7 +307,7 @@ class CastController:
 
     def play_media_url(self, video_url, **kwargs):
         """
-        CastController subclasses needs to implement
+        CastController subclasses need to implement
         either play_media_url or play_media_id
         """
 
@@ -316,7 +315,7 @@ class CastController:
 
     def play_media_id(self, video_id):
         """
-        CastController subclasses needs to implement
+        CastController subclasses need to implement
         either play_media_url or play_media_id
         """
 
@@ -407,7 +406,7 @@ class DefaultCastController(CastController):
     def __init__(self, cast, name, app_id, prep=None):
         super(DefaultCastController, self).__init__(cast, name, app_id, prep=prep)
         self.info_type = "url"
-        self.save_capability = "complete" if self._cast.app_id == DEFAULT_APP["app_id"]) else None
+        self.save_capability = "complete" if self._cast.app_id == DEFAULT_APP["app_id"] else None
 
     def play_media_url(self, video_url, **kwargs):
         self._controller.play_media(video_url, "video/mp4",
@@ -449,3 +448,9 @@ class YoutubeCastController(CastController):
         # You can't add videos to the queue while the app is buffering.
         self._media_listener.not_buffering.wait()
         self._controller.add_to_queue(video_id)
+
+    @catch_namespace_error
+    def restore(self, data):
+        self.play_media_id(data["url_or_id"])
+        self._media_listener.playing.wait()
+        self.seek(data["time"])

@@ -255,7 +255,7 @@ def scan():
 def save(settings):
     cst = setup_cast(settings["device"], prep="control")
     if not cst.save_capability:
-        raise CattCliError("Saving state of this Chromecast app is not supported.")
+        raise CattCliError("Saving state of this kind of content is not supported.")
     elif cst.save_capability == "partial":
         click.echo("Warning: Please be advised that playlist data will not be saved.",
                    err=True)
