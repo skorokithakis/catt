@@ -58,6 +58,10 @@ def setup_cast(device_name, video_url=None, prep=None, controller=None):
                  if the desired action can be carried out regardless of the
                  state of the chromecast (like volume adjustment).
     :type prep: str
+    :param controller: If supplied, the normal logic for determining the appropriate
+                       controller is bypassed, and the one specified here is
+                       returned instead.
+    :type controller: str
     :returns: controllers.DefaultCastController or controllers.YoutubeCastController,
               and stream_info.StreamInfo if video_url is supplied.
     """
