@@ -411,7 +411,8 @@ class DefaultCastController(CastController):
     def __init__(self, cast, name, app_id, prep=None):
         super(DefaultCastController, self).__init__(cast, name, app_id, prep=prep)
         self.info_type = "url"
-        self.save_capability = "complete" if self._cast.app_id == DEFAULT_APP["app_id"] else None
+        self.save_capability = "complete" if (self._is_seekable and
+                                              self._cast.app_id == DEFAULT_APP["app_id"]) else None
 
     def play_media_url(self, video_url, **kwargs):
         self._controller.play_media(video_url, "video/mp4",
