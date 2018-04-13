@@ -31,12 +31,12 @@ class TestThings(unittest.TestCase):
 
     def test_cache(self):
         cache = Cache()
-        cache.set("key", "value")
-        self.assertEqual(cache.get("key"), "value")
+        cache.set_data("key", "value")
+        self.assertEqual(cache.get_data("key"), "value")
 
         cache.clear()
         cache = Cache()
-        self.assertEqual(cache.get("key"), None)
+        self.assertEqual(cache.get_data("key"), None)
         cache.clear()
 
 
