@@ -103,7 +103,7 @@ def setup_cast(device_name, video_url=None, prep=None, controller=None):
             app = DEFAULT_APP
 
     if (not controller and app["app_name"] != "default" and
-        cast.cast_type not in app["supported_device_types"]):
+            cast.cast_type not in app["supported_device_types"]):
         if stream:
             echo("Warning: The %s app is not available for this device." % app["app_name"].capitalize(),
                  err=True)
