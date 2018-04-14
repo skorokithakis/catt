@@ -1,7 +1,6 @@
 import json
 import tempfile
 import threading
-import time
 from pathlib import Path
 
 import pychromecast
@@ -270,29 +269,43 @@ class CastController:
         return self._cast.device.friendly_name
 
     @property
-    def _is_seekable(self):
-        status = self._cast.media_controller.status
-        # Some seekable streams are reported as having a duration of 0.
-        return True if (status.duration is not None and
-                        status.stream_type == "BUFFERED") else False
+    def info(self):
+        status = self._cast.media_controller.status.__dict__
+        # Values in media_controller.status for the keys "volume_level" and "volume_muted"
+        # are always the same, regardless of actual state, so we discard those by
+        # overwriting them with the values from system status.
+        status.update(self._cast.status._asdict())
+        return status
 
     @property
-    def save_data(self):
+    def media_info(self):
         status = self._cast.media_controller.status
-        return {"url_or_id": status.content_id,
-                "title": status.title,
-                "time": status.current_time,
-                "human_time": self._human_time(status.current_time),
+        return {"title": status.title,
+                "content_id": status.content_id,
+                "current_time": status.current_time if self._is_seekable else None,
                 "thumb": status.images[0].url if status.images else None}
 
-    def restore(self, data):
-        """
-        Recreate Chromecast state from save data.
-        Subclasses can implement this if its possible to recreate
-        a session from the save data.
-        """
+    @property
+    def cast_info(self):
+        status = self._cast.media_controller.status
+        cinfo = self.media_info
 
-        raise NotImplementedError
+        if self._is_seekable:
+            duration, current = status.duration, status.current_time
+            remaining = duration - current
+            progress = int((1.0 * current / duration) * 100)
+            cinfo.update({"duration": duration,
+                          "remaining": remaining, "progress": progress})
+
+        cinfo.update({"player_state": status.player_state,
+                      "volume_level": str(int(round(self._cast.status.volume_level, 2) * 100))})
+        return cinfo
+
+    @property
+    def _is_seekable(self):
+        status = self._cast.media_controller.status
+        return True if (status.duration and
+                        status.stream_type == "BUFFERED") else False
 
     def _prep_app(self):
         """Make shure desired chromecast app is running."""
@@ -309,9 +322,6 @@ class CastController:
         self._cast.media_controller.block_until_active(1.0)
         if self._cast.media_controller.status.player_state in ["UNKNOWN", "IDLE"]:
             raise CattCastError("Nothing is currently playing.")
-
-    def _human_time(self, seconds):
-        return time.strftime("%H:%M:%S", time.gmtime(seconds))
 
     def play_media_url(self, video_url, **kwargs):
         """
@@ -367,39 +377,17 @@ class CastController:
     def volumedown(self, delta):
         self._cast.volume_down(delta)
 
-    def status(self):
-        status = self._cast.media_controller.status
-
-        if status.title:
-            echo("Title: %s" % status.title)
-
-        if self._is_seekable:
-            cur = int(status.current_time)
-            current = self._human_time(cur)
-            if status.duration:
-                dur = int(status.duration)
-                duration = self._human_time(dur)
-                remaining = self._human_time(dur - cur)
-                progress = int((1.0 * cur / dur) * 100)
-                echo("Time: %s / %s (%s%%)" % (current, duration, progress))
-                echo("Remaining time: %s" % remaining)
-            else:
-                echo("Time: %s" % current)
-
-        echo("State: %s" % status.player_state)
-        echo("Volume: %s" % int(round(self._cast.status.volume_level, 2) * 100))
-
-    def info(self):
-        # Values in media_controller.status for the keys "volume_level" and "volume_muted"
-        # are always the same, regardless of actual state, so we discard those.
-        status = {k: v for k, v in self._cast.media_controller.status.__dict__.items()
-                  if "volume" not in k}
-        status.update(self._cast.status._asdict())
-        for (key, value) in status.items():
-            echo("%s: %s" % (key, value))
-
     def kill(self):
         self._cast.quit_app()
+
+    def restore(self, data):
+        """
+        Recreates Chromecast state from save data.
+        Subclasses can implement this if its possible to recreate
+        a session from save data.
+        """
+
+        raise NotImplementedError
 
     def _not_supported(self):
         if self._cast.media_controller.status.player_state in ["UNKNOWN", "IDLE"]:
@@ -419,12 +407,12 @@ class DefaultCastController(CastController):
 
     def play_media_url(self, video_url, **kwargs):
         self._controller.play_media(video_url, "video/mp4",
-                                    current_time=kwargs.get("time"),
+                                    current_time=kwargs.get("current_time"),
                                     title=kwargs.get("title"), thumb=kwargs.get("thumb"))
         self._controller.block_until_active()
 
     def restore(self, data):
-        self.play_media_url(data["url_or_id"], time=data["time"],
+        self.play_media_url(data["content_id"], current_time=data["current_time"],
                             title=data["title"], thumb=data["thumb"])
 
 
@@ -460,6 +448,6 @@ class YoutubeCastController(CastController):
 
     @catch_namespace_error
     def restore(self, data):
-        self.play_media_id(data["url_or_id"])
+        self.play_media_id(data["content_id"])
         self._media_listener.playing.wait()
-        self.seek(data["time"])
+        self.seek(data["current_time"])

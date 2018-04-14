@@ -43,6 +43,10 @@ class CattTimeParamType(click.ParamType):
 CATT_TIME = CattTimeParamType()
 
 
+def human_time(seconds):
+    return time.strftime("%H:%M:%S", time.gmtime(seconds))
+
+
 def process_url(ctx, param, value):
     if value.strip() == "-":
         stdin_text = click.get_text_stream('stdin')
@@ -233,14 +237,15 @@ def volumedown(settings, delta):
 @click.pass_obj
 def status(settings):
     cst = setup_cast(settings["device"], prep="control")
-    cst.status()
+    print_status(cst.cast_info)
 
 
 @cli.command(short_help="Show complete information about the currently-playing video.")
 @click.pass_obj
 def info(settings):
     cst = setup_cast(settings["device"], prep="control")
-    cst.info()
+    for (key, value) in cst.info.items():
+        click.echo("%s: %s" % (key, value))
 
 
 @cli.command(short_help="Scan the local network and show all Chromecasts and their IPs.")
@@ -260,10 +265,10 @@ def save(settings):
         click.echo("Warning: Please be advised that playlist data will not be saved.",
                    err=True)
 
-    click.echo("Device: %s" % cst.cc_name)
-    click.echo("Title: {title}\nTime: {human_time}\nSaving data...".format(**cst.save_data))
+    print_status(cst.media_info)
+    click.echo("Saving...")
     state = CastState(CONFIG_DIR, STATE_FILENAME)
-    state.set_data(cst.cc_name, {"controller": cst.name, "data": cst.save_data})
+    state.set_data(cst.cc_name, {"controller": cst.name, "data": cst.media_info})
 
 
 @cli.command(short_help="Return Chromecast to saved state.")
@@ -275,10 +280,31 @@ def restore(settings):
     if not data:
         raise CattCliError("No save data found for this device.")
 
-    click.echo("Device: %s" % cst.cc_name)
-    click.echo("Title: {title}\nTime: {human_time}\nRestoring data...".format(**data["data"]))
+    print_status(data["data"])
+    click.echo("Restoring...")
     cst = setup_cast(settings["device"], prep="app", controller=data["controller"])
     cst.restore(data["data"])
+
+
+def print_status(status):
+    if status.get("title"):
+        click.echo("Title: %s" % status["title"])
+
+    if status.get("current_time"):
+        current = human_time(status["current_time"])
+        if status.get("duration"):
+            duration = human_time(status["duration"])
+            remaining = human_time(status["remaining"])
+            click.echo("Time: %s / %s (%s%%)" % (current, duration, status["progress"]))
+            click.echo("Remaining time: %s" % remaining)
+        else:
+            click.echo("Time: %s" % current)
+
+    if status.get("player_state"):
+        click.echo("State: %s" % status["player_state"])
+
+    if status.get("volume_level"):
+        click.echo("Volume: %s" % status["volume_level"])
 
 
 def writeconfig(settings):
