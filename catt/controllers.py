@@ -280,7 +280,9 @@ class CastController:
     def save_data(self):
         status = self._cast.media_controller.status
         return {"url_or_id": status.content_id,
-                "time": status.current_time, "title": status.title,
+                "title": status.title,
+                "time": status.current_time,
+                "human_time": self._human_time(status.current_time),
                 "thumb": status.images[0].url if status.images else None}
 
     def restore(self, data):
