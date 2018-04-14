@@ -286,7 +286,8 @@ class CastController:
     def restore(self, data):
         """
         Recreate Chromecast state from save data.
-        Subclasses must implement this.
+        Subclasses can implement this if its possible to recreate
+        a session from the save data.
         """
 
         raise NotImplementedError
