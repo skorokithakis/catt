@@ -259,7 +259,7 @@ def scan():
 @click.pass_obj
 def save(settings):
     cst = setup_cast(settings["device"], prep="control")
-    if not cst.save_capability:
+    if not cst.save_capability or cst.is_streaming_local_file:
         raise CattCliError("Saving state of this kind of content is not supported.")
     elif cst.save_capability == "partial":
         click.echo("Warning: Please be advised that playlist data will not be saved.",

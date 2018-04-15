@@ -302,6 +302,11 @@ class CastController:
         return cinfo
 
     @property
+    def is_streaming_local_file(self):
+        status = self._cast.media_controller.status
+        return True if status.content_id.endswith("?loaded_from_catt") else False
+
+    @property
     def _is_seekable(self):
         status = self._cast.media_controller.status
         return True if (status.duration and
