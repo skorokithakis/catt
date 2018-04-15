@@ -140,20 +140,19 @@ class PlaybackError(Exception):
 
 
 class CattStore:
-    def __init__(self, store_dir, store_filename):
-        self.store_dir = store_dir
+    def __init__(self, store_path):
+        self.store_path = store_path
         try:
-            self.store_dir.mkdir()
+            self.store_path.parent.mkdir()
         except FileExistsError:
             pass
-        self.store_file = Path(self.store_dir, store_filename)
 
     def _read_store(self):
-        with self.store_file.open() as store:
+        with self.store_path.open() as store:
             return json.load(store)
 
     def _write_store(self, data):
-        with self.store_file.open("w") as store:
+        with self.store_path.open("w") as store:
             json.dump(data, store)
 
     def get_data(self, *args):
@@ -166,19 +165,18 @@ class CattStore:
 
     def clear(self):
         try:
-            self.store_file.unlink()
-            self.store_dir.rmdir()
+            self.store_path.unlink()
+            self.store_path.parent.rmdir()
         except FileNotFoundError:
             pass
 
 
 class Cache(CattStore):
     def __init__(self):
-        cache_dir = Path(tempfile.gettempdir(), "catt_cache")
-        cache_filename = Path("chromecast_hosts")
-        super(Cache, self).__init__(cache_dir, cache_filename)
+        cache_path = Path(tempfile.gettempdir(), "catt_cache", "chromecast_hosts")
+        super(Cache, self).__init__(cache_path)
 
-        if not self.store_file.exists():
+        if not self.store_path.exists():
             devices = pychromecast.get_chromecasts()
             self._write_store({d.name: d.host for d in devices})
 
@@ -196,10 +194,10 @@ class Cache(CattStore):
 
 
 class CastState(CattStore):
-    def __init__(self, state_dir, state_filename):
-        super(CastState, self).__init__(state_dir, state_filename)
+    def __init__(self, state_path):
+        super(CastState, self).__init__(state_path)
 
-        if not self.store_file.exists():
+        if not self.store_path.exists():
             self._write_store({})
 
     def get_data(self, name):

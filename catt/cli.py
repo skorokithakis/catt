@@ -18,8 +18,8 @@ from .http_server import serve_file
 
 
 CONFIG_DIR = Path(click.get_app_dir("catt"))
-CONFIG_FILE = Path(CONFIG_DIR, "catt.cfg")
-STATE_FILENAME = Path("state.json")
+CONFIG_PATH = Path(CONFIG_DIR, "catt.cfg")
+STATE_PATH = Path(CONFIG_DIR, "state.json")
 
 
 class CattCliError(click.ClickException):
@@ -267,7 +267,7 @@ def save(settings):
 
     print_status(cst.media_info)
     click.echo("Saving...")
-    state = CastState(CONFIG_DIR, STATE_FILENAME)
+    state = CastState(STATE_PATH)
     state.set_data(cst.cc_name, {"controller": cst.name, "data": cst.media_info})
 
 
@@ -275,7 +275,7 @@ def save(settings):
 @click.pass_obj
 def restore(settings):
     cst = setup_cast(settings["device"])
-    state = CastState(CONFIG_DIR, STATE_FILENAME)
+    state = CastState(STATE_PATH)
     data = state.get_data(cst.cc_name)
     if not data:
         raise CattCliError("No save data found for this device.")
@@ -326,7 +326,7 @@ def writeconfig(settings):
         for option, value in options.items():
             config.set(section, option, value)
 
-    with CONFIG_FILE.open("w") as configfile:
+    with CONFIG_PATH.open("w") as configfile:
         config.write(configfile)
 
 
@@ -339,7 +339,7 @@ def readconfig():
          "aliases": {"device1": "device_name"}}
     """
     config = configparser.ConfigParser()
-    config.read(CONFIG_FILE)
+    config.read(CONFIG_PATH)
     conf_dict = {section: dict(config.items(section)) for section in config.sections()}
 
     conf = conf_dict.get("options", {})
