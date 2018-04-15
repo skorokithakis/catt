@@ -135,6 +135,10 @@ class CattCastError(ClickException):
     pass
 
 
+class StateFileError(Exception):
+    pass
+
+
 class PlaybackError(Exception):
     pass
 
@@ -201,8 +205,14 @@ class CastState(CattStore):
             self._write_store({})
 
     def get_data(self, name):
-        data = self._read_store()
-        return data.get(name)
+        try:
+            data = self._read_store()
+            save_data = data.get(name)
+            if save_data and set(save_data.keys()) != set(["controller", "data"]):
+                raise ValueError
+        except (json.decoder.JSONDecodeError, ValueError):
+            raise StateFileError
+        return save_data
 
 
 class CastStatusListener:

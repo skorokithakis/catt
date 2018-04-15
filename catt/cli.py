@@ -12,7 +12,8 @@ from .controllers import (
     get_chromecast,
     get_chromecasts,
     PlaybackError,
-    setup_cast
+    setup_cast,
+    StateFileError
 )
 from .http_server import serve_file
 
@@ -289,7 +290,10 @@ def save(settings, path):
 def restore(settings, path):
     cst = setup_cast(settings["device"])
     state = CastState(path or STATE_PATH)
-    data = state.get_data(cst.cc_name)
+    try:
+        data = state.get_data(cst.cc_name)
+    except StateFileError:
+        raise CattCliError("The chosen file is not a valid save file.")
     if not data:
         raise CattCliError("No save data found for this device.")
 
