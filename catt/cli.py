@@ -264,8 +264,8 @@ def scan():
 
 
 @cli.command(short_help="Save the current state of the Chromecast for later use.")
-@click.argument("path", type=click.Path(writable=True),
-                callback=process_path, required=False, metavar="PATH")
+@click.argument("path",
+                type=click.Path(writable=True), callback=process_path, required=False)
 @click.pass_obj
 def save(settings, path):
     cst = setup_cast(settings["device"], prep="control")
@@ -284,8 +284,8 @@ def save(settings, path):
 
 
 @cli.command(short_help="Return Chromecast to saved state.")
-@click.argument("path", type=click.Path(exists=True),
-                callback=process_path, required=False, metavar="PATH")
+@click.argument("path",
+                type=click.Path(exists=True), callback=process_path, required=False)
 @click.pass_obj
 def restore(settings, path):
     cst = setup_cast(settings["device"])
