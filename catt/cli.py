@@ -48,8 +48,8 @@ def human_time(seconds):
 
 
 def process_url(ctx, param, value):
-    if value.strip() == "-":
-        stdin_text = click.get_text_stream('stdin')
+    if value == "-":
+        stdin_text = click.get_text_stream("stdin")
         if not stdin_text.isatty():
             value = stdin_text.read().strip()
         else:
@@ -60,6 +60,13 @@ def process_url(ctx, param, value):
         if not Path(value).exists():
             raise CattCliError("The chosen file does not exist.")
     return value
+
+
+def process_path(ctx, param, value):
+    path = Path(value) if value else None
+    if path and path.is_dir():
+        raise CattCliError("Path is a directory.")
+    return path
 
 
 def get_device(ctx, param, value):
@@ -256,8 +263,10 @@ def scan():
 
 
 @cli.command(short_help="Save the current state of the Chromecast for later use.")
+@click.argument("path", type=click.Path(writable=True),
+                callback=process_path, required=False, metavar="PATH")
 @click.pass_obj
-def save(settings):
+def save(settings, path):
     cst = setup_cast(settings["device"], prep="control")
     if not cst.save_capability or cst.is_streaming_local_file:
         raise CattCliError("Saving state of this kind of content is not supported.")
@@ -266,16 +275,20 @@ def save(settings):
                    err=True)
 
     print_status(cst.media_info)
+    if path and path.exists():
+        click.confirm("File already exists. Overwrite?", abort=True)
     click.echo("Saving...")
-    state = CastState(STATE_PATH)
+    state = CastState(path or STATE_PATH)
     state.set_data(cst.cc_name, {"controller": cst.name, "data": cst.media_info})
 
 
 @cli.command(short_help="Return Chromecast to saved state.")
+@click.argument("path", type=click.Path(exists=True),
+                callback=process_path, required=False, metavar="PATH")
 @click.pass_obj
-def restore(settings):
+def restore(settings, path):
     cst = setup_cast(settings["device"])
-    state = CastState(STATE_PATH)
+    state = CastState(path or STATE_PATH)
     data = state.get_data(cst.cc_name)
     if not data:
         raise CattCliError("No save data found for this device.")
