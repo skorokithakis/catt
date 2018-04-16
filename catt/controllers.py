@@ -75,7 +75,7 @@ def setup_cast(device_name, video_url=None, prep=None, controller=None):
         cast = pychromecast.Chromecast(cached_ip)
     except (pychromecast.error.ChromecastConnectionError, ValueError):
         cast = get_chromecast(device_name)
-        cache.set(cast.name, cast.host)
+        cache.set_data(cast.name, cast.host)
     cast.wait()
 
     if video_url:
