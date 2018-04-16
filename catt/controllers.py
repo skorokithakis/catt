@@ -75,7 +75,7 @@ def setup_cast(device_name, video_url=None, prep=None, controller=None):
         cast = pychromecast.Chromecast(cached_ip)
     except (pychromecast.error.ChromecastConnectionError, ValueError):
         cast = get_chromecast(device_name)
-        cache.set(cast.name, cast.host)
+        cache.set_data(cast.name, cast.host)
     cast.wait()
 
     if video_url:
@@ -390,7 +390,20 @@ class CastController:
     def volumedown(self, delta):
         self._cast.volume_down(delta)
 
-    def kill(self):
+    def kill(self, idle_only=False):
+        """
+        Kills current Chromecast session.
+
+        :param idle_only: If set, session is only killed if the active Chromecast app
+                          is idle. Use to avoid killing an active streaming session
+                          when catt fails with certain invalid actions (such as trying
+                          to cast an empty playlist).
+        :type idle_only: bool
+        """
+
+        if (idle_only and
+                self._cast.media_controller.status.player_state not in ["UNKNOWN", "IDLE"]):
+            return
         self._cast.quit_app()
 
     def restore(self, data):
@@ -403,8 +416,7 @@ class CastController:
         raise NotImplementedError
 
     def _not_supported(self):
-        if self._cast.media_controller.status.player_state in ["UNKNOWN", "IDLE"]:
-            self.kill()
+        self.kill(idle_only=True)
         raise CattCastError("This action is not supported by the %s controller." % self.name.capitalize())
 
     def add(self, video_id):
