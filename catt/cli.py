@@ -8,16 +8,19 @@ import click
 
 from .controllers import (
     Cache,
+    CastState,
     get_chromecast,
     get_chromecasts,
     PlaybackError,
-    setup_cast
+    setup_cast,
+    StateFileError
 )
 from .http_server import serve_file
 
 
 CONFIG_DIR = Path(click.get_app_dir("catt"))
-CONFIG_FILE = Path(CONFIG_DIR, "catt.cfg")
+CONFIG_PATH = Path(CONFIG_DIR, "catt.cfg")
+STATE_PATH = Path(CONFIG_DIR, "state.json")
 
 
 class CattCliError(click.ClickException):
@@ -41,9 +44,13 @@ class CattTimeParamType(click.ParamType):
 CATT_TIME = CattTimeParamType()
 
 
+def human_time(seconds):
+    return time.strftime("%H:%M:%S", time.gmtime(seconds))
+
+
 def process_url(ctx, param, value):
-    if value.strip() == "-":
-        stdin_text = click.get_text_stream('stdin')
+    if value == "-":
+        stdin_text = click.get_text_stream("stdin")
         if not stdin_text.isatty():
             value = stdin_text.read().strip()
         else:
@@ -54,6 +61,13 @@ def process_url(ctx, param, value):
         if not Path(value).exists():
             raise CattCliError("The chosen file does not exist.")
     return value
+
+
+def process_path(ctx, param, value):
+    path = Path(value) if value else None
+    if path and path.is_dir():
+        raise CattCliError("Path is a directory.")
+    return path
 
 
 def get_device(ctx, param, value):
@@ -93,8 +107,9 @@ def write_config(settings):
               help="Force use of the default Chromecast app (use if a custom app doesn't work).")
 @click.pass_obj
 def cast(settings, video_url, force_default):
+    controller = "default" if force_default else None
     cst, stream = setup_cast(settings["device"], video_url=video_url,
-                             prep="app", force_default=force_default)
+                             prep="app", controller=controller)
 
     if stream.is_local_file:
         click.echo("Casting local file %s..." % video_url)
@@ -230,14 +245,15 @@ def volumedown(settings, delta):
 @click.pass_obj
 def status(settings):
     cst = setup_cast(settings["device"], prep="control")
-    cst.status()
+    print_status(cst.cast_info)
 
 
 @cli.command(short_help="Show complete information about the currently-playing video.")
 @click.pass_obj
 def info(settings):
     cst = setup_cast(settings["device"], prep="control")
-    cst.info()
+    for (key, value) in cst.info.items():
+        click.echo("%s: %s" % (key, value))
 
 
 @cli.command(short_help="Scan the local network and show all Chromecasts and their IPs.")
@@ -245,6 +261,67 @@ def scan():
     click.echo("Scanning Chromecasts...")
     for device in get_chromecasts():
         click.echo("{0.host} - {0.device.friendly_name} - {0.device.manufacturer} {0.device.model_name}".format(device))
+
+
+@cli.command(short_help="Save the current state of the Chromecast for later use.")
+@click.argument("path",
+                type=click.Path(writable=True), callback=process_path, required=False)
+@click.pass_obj
+def save(settings, path):
+    cst = setup_cast(settings["device"], prep="control")
+    if not cst.save_capability or cst.is_streaming_local_file:
+        raise CattCliError("Saving state of this kind of content is not supported.")
+    elif cst.save_capability == "partial":
+        click.echo("Warning: Please be advised that playlist data will not be saved.",
+                   err=True)
+
+    print_status(cst.media_info)
+    if path and path.exists():
+        click.confirm("File already exists. Overwrite?", abort=True)
+    click.echo("Saving...")
+    state = CastState(path or STATE_PATH)
+    state.set_data(cst.cc_name, {"controller": cst.name, "data": cst.media_info})
+
+
+@cli.command(short_help="Return Chromecast to saved state.")
+@click.argument("path",
+                type=click.Path(exists=True), callback=process_path, required=False)
+@click.pass_obj
+def restore(settings, path):
+    cst = setup_cast(settings["device"])
+    state = CastState(path or STATE_PATH)
+    try:
+        data = state.get_data(cst.cc_name)
+    except StateFileError:
+        raise CattCliError("The chosen file is not a valid save file.")
+    if not data:
+        raise CattCliError("No save data found for this device.")
+
+    print_status(data["data"])
+    click.echo("Restoring...")
+    cst = setup_cast(settings["device"], prep="app", controller=data["controller"])
+    cst.restore(data["data"])
+
+
+def print_status(status):
+    if status.get("title"):
+        click.echo("Title: %s" % status["title"])
+
+    if status.get("current_time"):
+        current = human_time(status["current_time"])
+        if status.get("duration"):
+            duration = human_time(status["duration"])
+            remaining = human_time(status["remaining"])
+            click.echo("Time: %s / %s (%s%%)" % (current, duration, status["progress"]))
+            click.echo("Remaining time: %s" % remaining)
+        else:
+            click.echo("Time: %s" % current)
+
+    if status.get("player_state"):
+        click.echo("State: %s" % status["player_state"])
+
+    if status.get("volume_level"):
+        click.echo("Volume: %s" % status["volume_level"])
 
 
 def writeconfig(settings):
@@ -266,7 +343,7 @@ def writeconfig(settings):
         for option, value in options.items():
             config.set(section, option, value)
 
-    with CONFIG_FILE.open("w") as configfile:
+    with CONFIG_PATH.open("w") as configfile:
         config.write(configfile)
 
 
@@ -279,7 +356,7 @@ def readconfig():
          "aliases": {"device1": "device_name"}}
     """
     config = configparser.ConfigParser()
-    config.read(CONFIG_FILE)
+    config.read(CONFIG_PATH)
     conf_dict = {section: dict(config.items(section)) for section in config.sections()}
 
     conf = conf_dict.get("options", {})

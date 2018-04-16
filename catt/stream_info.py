@@ -97,7 +97,7 @@ class StreamInfo:
     @property
     def video_url(self):
         if self.is_local_file:
-            return "http://%s:%s/" % (self.local_ip, self.port)
+            return "http://%s:%s/?loaded_from_catt" % (self.local_ip, self.port)
         elif self.is_playlist:
             return None
         else:

@@ -1,7 +1,6 @@
 import json
 import tempfile
 import threading
-import time
 from pathlib import Path
 
 import pychromecast
@@ -39,7 +38,7 @@ def get_chromecast(device_name):
         return devices[0]
 
 
-def setup_cast(device_name, video_url=None, prep=None, force_default=False):
+def setup_cast(device_name, video_url=None, prep=None, controller=None):
     """
     Prepares selected chromecast and/or media file.
 
@@ -58,12 +57,16 @@ def setup_cast(device_name, video_url=None, prep=None, force_default=False):
                  if the desired action can be carried out regardless of the
                  state of the chromecast (like volume adjustment).
     :type prep: str
+    :param controller: If supplied, the normal logic for determining the appropriate
+                       controller is bypassed, and the one specified here is
+                       returned instead.
+    :type controller: str
     :returns: controllers.DefaultCastController or controllers.YoutubeCastController,
               and stream_info.StreamInfo if video_url is supplied.
     """
 
     cache = Cache()
-    cached_ip = cache.get(device_name)
+    cached_ip = cache.get_data(device_name)
     stream = None
 
     try:
@@ -79,8 +82,11 @@ def setup_cast(device_name, video_url=None, prep=None, force_default=False):
         cc_info = (cast.device.manufacturer, cast.model_name)
         stream = StreamInfo(video_url, model=cc_info, host=cast.host)
 
-    if force_default:
-        app = DEFAULT_APP
+    if controller:
+        if controller == "default":
+            app = DEFAULT_APP
+        else:
+            app = next(a for a in APP_INFO if a["app_name"] == controller)
     elif stream and prep == "app":
         if stream.is_local_file:
             app = DEFAULT_APP
@@ -95,7 +101,8 @@ def setup_cast(device_name, video_url=None, prep=None, force_default=False):
         except StopIteration:
             app = DEFAULT_APP
 
-    if app["app_name"] != "default" and cast.cast_type not in app["supported_device_types"]:
+    if (not controller and app["app_name"] != "default" and
+            cast.cast_type not in app["supported_device_types"]):
         if stream:
             echo("Warning: The %s app is not available for this device." % app["app_name"].capitalize(),
                  err=True)
@@ -128,33 +135,57 @@ class CattCastError(ClickException):
     pass
 
 
+class StateFileError(Exception):
+    pass
+
+
 class PlaybackError(Exception):
     pass
 
 
-class Cache:
-    def __init__(self):
-        self.cache_dir = Path(tempfile.gettempdir(), "catt_cache")
+class CattStore:
+    def __init__(self, store_path):
+        self.store_path = store_path
         try:
-            self.cache_dir.mkdir()
+            self.store_path.parent.mkdir()
         except FileExistsError:
             pass
-        self.cache_file = Path(self.cache_dir, "chromecast_hosts")
 
-        if not self.cache_file.exists():
+    def _read_store(self):
+        with self.store_path.open() as store:
+            return json.load(store)
+
+    def _write_store(self, data):
+        with self.store_path.open("w") as store:
+            json.dump(data, store)
+
+    def get_data(self, *args):
+        raise NotImplementedError
+
+    def set_data(self, name, value):
+        data = self._read_store()
+        data[name] = value
+        self._write_store(data)
+
+    def clear(self):
+        try:
+            self.store_path.unlink()
+            self.store_path.parent.rmdir()
+        except FileNotFoundError:
+            pass
+
+
+class Cache(CattStore):
+    def __init__(self):
+        cache_path = Path(tempfile.gettempdir(), "catt_cache", "chromecast_hosts")
+        super(Cache, self).__init__(cache_path)
+
+        if not self.store_path.exists():
             devices = pychromecast.get_chromecasts()
-            self._write_cache({d.name: d.host for d in devices})
+            self._write_store({d.name: d.host for d in devices})
 
-    def _read_cache(self):
-        with self.cache_file.open() as cache:
-            return json.load(cache)
-
-    def _write_cache(self, data):
-        with self.cache_file.open("w") as cache:
-            json.dump(data, cache)
-
-    def get(self, name):
-        data = self._read_cache()
+    def get_data(self, name):
+        data = self._read_store()
         # In the case that cache has been initialized with no cc's on the
         # network, we need to ensure auto-discovery.
         if not data:
@@ -165,17 +196,23 @@ class Cache:
             return data[min(data, key=str)]
         return data.get(name)
 
-    def set(self, name, value):
-        data = self._read_cache()
-        data[name] = value
-        self._write_cache(data)
 
-    def clear(self):
+class CastState(CattStore):
+    def __init__(self, state_path):
+        super(CastState, self).__init__(state_path)
+
+        if not self.store_path.exists():
+            self._write_store({})
+
+    def get_data(self, name):
         try:
-            self.cache_file.unlink()
-            self.cache_dir.rmdir()
-        except FileNotFoundError:
-            pass
+            data = self._read_store()
+            save_data = data.get(name)
+            if save_data and set(save_data.keys()) != set(["controller", "data"]):
+                raise ValueError
+        except (json.decoder.JSONDecodeError, ValueError):
+            raise StateFileError
+        return save_data
 
 
 class CastStatusListener:
@@ -195,14 +232,22 @@ class CastStatusListener:
 class MediaStatusListener:
     def __init__(self, state):
         self.not_buffering = threading.Event()
+        self.playing = threading.Event()
         if state != "BUFFERING":
             self.not_buffering.set()
+        elif state == "PLAYING":
+            self.playing.set()
 
     def new_media_status(self, status):
-        if status.player_state != "BUFFERING":
-            self.not_buffering.set()
-        else:
+        if status.player_state == "BUFFERING":
             self.not_buffering.clear()
+            self.playing.clear()
+        elif status.player_state == "PLAYING":
+            self.not_buffering.set()
+            self.playing.set()
+        else:
+            self.not_buffering.set()
+            self.playing.clear()
 
 
 class CastController:
@@ -210,6 +255,8 @@ class CastController:
         self._cast = cast
         self.name = name
         self.info_type = None
+        self.save_capability = None
+
         self._cast_listener = CastStatusListener(app_id, self._cast.app_id)
         self._cast.register_status_listener(self._cast_listener)
         self._media_listener = MediaStatusListener(self._cast.media_controller.status.player_state)
@@ -230,10 +277,47 @@ class CastController:
         return self._cast.device.friendly_name
 
     @property
+    def info(self):
+        status = self._cast.media_controller.status.__dict__
+        # Values in media_controller.status for the keys "volume_level" and "volume_muted"
+        # are always the same, regardless of actual state, so we discard those by
+        # overwriting them with the values from system status.
+        status.update(self._cast.status._asdict())
+        return status
+
+    @property
+    def media_info(self):
+        status = self._cast.media_controller.status
+        return {"title": status.title,
+                "content_id": status.content_id,
+                "current_time": status.current_time if self._is_seekable else None,
+                "thumb": status.images[0].url if status.images else None}
+
+    @property
+    def cast_info(self):
+        status = self._cast.media_controller.status
+        cinfo = self.media_info
+
+        if self._is_seekable:
+            duration, current = status.duration, status.current_time
+            remaining = duration - current
+            progress = int((1.0 * current / duration) * 100)
+            cinfo.update({"duration": duration,
+                          "remaining": remaining, "progress": progress})
+
+        cinfo.update({"player_state": status.player_state,
+                      "volume_level": str(int(round(self._cast.status.volume_level, 2) * 100))})
+        return cinfo
+
+    @property
+    def is_streaming_local_file(self):
+        status = self._cast.media_controller.status
+        return True if status.content_id.endswith("?loaded_from_catt") else False
+
+    @property
     def _is_seekable(self):
         status = self._cast.media_controller.status
-        # Some seekable streams are reported as having a duration of 0.
-        return True if (status.duration is not None and
+        return True if (status.duration and
                         status.stream_type == "BUFFERED") else False
 
     def _prep_app(self):
@@ -252,14 +336,21 @@ class CastController:
         if self._cast.media_controller.status.player_state in ["UNKNOWN", "IDLE"]:
             raise CattCastError("Nothing is currently playing.")
 
-    def _human_time(self, seconds):
-        return time.strftime("%H:%M:%S", time.gmtime(seconds))
-
     def play_media_url(self, video_url, **kwargs):
-        raise PlaybackError
+        """
+        CastController subclasses need to implement
+        either play_media_url or play_media_id
+        """
+
+        raise NotImplementedError
 
     def play_media_id(self, video_id):
-        raise PlaybackError
+        """
+        CastController subclasses need to implement
+        either play_media_url or play_media_id
+        """
+
+        raise NotImplementedError
 
     def play_playlist(self, playlist_id):
         raise PlaybackError
@@ -299,39 +390,17 @@ class CastController:
     def volumedown(self, delta):
         self._cast.volume_down(delta)
 
-    def status(self):
-        status = self._cast.media_controller.status
-
-        if status.title:
-            echo("Title: %s" % status.title)
-
-        if self._is_seekable:
-            cur = int(status.current_time)
-            current = self._human_time(cur)
-            if status.duration:
-                dur = int(status.duration)
-                duration = self._human_time(dur)
-                remaining = self._human_time(dur - cur)
-                progress = int((1.0 * cur / dur) * 100)
-                echo("Time: %s / %s (%s%%)" % (current, duration, progress))
-                echo("Remaining time: %s" % remaining)
-            else:
-                echo("Time: %s" % current)
-
-        echo("State: %s" % status.player_state)
-        echo("Volume: %s" % int(round(self._cast.status.volume_level, 2) * 100))
-
-    def info(self):
-        # Values in media_controller.status for the keys "volume_level" and "volume_muted"
-        # are always the same, regardless of actual state, so we discard those.
-        status = {k: v for k, v in self._cast.media_controller.status.__dict__.items()
-                  if "volume" not in k}
-        status.update(self._cast.status._asdict())
-        for (key, value) in status.items():
-            echo("%s: %s" % (key, value))
-
     def kill(self):
         self._cast.quit_app()
+
+    def restore(self, data):
+        """
+        Recreates Chromecast state from save data.
+        Subclasses can implement this if its possible to recreate
+        a session from save data.
+        """
+
+        raise NotImplementedError
 
     def _not_supported(self):
         if self._cast.media_controller.status.player_state in ["UNKNOWN", "IDLE"]:
@@ -346,11 +415,18 @@ class DefaultCastController(CastController):
     def __init__(self, cast, name, app_id, prep=None):
         super(DefaultCastController, self).__init__(cast, name, app_id, prep=prep)
         self.info_type = "url"
+        self.save_capability = "complete" if (self._is_seekable and
+                                              self._cast.app_id == DEFAULT_APP["app_id"]) else None
 
     def play_media_url(self, video_url, **kwargs):
         self._controller.play_media(video_url, "video/mp4",
+                                    current_time=kwargs.get("current_time"),
                                     title=kwargs.get("title"), thumb=kwargs.get("thumb"))
         self._controller.block_until_active()
+
+    def restore(self, data):
+        self.play_media_url(data["content_id"], current_time=data["current_time"],
+                            title=data["title"], thumb=data["thumb"])
 
 
 class YoutubeCastController(CastController):
@@ -358,6 +434,7 @@ class YoutubeCastController(CastController):
         self._controller = YouTubeController()
         super(YoutubeCastController, self).__init__(cast, name, app_id, prep=prep)
         self.info_type = "id"
+        self.save_capability = "partial"
 
     # The controller's start_new_session method needs a video id.
     def _prep_yt(self, video_id):
@@ -381,3 +458,9 @@ class YoutubeCastController(CastController):
         # You can't add videos to the queue while the app is buffering.
         self._media_listener.not_buffering.wait()
         self._controller.add_to_queue(video_id)
+
+    @catch_namespace_error
+    def restore(self, data):
+        self.play_media_id(data["content_id"])
+        self._media_listener.playing.wait()
+        self.seek(data["current_time"])
