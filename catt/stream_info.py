@@ -137,7 +137,13 @@ class StreamInfo:
         return self._active_entry.get("thumbnail") if self.is_playlist else None
 
     def set_playlist_entry(self, number):
+        """
+        Must be called with valid entry number
+        before playlist entry properties can be accessed.
+        """
+
         if self.is_playlist:
+            # Some playlist entries needs to be re-processed.
             if self._entries[number].get("ie_key"):
                 self._active_entry = self._get_stream_preinfo(self._entries[number]["url"])
             else:
