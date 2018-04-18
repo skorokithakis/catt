@@ -208,12 +208,12 @@ class CastState(CattStore):
     def get_data(self, name):
         try:
             data = self._read_store()
-            save_data = data.get(name)
-            if save_data and set(save_data.keys()) != set(["controller", "data"]):
+            if set(next(iter(data.values())).keys()) != set(["controller", "data"]):
                 raise ValueError
-        except (json.decoder.JSONDecodeError, ValueError):
+        except (json.decoder.JSONDecodeError,
+                ValueError, StopIteration, AttributeError):
             raise StateFileError
-        return save_data
+        return data.get(name)
 
 
 class CastStatusListener:
