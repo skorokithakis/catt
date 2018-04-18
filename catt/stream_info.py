@@ -50,35 +50,22 @@ class StreamInfo:
                 self._best_format = STANDARD_FORMAT
 
             if self.is_playlist:
-                items = list(self._preinfo["entries"])
-                self._first_entry_info = self._get_stream_info(items[0]) if items else None
-                # Some playlist extractors do not provide an id key with entries,
-                # so we need to tolerate that. _playlist_items is only required by
-                # custom controllers anyway.
-                try:
-                    self._playlist_items = [item["id"] for item in items]
-                except KeyError:
-                    self._playlist_items = None
+                self._entries = list(self._preinfo["entries"])
+                self._active_entry = None
             else:
                 self._info = self._get_stream_info(self._preinfo)
 
     @property
     def is_video(self):
-        return True if not self.is_local_file and not self.is_playlist else False
+        return not self.is_local_file and not self.is_playlist
 
     @property
     def is_playlist(self):
-        if not self.is_local_file:
-            return True if "entries" in self._preinfo else False
-        else:
-            return False
+        return not self.is_local_file and "entries" in self._preinfo
 
     @property
     def extractor(self):
-        if not self.is_local_file:
-            return self._preinfo["extractor"].split(":")[0]
-        else:
-            return None
+        return self._preinfo["extractor"].split(":")[0] if not self.is_local_file else None
 
     @property
     def video_title(self):
@@ -112,8 +99,15 @@ class StreamInfo:
         return self._preinfo.get("thumbnail") if self.is_video else None
 
     @property
-    def playlist(self):
-        return self._playlist_items if self.is_playlist else None
+    def playlist_length(self):
+        return len(self._entries) if self.is_playlist else None
+
+    @property
+    def playlist_all_ids(self):
+        if self.is_playlist and self._entries and self._entries[0].get("id"):
+            return [entry["id"] for entry in self._entries]
+        else:
+            return None
 
     @property
     def playlist_title(self):
@@ -124,23 +118,36 @@ class StreamInfo:
         return self._preinfo["id"] if self.is_playlist else None
 
     @property
-    def first_entry_title(self):
-        return self._first_entry_info["title"] if self.is_playlist else None
+    def playlist_entry_title(self):
+        return self._active_entry["title"] if self.is_playlist else None
 
     @property
-    def first_entry_url(self):
+    def playlist_entry_url(self):
         if self.is_playlist:
-            return self._get_stream_url(self._first_entry_info)
+            return self._get_stream_url(self._get_stream_info(self._active_entry))
         else:
             return None
 
     @property
-    def first_entry_id(self):
-        return self._playlist_items[0] if self.is_playlist else None
+    def playlist_entry_id(self):
+        return self._active_entry["id"] if self.is_playlist else None
 
     @property
-    def first_entry_thumbnail(self):
-        return self._first_entry_info.get("thumbnail") if self.is_playlist else None
+    def playlist_entry_thumbnail(self):
+        return self._active_entry.get("thumbnail") if self.is_playlist else None
+
+    def set_playlist_entry(self, number):
+        """
+        Must be called with valid entry number
+        before playlist entry properties can be accessed.
+        """
+
+        if self.is_playlist:
+            # Some playlist entries needs to be re-processed.
+            if self._entries[number].get("ie_key"):
+                self._active_entry = self._get_stream_preinfo(self._entries[number]["url"])
+            else:
+                self._active_entry = self._entries[number]
 
     def _get_local_ip(self, cc_host):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

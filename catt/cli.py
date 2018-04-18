@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import configparser
+import random
 import time
 from pathlib import Path
 from threading import Thread
@@ -105,8 +106,10 @@ def write_config(settings):
 @click.argument("video_url", callback=process_url)
 @click.option("-f", "--force-default", is_flag=True,
               help="Force use of the default Chromecast app (use if a custom app doesn't work).")
+@click.option("-r", "--random-play", is_flag=True,
+              help="Play random item from playlist, if applicable.")
 @click.pass_obj
-def cast(settings, video_url, force_default):
+def cast(settings, video_url, force_default, random_play):
     controller = "default" if force_default else None
     cst, stream = setup_cast(settings["device"], video_url=video_url,
                              prep="app", controller=controller)
@@ -126,20 +129,28 @@ def cast(settings, video_url, force_default):
             time.sleep(1)
 
     elif stream.is_playlist:
-        if not stream.playlist:
+        if stream.playlist_length == 0:
             cst.kill(idle_only=True)
             raise CattCliError("Playlist is empty.")
-        click.echo("Casting remote file %s..." % video_url)
-        click.echo("Playing %s on \"%s\"..." % (stream.playlist_title, cst.cc_name))
-        try:
-            cst.play_playlist(stream.playlist)
-        except PlaybackError:
-            click.echo("Warning: Playlist playback not possible, playing first video.", err=True)
-            if cst.info_type == "url":
-                cst.play_media_url(stream.first_entry_url, title=stream.first_entry_title,
-                                   thumb=stream.first_entry_thumbnail)
-            elif cst.info_type == "id":
-                cst.play_media_id(stream.first_entry_id)
+        click.echo("Casting remote playlist %s..." % video_url)
+        if random_play:
+            stream.set_playlist_entry(random.randrange(0, stream.playlist_length))
+        else:
+            try:
+                if not stream.playlist_all_ids:
+                    raise ValueError
+                cst.play_playlist(stream.playlist_all_ids)
+                return
+            except (PlaybackError, ValueError):
+                click.echo("Warning: Playlist playback not possible, playing first video.", err=True)
+                stream.set_playlist_entry(0)
+        click.echo("Playing %s on \"%s\"..." % (stream.playlist_entry_title, cst.cc_name))
+        if cst.info_type == "url":
+            cst.play_media_url(stream.playlist_entry_url,
+                               title=stream.playlist_entry_title,
+                               thumb=stream.playlist_entry_thumbnail)
+        elif cst.info_type == "id":
+            cst.play_media_id(stream.playlist_entry_id)
 
     else:
         click.echo("Casting remote file %s..." % video_url)
