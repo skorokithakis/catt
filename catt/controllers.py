@@ -147,6 +147,8 @@ class PlaybackError(Exception):
 class CattStore:
     def __init__(self, store_path):
         self.store_path = store_path
+
+    def _create_store_dir(self):
         try:
             self.store_path.parent.mkdir()
         except FileExistsError:
@@ -180,6 +182,7 @@ class Cache(CattStore):
     def __init__(self):
         cache_path = Path(tempfile.gettempdir(), "catt_cache", "chromecast_hosts")
         super(Cache, self).__init__(cache_path)
+        self._create_store_dir()
 
         if not self.store_path.exists():
             devices = pychromecast.get_chromecasts()
