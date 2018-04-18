@@ -66,8 +66,8 @@ def process_url(ctx, param, value):
 
 def process_path(ctx, param, value):
     path = Path(value) if value else None
-    if path and path.is_dir():
-        raise CattCliError("Path is a directory.")
+    if path and (path.is_dir() or not path.parent.exists()):
+        raise CattCliError("The specified path is invalid.")
     return path
 
 
