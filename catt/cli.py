@@ -142,7 +142,8 @@ def cast(settings, video_url, force_default, random_play):
                 cst.play_playlist(stream.playlist_all_ids)
                 return
             except (PlaybackError, ValueError):
-                click.echo("Warning: Playlist playback not possible, playing first video.", err=True)
+                click.secho("Warning: ", fg="red", nl=False)
+                click.echo("Playlist playback not possible, playing first video.", err=True)
                 stream.set_playlist_entry(0)
         click.echo("Playing %s on \"%s\"..." % (stream.playlist_entry_title, cst.cc_name))
         if cst.info_type == "url":
@@ -283,8 +284,8 @@ def save(settings, path):
     if not cst.save_capability or cst.is_streaming_local_file:
         raise CattCliError("Saving state of this kind of content is not supported.")
     elif cst.save_capability == "partial":
-        click.echo("Warning: Please be advised that playlist data will not be saved.",
-                   err=True)
+        click.secho("Warning: ", fg="red", nl=False)
+        click.echo("Please be advised that playlist data will not be saved.", err=True)
 
     print_status(cst.media_info)
     if path and path.exists():

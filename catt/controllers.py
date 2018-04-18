@@ -4,7 +4,7 @@ import threading
 from pathlib import Path
 
 import pychromecast
-from click import ClickException, echo
+from click import ClickException, echo, secho
 
 from .stream_info import StreamInfo
 from .youtube import YouTubeController
@@ -104,7 +104,8 @@ def setup_cast(device_name, video_url=None, prep=None, controller=None):
     if (not controller and app["app_name"] != "default" and
             cast.cast_type not in app["supported_device_types"]):
         if stream:
-            echo("Warning: The %s app is not available for this device." % app["app_name"].capitalize(),
+            secho("Warning: ", fg="red", nl=False)
+            echo("The %s app is not available for this device." % app["app_name"].capitalize(),
                  err=True)
         app = DEFAULT_APP
 
