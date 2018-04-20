@@ -147,6 +147,8 @@ class PlaybackError(Exception):
 class CattStore:
     def __init__(self, store_path):
         self.store_path = store_path
+
+    def _create_store_dir(self):
         try:
             self.store_path.parent.mkdir()
         except FileExistsError:
@@ -180,6 +182,7 @@ class Cache(CattStore):
     def __init__(self):
         cache_path = Path(tempfile.gettempdir(), "catt_cache", "chromecast_hosts")
         super(Cache, self).__init__(cache_path)
+        self._create_store_dir()
 
         if not self.store_path.exists():
             devices = pychromecast.get_chromecasts()
@@ -208,12 +211,12 @@ class CastState(CattStore):
     def get_data(self, name):
         try:
             data = self._read_store()
-            save_data = data.get(name)
-            if save_data and set(save_data.keys()) != set(["controller", "data"]):
+            if set(next(iter(data.values())).keys()) != set(["controller", "data"]):
                 raise ValueError
-        except (json.decoder.JSONDecodeError, ValueError):
+        except (json.decoder.JSONDecodeError,
+                ValueError, StopIteration, AttributeError):
             raise StateFileError
-        return save_data
+        return data.get(name)
 
 
 class CastStatusListener:
