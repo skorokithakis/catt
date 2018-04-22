@@ -290,7 +290,7 @@ def save(settings, path):
     if path and path.exists():
         click.confirm("File already exists. Overwrite?", abort=True)
     click.echo("Saving...")
-    state = CastState(path or STATE_PATH)
+    state = CastState(path or STATE_PATH, create_dir=True if not path else False)
     state.set_data(cst.cc_name, {"controller": cst.name, "data": cst.media_info})
 
 

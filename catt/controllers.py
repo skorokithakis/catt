@@ -201,9 +201,10 @@ class Cache(CattStore):
 
 
 class CastState(CattStore):
-    def __init__(self, state_path):
+    def __init__(self, state_path, create_dir=False):
         super(CastState, self).__init__(state_path)
-
+        if create_dir:
+            self._create_store_dir()
         if not self.store_path.exists():
             self._write_store({})
 
