@@ -31,7 +31,7 @@ Usage
 
 To use Cast All The Things, just specify a URL::
 
-    catt cast "https://www.youtube.com/watch?v=VZMfhtKa-wo"
+    catt cast "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 
 CATT supports any service that youtube-dl supports, which includes most online
 video hosting services.
