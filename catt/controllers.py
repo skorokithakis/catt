@@ -46,13 +46,13 @@ def setup_cast(device_name, video_url=None, prep=None, controller=None):
     :param device_name: Friendly name of chromecast device to use.
     :type device_name: str or NoneType
     :param video_url: If supplied, setup_cast will try to exctract a media url
-                      from this, for playback or queing.
+                      from this, for playback or queueing.
     :type video_url: str
     :param prep: If prep = "app", video_url, if supplied, is meant for playback.
                  The relevant chromecast app is started during initialization
                  of the CastController object.
                  If prep = "control", video_url, if supplied, is meant for
-                 queing. The state of the selected chromecast is determined
+                 queueing. The state of the selected chromecast is determined
                  during initialization of the CastController object.
                  If prep = None, no preparation is done. Should only be used
                  if the desired action can be carried out regardless of the

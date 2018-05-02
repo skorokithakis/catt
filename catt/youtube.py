@@ -142,7 +142,7 @@ class YouTubeController(BaseController):
         Sets the session token(xsrf_token).
         """
         if not self.video_id:
-            raise ValueError("Cant start a session without the video_id.")
+            raise ValueError("Can't start a session without the video_id.")
         response = requests.get(self.video_url)
         response.raise_for_status()
         token = re.search(YOUTUBE_SESSION_TOKEN_REGEX, str(response.content))
@@ -335,7 +335,7 @@ class YouTubeController(BaseController):
     def add_to_queue(self, youtube_id):
         """
         Adds a video to the queue video will play after the currently playing video ends.
-        If video is buffering it wil not be added!
+        If video is buffering it will not be added!
         :param youtube_id: The video id to add to the queue
         """
         if not self.in_session:
