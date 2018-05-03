@@ -5,7 +5,7 @@ from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 
 
-def serve_file(filename, address="", port=45114):
+def serve_file(filename, address="", port=45114, content_type="video/mp4"):
     class FileHandler(BaseHTTPRequestHandler):
         def do_GET(self):  # noqa
             try:
@@ -15,8 +15,9 @@ def serve_file(filename, address="", port=45114):
                 mediafile = open(str(mediapath), "rb")
 
                 self.send_response(200)
-                self.send_header("Content-type", "video/mp4")
+                self.send_header("Content-type", content_type)
                 self.send_header("Content-Length", length)
+                self.send_header('Access-Control-Allow-Origin', '*')
                 self.send_header(
                     "Last-Modified",
                     time.strftime(

@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import configparser
 import random
+import re
+import tempfile
 import time
 from pathlib import Path
 from threading import Thread
@@ -103,14 +105,78 @@ def write_config(settings):
         raise CattCliError("No device specified.")
 
 
+def hunt_subtitle(video):
+    dot_pos = video.rfind(".")
+    if dot_pos < 0:
+        return None
+    naked_video = video[0:dot_pos]
+    for expected_sufix in [".vtt", ".VTT", ".srt", ".SRT"]:
+        new_name = naked_video + expected_sufix
+        if Path(new_name).is_file():
+            return new_name
+    return None
+
+
+def convert_srt_to_webvtt(filename):
+    # print("Converting {} to WebVTT".format(filename))
+    with open(filename, 'r') as srtfile:
+        content = srtfile.read()
+        content = re.sub(r'([\d]+)\,([\d]+)', r'\1.\2', content)
+
+        with tempfile.NamedTemporaryFile(mode='w+b',
+                                         suffix=".vtt",
+                                         delete=False) as vttfile:
+            target_filename = vttfile.name
+            vttfile.write("WEBVTT\n\n".encode())
+            vttfile.write(content.encode())
+            return target_filename
+
+
+def load_subtitle_if_exists(subtitle, video, stream):
+    if subtitle is None:
+        subtitle = hunt_subtitle(video)
+        if subtitle is None:
+            return None
+    print("Using subtitle {}".format(subtitle))
+
+    if "://" in subtitle:
+        # it's an URL
+        return subtitle
+
+    if len(subtitle) > 4 and subtitle.lower()[-4:] == ".srt":
+        subtitle = convert_srt_to_webvtt(subtitle)
+
+    subtitle_port = stream.port + 1
+    thr = Thread(target=serve_file,
+                 args=(subtitle, stream.local_ip, subtitle_port, "text/vtt;charset=utf-8"))
+    thr.setDaemon(True)
+    thr.start()
+    subtitle_url = "http://{}:{}/{}".format(stream.local_ip, subtitle_port, subtitle)
+    return subtitle_url
+
+
+def process_subtitle(ctx, param, value):
+    if value is None:
+        return None
+
+    if "://" in value:
+        return value
+
+    if not Path(value).is_file():
+        raise CattCliError("Subtitle file [{}] does not exist".format(value))
+
+    return value
+
+
 @cli.command(short_help="Send a video to a Chromecast for playing.")
 @click.argument("video_url", callback=process_url)
+@click.argument("subtitle", required=False, default=None, callback=process_subtitle)
 @click.option("-f", "--force-default", is_flag=True,
               help="Force use of the default Chromecast app (use if a custom app doesn't work).")
 @click.option("-r", "--random-play", is_flag=True,
               help="Play random item from playlist, if applicable.")
 @click.pass_obj
-def cast(settings, video_url, force_default, random_play):
+def cast(settings, video_url, subtitle, force_default, random_play):
     controller = "default" if force_default else None
     cst, stream = setup_cast(settings["device"], video_url=video_url,
                              prep="app", controller=controller)
@@ -118,13 +184,14 @@ def cast(settings, video_url, force_default, random_play):
     if stream.is_local_file:
         click.echo("Casting local file %s..." % video_url)
         click.echo("Playing %s on \"%s\"..." % (stream.video_title, cst.cc_name))
+        subtitle_url = load_subtitle_if_exists(subtitle, video_url, stream)
 
         thr = Thread(target=serve_file,
                      args=(video_url, stream.local_ip, stream.port))
 
         thr.setDaemon(True)
         thr.start()
-        cst.play_media_url(stream.video_url, title=stream.video_title)
+        cst.play_media_url(stream.video_url, title=stream.video_title, subtitles=subtitle_url)
         click.echo("Serving local file, press Ctrl+C when done.")
         while thr.is_alive():
             time.sleep(1)
