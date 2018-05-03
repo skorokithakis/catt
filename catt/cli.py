@@ -140,8 +140,9 @@ def convert_srt_to_webvtt(filename):
     raise CattCliError("Could not find the proper encoding of {}. Please convert it to utf-8".format(filename))
 
 
-def load_subtitle_if_exists(subtitle, video, local_ip, port):
-    subtitle = subtitle or hunt_subtitle(video)
+def load_subtitle_if_exists(subtitle, dont_load_subtitles_automatically, video, local_ip, port):
+    if subtitle is None and not dont_load_subtitles_automatically:
+        subtitle = hunt_subtitle(video)
     if subtitle is None:
         return None
     print("Using subtitle {}".format(subtitle))
@@ -181,8 +182,10 @@ def process_subtitle(ctx, param, value):
               help="Force use of the default Chromecast app (use if a custom app doesn't work).")
 @click.option("-r", "--random-play", is_flag=True,
               help="Play random item from playlist, if applicable.")
+@click.option("--dont-load-subtitles-automatically", is_flag=True, default=False,
+              help="Don't try to load subtitles automatically from the local folder.")
 @click.pass_obj
-def cast(settings, video_url, subtitle, force_default, random_play):
+def cast(settings, video_url, subtitle, force_default, random_play, dont_load_subtitles_automatically):
     controller = "default" if force_default else None
     cst, stream = setup_cast(settings["device"], video_url=video_url,
                              prep="app", controller=controller)
@@ -190,7 +193,7 @@ def cast(settings, video_url, subtitle, force_default, random_play):
     if stream.is_local_file:
         click.echo("Casting local file %s..." % video_url)
         click.echo("Playing %s on \"%s\"..." % (stream.video_title, cst.cc_name))
-        subtitle_url = load_subtitle_if_exists(subtitle, video_url, stream.local_ip, stream.port+1)
+        subtitle_url = load_subtitle_if_exists(subtitle, dont_load_subtitles_automatically, video_url, stream.local_ip, stream.port+1)
 
         thr = Thread(target=serve_file,
                      args=(video_url, stream.local_ip, stream.port))
