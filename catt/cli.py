@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import configparser
+import os
 import random
 import re
 import tempfile
@@ -106,14 +107,16 @@ def write_config(settings):
 
 
 def hunt_subtitle(video):
-    dot_pos = video.rfind(".")
-    if dot_pos < 0:
-        return None
-    naked_video = video[0:dot_pos]
-    for expected_sufix in [".vtt", ".VTT", ".srt", ".SRT"]:
-        new_name = naked_video + expected_sufix
-        if Path(new_name).is_file():
-            return new_name
+    """"Searches for subtitles in the current folder"""
+    video_path = Path(video)
+    video_path_stem_lower = video_path.stem.lower()
+    for entry in os.listdir(video_path.parent):
+        entry_path = Path(entry)
+        if entry_path.is_dir():
+            continue
+        if entry_path.stem.lower().startswith(video_path_stem_lower) and \
+                entry_path.suffix.lower() in [".vtt", ".srt"]:
+            return entry
     return None
 
 
@@ -139,8 +142,8 @@ def convert_srt_to_webvtt(filename):
 
 def load_subtitle_if_exists(subtitle, video, local_ip, port):
     subtitle = subtitle or hunt_subtitle(video)
-        if subtitle is None:
-            return None
+    if subtitle is None:
+        return None
     print("Using subtitle {}".format(subtitle))
 
     if "://" in subtitle:
@@ -187,7 +190,7 @@ def cast(settings, video_url, subtitle, force_default, random_play):
     if stream.is_local_file:
         click.echo("Casting local file %s..." % video_url)
         click.echo("Playing %s on \"%s\"..." % (stream.video_title, cst.cc_name))
-        subtitle_url = load_subtitle_if_exists(subtitle, video_url, stream.local_ip, stream.port)
+        subtitle_url = load_subtitle_if_exists(subtitle, video_url, stream.local_ip, stream.port+1)
 
         thr = Thread(target=serve_file,
                      args=(video_url, stream.local_ip, stream.port))
