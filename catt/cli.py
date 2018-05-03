@@ -119,17 +119,22 @@ def hunt_subtitle(video):
 
 def convert_srt_to_webvtt(filename):
     # print("Converting {} to WebVTT".format(filename))
-    with open(filename, 'r') as srtfile:
-        content = srtfile.read()
-        content = re.sub(r'([\d]+)\,([\d]+)', r'\1.\2', content)
+    for possible_encoding in ['utf-8', 'iso-8859-15']:
+        try:
+            with open(filename, 'r', encoding=possible_encoding) as srtfile:
+                content = srtfile.read()
+                content = re.sub(r'([\d]+)\,([\d]+)', r'\1.\2', content)
 
-        with tempfile.NamedTemporaryFile(mode='w+b',
-                                         suffix=".vtt",
-                                         delete=False) as vttfile:
-            target_filename = vttfile.name
-            vttfile.write("WEBVTT\n\n".encode())
-            vttfile.write(content.encode())
-            return target_filename
+                with tempfile.NamedTemporaryFile(mode='w+b',
+                                                 suffix=".vtt",
+                                                 delete=False) as vttfile:
+                    target_filename = vttfile.name
+                    vttfile.write("WEBVTT\n\n".encode())
+                    vttfile.write(content.encode())
+                    return target_filename
+        except UnicodeDecodeError:
+            pass
+    raise CattCliError("Could not find the proper encoding of {}. Please convert it to utf-8".format(filename))
 
 
 def load_subtitle_if_exists(subtitle, video, stream):
