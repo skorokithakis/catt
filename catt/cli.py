@@ -137,9 +137,8 @@ def convert_srt_to_webvtt(filename):
     raise CattCliError("Could not find the proper encoding of {}. Please convert it to utf-8".format(filename))
 
 
-def load_subtitle_if_exists(subtitle, video, stream):
-    if subtitle is None:
-        subtitle = hunt_subtitle(video)
+def load_subtitle_if_exists(subtitle, video, local_ip, port):
+    subtitle = subtitle or hunt_subtitle(video)
         if subtitle is None:
             return None
     print("Using subtitle {}".format(subtitle))
@@ -148,15 +147,14 @@ def load_subtitle_if_exists(subtitle, video, stream):
         # it's an URL
         return subtitle
 
-    if len(subtitle) > 4 and subtitle.lower()[-4:] == ".srt":
+    if subtitle.lower().endswith(".srt"):
         subtitle = convert_srt_to_webvtt(subtitle)
 
-    subtitle_port = stream.port + 1
     thr = Thread(target=serve_file,
-                 args=(subtitle, stream.local_ip, subtitle_port, "text/vtt;charset=utf-8"))
+                 args=(subtitle, local_ip, port, "text/vtt;charset=utf-8"))
     thr.setDaemon(True)
     thr.start()
-    subtitle_url = "http://{}:{}/{}".format(stream.local_ip, subtitle_port, subtitle)
+    subtitle_url = "http://{}:{}/{}".format(local_ip, port, subtitle)
     return subtitle_url
 
 
@@ -175,7 +173,7 @@ def process_subtitle(ctx, param, value):
 
 @cli.command(short_help="Send a video to a Chromecast for playing.")
 @click.argument("video_url", callback=process_url)
-@click.argument("subtitle", required=False, default=None, callback=process_subtitle)
+@click.argument("subtitle", required=False, callback=process_subtitle)
 @click.option("-f", "--force-default", is_flag=True,
               help="Force use of the default Chromecast app (use if a custom app doesn't work).")
 @click.option("-r", "--random-play", is_flag=True,
@@ -189,7 +187,7 @@ def cast(settings, video_url, subtitle, force_default, random_play):
     if stream.is_local_file:
         click.echo("Casting local file %s..." % video_url)
         click.echo("Playing %s on \"%s\"..." % (stream.video_title, cst.cc_name))
-        subtitle_url = load_subtitle_if_exists(subtitle, video_url, stream)
+        subtitle_url = load_subtitle_if_exists(subtitle, video_url, stream.local_ip, stream.port)
 
         thr = Thread(target=serve_file,
                      args=(video_url, stream.local_ip, stream.port))
