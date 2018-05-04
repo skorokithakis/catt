@@ -367,7 +367,8 @@ def readconfig():
          "aliases": {"device1": "device_name"}}
     """
     config = configparser.ConfigParser()
-    config.read(CONFIG_PATH)
+    # ConfigParser.read does not take path-like objects <3.6.
+    config.read(str(CONFIG_PATH))
     conf_dict = {section: dict(config.items(section)) for section in config.sections()}
 
     conf = conf_dict.get("options", {})
