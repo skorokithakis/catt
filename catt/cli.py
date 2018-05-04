@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 import configparser
 import os
 import random
@@ -9,6 +10,7 @@ from pathlib import Path
 from threading import Thread
 
 import click
+import requests
 
 from .controllers import (
     Cache,
@@ -120,21 +122,25 @@ def hunt_subtitle(video):
     return None
 
 
+def convert_srt_to_webvtt_helper(content):
+    content = re.sub(r'([\d]+)\,([\d]+)', r'\1.\2', content)
+
+    with tempfile.NamedTemporaryFile(mode='w+b',
+                                     suffix=".vtt",
+                                     delete=False) as vttfile:
+        target_filename = vttfile.name
+        vttfile.write("WEBVTT\n\n".encode())
+        vttfile.write(content.encode())
+        return target_filename
+
+
 def convert_srt_to_webvtt(filename):
     # print("Converting {} to WebVTT".format(filename))
     for possible_encoding in ['utf-8', 'iso-8859-15']:
         try:
             with open(filename, 'r', encoding=possible_encoding) as srtfile:
                 content = srtfile.read()
-                content = re.sub(r'([\d]+)\,([\d]+)', r'\1.\2', content)
-
-                with tempfile.NamedTemporaryFile(mode='w+b',
-                                                 suffix=".vtt",
-                                                 delete=False) as vttfile:
-                    target_filename = vttfile.name
-                    vttfile.write("WEBVTT\n\n".encode())
-                    vttfile.write(content.encode())
-                    return target_filename
+                return convert_srt_to_webvtt_helper(content)
         except UnicodeDecodeError:
             pass
     raise CattCliError("Could not find the proper encoding of {}. Please convert it to utf-8".format(filename))
@@ -145,11 +151,15 @@ def load_subtitle_if_exists(subtitle, dont_load_subtitles_automatically, video, 
         subtitle = hunt_subtitle(video)
     if subtitle is None:
         return None
-    print("Using subtitle {}".format(subtitle))
+    click.echo("Using subtitle {}".format(subtitle))
 
     if "://" in subtitle:
         # it's an URL
-        return subtitle
+        if subtitle.lower().endswith(".srt"):
+            content = requests.get(subtitle).text
+            subtitle = convert_srt_to_webvtt_helper(content)
+        else:
+            return subtitle
 
     if subtitle.lower().endswith(".srt"):
         subtitle = convert_srt_to_webvtt(subtitle)
@@ -193,7 +203,7 @@ def cast(settings, video_url, subtitle, force_default, random_play, dont_load_su
     if stream.is_local_file:
         click.echo("Casting local file %s..." % video_url)
         click.echo("Playing %s on \"%s\"..." % (stream.video_title, cst.cc_name))
-        subtitle_url = load_subtitle_if_exists(subtitle, dont_load_subtitles_automatically, video_url, stream.local_ip, stream.port+1)
+        subtitle_url = load_subtitle_if_exists(subtitle, dont_load_subtitles_automatically, video_url, stream.local_ip, stream.port + 1)
 
         thr = Thread(target=serve_file,
                      args=(video_url, stream.local_ip, stream.port))
