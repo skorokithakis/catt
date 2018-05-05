@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import configparser
-import os
 import random
 import re
 import tempfile
@@ -112,13 +111,13 @@ def hunt_subtitle(video):
     """"Searches for subtitles in the current folder"""
     video_path = Path(video)
     video_path_stem_lower = video_path.stem.lower()
-    for entry in os.listdir(video_path.parent):
+    for entry in video_path.parent.iterdir():
         entry_path = Path(entry)
         if entry_path.is_dir():
             continue
         if entry_path.stem.lower().startswith(video_path_stem_lower) and \
                 entry_path.suffix.lower() in [".vtt", ".srt"]:
-            return entry
+            return str(entry_path.resolve())
     return None
 
 
@@ -146,9 +145,8 @@ def convert_srt_to_webvtt(filename):
     raise CattCliError("Could not find the proper encoding of {}. Please convert it to utf-8".format(filename))
 
 
-def load_subtitle_if_exists(subtitle, dont_load_subtitles_automatically, video, local_ip, port):
-    if subtitle is None and not dont_load_subtitles_automatically:
-        subtitle = hunt_subtitle(video)
+def load_subtitle_if_exists(subtitle, video, local_ip, port):
+    subtitle = subtitle or hunt_subtitle(video)
     if subtitle is None:
         return None
     click.echo("Using subtitle {}".format(subtitle))
@@ -203,7 +201,10 @@ def cast(settings, video_url, subtitle, force_default, random_play, dont_load_su
     if stream.is_local_file:
         click.echo("Casting local file %s..." % video_url)
         click.echo("Playing %s on \"%s\"..." % (stream.video_title, cst.cc_name))
-        subtitle_url = load_subtitle_if_exists(subtitle, dont_load_subtitles_automatically, video_url, stream.local_ip, stream.port + 1)
+        if subtitle is None and dont_load_subtitles_automatically:
+            subtitle_url = None
+        else:
+            subtitle_url = load_subtitle_if_exists(subtitle, video_url, stream.local_ip, stream.port + 1)
 
         thr = Thread(target=serve_file,
                      args=(video_url, stream.local_ip, stream.port))
