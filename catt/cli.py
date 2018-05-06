@@ -121,7 +121,7 @@ def hunt_subtitle(video):
 
 
 def convert_srt_to_webvtt_helper(content):
-    content = re.sub(r'([\d]+)\,([\d]+)', r'\1.\2', content)
+    content = re.sub(r"^(.*? \-\-\> .*?)$", lambda m: m.group(1).replace(",", "."), content, flags=re.MULTILINE)
 
     with tempfile.NamedTemporaryFile(mode='w+b',
                                      suffix=".vtt",
