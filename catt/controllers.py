@@ -3,8 +3,9 @@ import tempfile
 import threading
 from pathlib import Path
 
-import pychromecast
 from click import ClickException, echo
+
+import pychromecast
 
 from .stream_info import StreamInfo
 from .util import warning

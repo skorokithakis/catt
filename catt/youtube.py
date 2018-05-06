@@ -9,8 +9,10 @@ try:
 except ImportError:
     JSONDecodeError = ValueError
 
-import requests
 from pychromecast.controllers import BaseController
+
+import requests
+
 
 YOUTUBE_BASE_URL = "https://www.youtube.com/"
 YOUTUBE_WATCH_VIDEO_URL = YOUTUBE_BASE_URL + "watch?v="
