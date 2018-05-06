@@ -111,8 +111,7 @@ def hunt_subtitle(video):
     """"Searches for subtitles in the current folder"""
     video_path = Path(video)
     video_path_stem_lower = video_path.stem.lower()
-    for entry in video_path.parent.iterdir():
-        entry_path = Path(entry)
+    for entry_path in video_path.parent.iterdir():
         if entry_path.is_dir():
             continue
         if entry_path.stem.lower().startswith(video_path_stem_lower) and \
@@ -134,7 +133,6 @@ def convert_srt_to_webvtt_helper(content):
 
 
 def convert_srt_to_webvtt(filename):
-    # print("Converting {} to WebVTT".format(filename))
     for possible_encoding in ['utf-8', 'iso-8859-15']:
         try:
             with open(filename, 'r', encoding=possible_encoding) as srtfile:
@@ -146,7 +144,7 @@ def convert_srt_to_webvtt(filename):
 
 
 def load_subtitle_if_exists(subtitle, video, local_ip, port):
-    subtitle = subtitle or hunt_subtitle(video)
+    subtitle = subtitle if subtitle else hunt_subtitle(video)
     if subtitle is None:
         return None
     click.echo("Using subtitle {}".format(subtitle))
@@ -190,10 +188,10 @@ def process_subtitle(ctx, param, value):
               help="Force use of the default Chromecast app (use if a custom app doesn't work).")
 @click.option("-r", "--random-play", is_flag=True,
               help="Play random item from playlist, if applicable.")
-@click.option("--dont-load-subtitles-automatically", is_flag=True, default=False,
+@click.option("--no-subs", is_flag=True, default=False,
               help="Don't try to load subtitles automatically from the local folder.")
 @click.pass_obj
-def cast(settings, video_url, subtitle, force_default, random_play, dont_load_subtitles_automatically):
+def cast(settings, video_url, subtitle, force_default, random_play, no_subs):
     controller = "default" if force_default else None
     cst, stream = setup_cast(settings["device"], video_url=video_url,
                              prep="app", controller=controller)
@@ -201,7 +199,7 @@ def cast(settings, video_url, subtitle, force_default, random_play, dont_load_su
     if stream.is_local_file:
         click.echo("Casting local file %s..." % video_url)
         click.echo("Playing %s on \"%s\"..." % (stream.video_title, cst.cc_name))
-        if subtitle is None and dont_load_subtitles_automatically:
+        if subtitle is None and no_subs:
             subtitle_url = None
         else:
             subtitle_url = load_subtitle_if_exists(subtitle, video_url, stream.local_ip, stream.port + 1)
