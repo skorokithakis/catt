@@ -6,11 +6,25 @@ from pathlib import Path
 
 
 def serve_file(filename, address="", port=45114, content_type="video/mp4"):
+    mediapath = Path(filename)
+    length = mediapath.stat().st_size
+
     class FileHandler(BaseHTTPRequestHandler):
+
+        def format_size(self, size):
+            for size_unity in ["B", "KB", "MB", "GB", "TB"]:
+                if size < 1024:
+                    return size, size_unity
+                size = size / 1024
+            return size * 1024, size_unity
+
+        def log_message(self, format, *args, **kwargs):
+            size, size_unity = self.format_size(length)
+            format += " {} - {:0.2f} {}".format(content_type, size, size_unity)
+            return super(FileHandler, self).log_message(format, *args, **kwargs)
+
         def do_GET(self):  # noqa
             try:
-                mediapath = Path(filename)
-                length = mediapath.stat().st_size
                 mtime = mediapath.stat().st_mtime
                 mediafile = open(str(mediapath), "rb")
 
