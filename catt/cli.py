@@ -183,7 +183,8 @@ def process_subtitle(ctx, param, value):
 
 @cli.command(short_help="Send a video to a Chromecast for playing.")
 @click.argument("video_url", callback=process_url)
-@click.argument("subtitle", required=False, callback=process_subtitle)
+@click.option("-s", "--subtitle",
+              callback=process_subtitle, help="Specify a Subtitle")
 @click.option("-f", "--force-default", is_flag=True,
               help="Force use of the default Chromecast app (use if a custom app doesn't work).")
 @click.option("-r", "--random-play", is_flag=True,
