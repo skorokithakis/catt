@@ -3,9 +3,8 @@ import tempfile
 import threading
 from pathlib import Path
 
-from click import ClickException, echo
-
 import pychromecast
+from click import ClickException, echo
 
 from .stream_info import StreamInfo
 from .util import warning

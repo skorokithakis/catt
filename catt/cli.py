@@ -9,17 +9,16 @@ from pathlib import Path
 from threading import Thread
 
 import click
-
 import requests
 
 from .controllers import (
     Cache,
     CastState,
-    PlaybackError,
-    StateFileError,
     get_chromecast,
     get_chromecasts,
+    PlaybackError,
     setup_cast,
+    StateFileError
 )
 from .http_server import serve_file
 from .util import warning
