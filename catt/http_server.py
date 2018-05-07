@@ -5,10 +5,7 @@ from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 
 
-def serve_file(filename, address="", port=45114, content_type="video/mp4"):
-    mediapath = Path(filename)
-    length = mediapath.stat().st_size
-
+def serve_file(filename, address="", port=45114, content_type=None):
     class FileHandler(BaseHTTPRequestHandler):
 
         def format_size(self, size):
@@ -51,6 +48,12 @@ def serve_file(filename, address="", port=45114, content_type="video/mp4"):
                 traceback.print_exc()
 
             mediafile.close()
+
+    if content_type is None:
+        content_type = "video/mp4"
+
+    mediapath = Path(filename)
+    length = mediapath.stat().st_size
 
     httpd = socketserver.TCPServer((address, port), FileHandler)
     httpd.serve_forever()
