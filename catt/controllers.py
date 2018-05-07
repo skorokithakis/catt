@@ -437,7 +437,8 @@ class DefaultCastController(CastController):
     def play_media_url(self, video_url, **kwargs):
         self._controller.play_media(video_url, "video/mp4",
                                     current_time=kwargs.get("current_time"),
-                                    title=kwargs.get("title"), thumb=kwargs.get("thumb"))
+                                    title=kwargs.get("title"), thumb=kwargs.get("thumb"),
+                                    subtitles=kwargs.get("subtitles"))
         self._controller.block_until_active()
 
     def restore(self, data):
