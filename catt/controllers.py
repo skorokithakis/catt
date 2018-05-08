@@ -435,7 +435,8 @@ class DefaultCastController(CastController):
                                               self._cast.app_id == DEFAULT_APP["app_id"]) else None
 
     def play_media_url(self, video_url, **kwargs):
-        self._controller.play_media(video_url, "video/mp4",
+        content_type = kwargs.get("content_type", "video/mp4")
+        self._controller.play_media(video_url, content_type,
                                     current_time=kwargs.get("current_time"),
                                     title=kwargs.get("title"), thumb=kwargs.get("thumb"),
                                     subtitles=kwargs.get("subtitles"))

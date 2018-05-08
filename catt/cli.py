@@ -181,6 +181,25 @@ def process_subtitle(ctx, param, value):
     return value
 
 
+def get_mime(path):
+    # source: https://developers.google.com/cast/docs/media
+    extension = Path(path).suffix.lower()
+    extensions = {
+        ".mp4": "video/mp4",
+        ".m4a": "audio/mp4",
+        ".mp3": "audio/mp3",
+        ".mpa": "audio/mpeg",
+        ".webm": "video/webm",
+        ".mkv": "video/x-matroska",
+        ".bmp": "image/bmp",
+        ".jpg": "image/jpeg",
+        ".gif": "image/gif",
+        ".png": "image/png",
+        ".webp": "image/web",
+    }
+    return extensions.get(extension, "video/mp4")
+
+
 @cli.command(short_help="Send a video to a Chromecast for playing.")
 @click.argument("video_url", callback=process_url)
 @click.option("-s", "--subtitle",
@@ -205,12 +224,13 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs):
         else:
             subtitle_url = load_subtitle_if_exists(subtitle, video_url, stream.local_ip, stream.port + 1)
 
+        content_type = get_mime(video_url)
         thr = Thread(target=serve_file,
-                     args=(video_url, stream.local_ip, stream.port))
+                     args=(video_url, stream.local_ip, stream.port, content_type))
 
         thr.setDaemon(True)
         thr.start()
-        cst.play_media_url(stream.video_url, title=stream.video_title, subtitles=subtitle_url)
+        cst.play_media_url(stream.video_url, content_type=content_type, title=stream.video_title, subtitles=subtitle_url)
         click.echo("Serving local file, press Ctrl+C when done.")
         while thr.is_alive():
             time.sleep(1)
