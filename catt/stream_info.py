@@ -1,8 +1,8 @@
 import random
-import socket
 from pathlib import Path
 
 import click
+import netifaces
 import youtube_dl
 
 
@@ -26,10 +26,10 @@ class CattInfoError(click.ClickException):
 
 
 class StreamInfo:
-    def __init__(self, video_url, model=None, host=None):
+    def __init__(self, video_url, model=None):
         if "://" not in video_url:
             self._local_file = video_url
-            self.local_ip = self._get_local_ip(host)
+            self.local_ip = self._get_local_ip()
             self.port = random.randrange(45000, 47000)
             self.is_local_file = True
         else:
@@ -149,10 +149,9 @@ class StreamInfo:
             else:
                 self._active_entry = self._entries[number]
 
-    def _get_local_ip(self, cc_host):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.connect((cc_host, 0))
-        return sock.getsockname()[0]
+    def _get_local_ip(self):
+        interface = netifaces.gateways()['default'][netifaces.AF_INET][1]
+        return netifaces.ifaddresses(interface)[netifaces.AF_INET][0]['addr']
 
     def _get_stream_preinfo(self, video_url):
         try:

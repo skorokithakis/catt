@@ -81,7 +81,7 @@ def setup_cast(device_name, video_url=None, prep=None, controller=None):
 
     if video_url:
         cc_info = (cast.device.manufacturer, cast.model_name)
-        stream = StreamInfo(video_url, model=cc_info, host=cast.host)
+        stream = StreamInfo(video_url, model=cc_info)
 
     if controller:
         if controller == "default":
