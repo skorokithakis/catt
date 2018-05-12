@@ -21,7 +21,7 @@ from .controllers import (
     StateFileError
 )
 from .http_server import serve_file
-from .util import warning
+from .util import get_mime, warning
 
 
 CONFIG_DIR = Path(click.get_app_dir("catt"))
@@ -179,25 +179,6 @@ def process_subtitle(ctx, param, value):
         raise CattCliError("Subtitle file [{}] does not exist".format(value))
 
     return value
-
-
-def get_mime(path):
-    # source: https://developers.google.com/cast/docs/media
-    extension = Path(path).suffix.lower()
-    extensions = {
-        ".mp4": "video/mp4",
-        ".m4a": "audio/mp4",
-        ".mp3": "audio/mp3",
-        ".mpa": "audio/mpeg",
-        ".webm": "video/webm",
-        ".mkv": "video/x-matroska",
-        ".bmp": "image/bmp",
-        ".jpg": "image/jpeg",
-        ".gif": "image/gif",
-        ".png": "image/png",
-        ".webp": "image/web",
-    }
-    return extensions.get(extension, "video/mp4")
 
 
 @cli.command(short_help="Send a video to a Chromecast for playing.")
