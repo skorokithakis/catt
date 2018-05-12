@@ -5,6 +5,7 @@ from pathlib import Path
 import click
 import youtube_dl
 
+from .util import get_mime
 
 AUDIO_MODELS = [("Google Inc.", "Chromecast Audio")]
 ULTRA_MODELS = [("Xiaomi", "MIBOX3"), ("Google Inc.", "Chromecast Ultra")]
@@ -93,6 +94,15 @@ class StreamInfo:
     @property
     def video_id(self):
         return self._preinfo["id"] if self.is_video else None
+
+    @property
+    def guessed_content_type(self):
+        if self.is_local_file:
+            return get_mime(self.video_title)
+        elif self.is_video and self._info.get("direct"):
+            return get_mime(self._info["webpage_url_basename"])
+        else:
+            return "video/mp4"
 
     @property
     def video_thumbnail(self):
