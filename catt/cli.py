@@ -236,7 +236,8 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs):
         if cst.info_type == "url":
             cst.play_media_url(stream.playlist_entry_url,
                                title=stream.playlist_entry_title,
-                               thumb=stream.playlist_entry_thumbnail)
+                               thumb=stream.playlist_entry_thumbnail,
+                               content_type=stream.guessed_content_type)
         elif cst.info_type == "id":
             cst.play_media_id(stream.playlist_entry_id)
 
@@ -245,7 +246,8 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs):
         click.echo("Playing %s on \"%s\"..." % (stream.video_title, cst.cc_name))
         if cst.info_type == "url":
             cst.play_media_url(stream.video_url, title=stream.video_title,
-                               thumb=stream.video_thumbnail)
+                               thumb=stream.video_thumbnail,
+                               content_type=stream.guessed_content_type)
         elif cst.info_type == "id":
             cst.play_media_id(stream.video_id)
 
