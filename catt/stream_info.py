@@ -107,7 +107,7 @@ class StreamInfo:
         elif self.is_remote_file and self._info.get("direct"):
             return guess_mime(self._info["webpage_url_basename"])
         else:
-            return "video/mp4"
+            return None
 
     @property
     def playlist_length(self):
