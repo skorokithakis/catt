@@ -8,7 +8,7 @@ def warning(msg):
     click.echo(msg, err=True)
 
 
-def get_mime(path):
+def guess_mime(path):
     # source: https://developers.google.com/cast/docs/media
     extension = Path(path).suffix.lower()
     extensions = {

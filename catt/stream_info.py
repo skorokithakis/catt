@@ -5,7 +5,7 @@ from pathlib import Path
 import click
 import youtube_dl
 
-from .util import get_mime
+from .util import guess_mime
 
 AUDIO_MODELS = [("Google Inc.", "Chromecast Audio")]
 ULTRA_MODELS = [("Xiaomi", "MIBOX3"), ("Google Inc.", "Chromecast Ultra")]
@@ -98,9 +98,9 @@ class StreamInfo:
     @property
     def guessed_content_type(self):
         if self.is_local_file:
-            return get_mime(self.video_title)
+            return guess_mime(self.video_title)
         elif self.is_video and self._info.get("direct"):
-            return get_mime(self._info["webpage_url_basename"])
+            return guess_mime(self._info["webpage_url_basename"])
         else:
             return "video/mp4"
 
