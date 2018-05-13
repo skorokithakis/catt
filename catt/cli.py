@@ -21,7 +21,7 @@ from .controllers import (
     StateFileError
 )
 from .http_server import serve_file
-from .util import guess_mime, warning
+from .util import warning
 
 
 CONFIG_DIR = Path(click.get_app_dir("catt"))
@@ -205,13 +205,13 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs):
         else:
             subtitle_url = load_subtitle_if_exists(subtitle, video_url, stream.local_ip, stream.port + 1)
 
-        content_type = guess_mime(video_url)
         thr = Thread(target=serve_file,
-                     args=(video_url, stream.local_ip, stream.port, content_type))
+                     args=(video_url, stream.local_ip, stream.port, stream.guessed_content_type))
 
         thr.setDaemon(True)
         thr.start()
-        cst.play_media_url(stream.video_url, content_type=content_type, title=stream.video_title, subtitles=subtitle_url)
+        cst.play_media_url(stream.video_url, content_type=stream.guessed_content_type,
+                           title=stream.video_title, subtitles=subtitle_url)
         click.echo("Serving local file, press Ctrl+C when done.")
         while thr.is_alive():
             time.sleep(1)
