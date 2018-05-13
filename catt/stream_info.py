@@ -7,6 +7,7 @@ import youtube_dl
 
 from .util import guess_mime
 
+
 AUDIO_MODELS = [("Google Inc.", "Chromecast Audio")]
 ULTRA_MODELS = [("Xiaomi", "MIBOX3"), ("Google Inc.", "Chromecast Ultra")]
 
@@ -57,7 +58,7 @@ class StreamInfo:
                 self._info = self._get_stream_info(self._preinfo)
 
     @property
-    def is_video(self):
+    def is_remote_file(self):
         return not self.is_local_file and not self.is_playlist
 
     @property
@@ -93,20 +94,20 @@ class StreamInfo:
 
     @property
     def video_id(self):
-        return self._preinfo["id"] if self.is_video else None
+        return self._preinfo["id"] if self.is_remote_file else None
+
+    @property
+    def video_thumbnail(self):
+        return self._preinfo.get("thumbnail") if self.is_remote_file else None
 
     @property
     def guessed_content_type(self):
         if self.is_local_file:
             return guess_mime(self.video_title)
-        elif self.is_video and self._info.get("direct"):
+        elif self.is_remote_file and self._info.get("direct"):
             return guess_mime(self._info["webpage_url_basename"])
         else:
             return "video/mp4"
-
-    @property
-    def video_thumbnail(self):
-        return self._preinfo.get("thumbnail") if self.is_video else None
 
     @property
     def playlist_length(self):
