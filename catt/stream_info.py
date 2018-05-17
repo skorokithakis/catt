@@ -1,8 +1,8 @@
 import random
 from pathlib import Path
 
-import click
 import netifaces
+
 import youtube_dl
 
 from .util import guess_mime
@@ -23,7 +23,7 @@ ULTRA_FORMAT = BEST_MAX_4K
 STANDARD_FORMAT = BEST_MAX_2K + MAX_50FPS + TWITCH_NO_60FPS
 
 
-class CattInfoError(click.ClickException):
+class YouTubeExtractorFailedException(Exception):
     pass
 
 
@@ -34,28 +34,35 @@ class StreamInfo:
             self.local_ip = self._get_local_ip()
             self.port = random.randrange(45000, 47000)
             self.is_local_file = True
+            self.is_standard_website = False
         else:
-            self._ydl = youtube_dl.YoutubeDL({"quiet": True, "no_warnings": True})
-            self._preinfo = self._get_stream_preinfo(video_url)
-            # Some playlist urls needs to be re-processed (such as youtube channel urls).
-            if self._preinfo.get("ie_key"):
-                self._preinfo = self._get_stream_preinfo(self._preinfo["url"])
+            self.is_local_file = False
             self.local_ip = None
             self.port = None
-            self.is_local_file = False
+            try:
+                self.is_standard_website = False
+                self._ydl = youtube_dl.YoutubeDL({"quiet": True, "no_warnings": True})
+                self._preinfo = self._get_stream_preinfo(video_url)
+                # Some playlist urls needs to be re-processed (such as youtube channel urls).
+                if self._preinfo.get("ie_key"):
+                    self._preinfo = self._get_stream_preinfo(self._preinfo["url"])
 
-            if model in AUDIO_MODELS:
-                self._best_format = AUDIO_FORMAT
-            elif model in ULTRA_MODELS:
-                self._best_format = ULTRA_FORMAT
-            else:
-                self._best_format = STANDARD_FORMAT
+                if model in AUDIO_MODELS:
+                    self._best_format = AUDIO_FORMAT
+                elif model in ULTRA_MODELS:
+                    self._best_format = ULTRA_FORMAT
+                else:
+                    self._best_format = STANDARD_FORMAT
 
-            if self.is_playlist:
-                self._entries = list(self._preinfo["entries"])
-                self._active_entry = None
-            else:
-                self._info = self._get_stream_info(self._preinfo)
+                if self.is_playlist:
+                    self._entries = list(self._preinfo["entries"])
+                    self._active_entry = None
+                else:
+                    self._info = self._get_stream_info(self._preinfo)
+
+            except YouTubeExtractorFailedException:
+                self._video_url = video_url
+                self.is_standard_website = True
 
     @property
     def is_remote_file(self):
@@ -63,14 +70,20 @@ class StreamInfo:
 
     @property
     def is_playlist(self):
+        if self.is_standard_website:
+            return False
         return not self.is_local_file and "entries" in self._preinfo
 
     @property
     def extractor(self):
+        if self.is_standard_website:
+            return None
         return self._preinfo["extractor"].split(":")[0] if not self.is_local_file else None
 
     @property
     def video_title(self):
+        if self.is_standard_website:
+            return self.video_url
         if self.is_local_file:
             return Path(self._local_file).name
         elif self.is_playlist:
@@ -85,6 +98,8 @@ class StreamInfo:
 
     @property
     def video_url(self):
+        if self.is_standard_website:
+            return self._video_url
         if self.is_local_file:
             return "http://%s:%s/?loaded_from_catt" % (self.local_ip, self.port)
         elif self.is_playlist:
@@ -94,14 +109,20 @@ class StreamInfo:
 
     @property
     def video_id(self):
+        if self.is_standard_website:
+            return self.video_url
         return self._preinfo["id"] if self.is_remote_file else None
 
     @property
     def video_thumbnail(self):
+        if self.is_standard_website:
+            return None
         return self._preinfo.get("thumbnail") if self.is_remote_file else None
 
     @property
     def guessed_content_type(self):
+        if self.is_standard_website:
+            return None
         if self.is_local_file:
             return guess_mime(self.video_title)
         elif self.is_remote_file and self._info.get("direct"):
@@ -168,13 +189,13 @@ class StreamInfo:
         try:
             return self._ydl.extract_info(video_url, process=False)
         except youtube_dl.utils.DownloadError:
-            raise CattInfoError("Remote resource not found.")
+            raise YouTubeExtractorFailedException("Remote resource not found.")
 
     def _get_stream_info(self, preinfo):
         try:
             return self._ydl.process_ie_result(preinfo, download=False)
         except (youtube_dl.utils.ExtractorError, youtube_dl.utils.DownloadError):
-            raise CattInfoError("Youtube-dl extractor failed.")
+            raise YouTubeExtractorFailedException("Youtube-dl extractor failed.")
 
     def _get_stream_url(self, info):
         format_selector = self._ydl.build_format_selector(self._best_format)
@@ -182,7 +203,7 @@ class StreamInfo:
         try:
             best_format = next(format_selector(info))
         except StopIteration:
-            raise CattInfoError("No suitable format was found.")
+            raise YouTubeExtractorFailedException("No suitable format was found.")
         # This is thrown when url points directly to media file.
         except KeyError:
             best_format = info

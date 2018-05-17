@@ -5,6 +5,8 @@ from pathlib import Path
 
 import pychromecast
 from click import ClickException, echo
+from pychromecast.controllers.dashcast import APP_DASHCAST as DASHCAST_APP_ID
+from pychromecast.controllers.dashcast import DashCastController as PyChromecastDashCastController
 
 from .stream_info import StreamInfo
 from .util import warning
@@ -13,6 +15,7 @@ from .youtube import YouTubeController
 
 APP_INFO = [{"app_name": "youtube", "app_id": "233637DE", "supported_device_types": ["cast"]}]
 DEFAULT_APP = {"app_name": "default", "app_id": "CC1AD845"}
+DASHCAST_APP = {"app_name": "dashcast", "app_id": DASHCAST_APP_ID}
 BACKDROP_APP_ID = "E8C28D3C"
 
 
@@ -81,7 +84,10 @@ def setup_cast(device_name, video_url=None, prep=None, controller=None):
 
     if video_url:
         cc_info = (cast.device.manufacturer, cast.model_name)
-        stream = StreamInfo(video_url, model=cc_info)
+        stream = StreamInfo(video_url, model=cc_info, host=cast.host)
+        if stream.is_standard_website:
+            controller = DashCastController(cast, DASHCAST_APP["app_name"], DASHCAST_APP["app_id"], prep=prep)
+            return (controller, stream)
 
     if controller:
         if controller == "default":
@@ -334,11 +340,13 @@ class CastController:
     def _prep_control(self):
         """Make shure chromecast is in an active state."""
 
+        if self._cast.app_id == DASHCAST_APP["app_id"]:
+            return
         if self._cast.app_id == BACKDROP_APP_ID or not self._cast.app_id:
             raise CattCastError("Chromecast is inactive.")
         self._cast.media_controller.block_until_active(1.0)
         if self._cast.media_controller.status.player_state in ["UNKNOWN", "IDLE"]:
-            raise CattCastError("Nothing is currently playing.")
+            raise CattCastError("Nothing is currently playing. [APP_ID={}]".format(self._cast.app_id))
 
     def play_media_url(self, video_url, **kwargs):
         """
@@ -445,6 +453,16 @@ class DefaultCastController(CastController):
     def restore(self, data):
         self.play_media_url(data["content_id"], current_time=data["current_time"],
                             title=data["title"], thumb=data["thumb"])
+
+
+class DashCastController(CastController):
+    def __init__(self, cast, name, app_id, prep=None):
+        self._controller = PyChromecastDashCastController()
+        super(DashCastController, self).__init__(cast, name, app_id, prep=prep)
+        self.info_type = "url"
+
+    def play_media_url(self, video_url, **kwargs):
+        self._controller.load_url(video_url, force=True)
 
 
 class YoutubeCastController(CastController):
