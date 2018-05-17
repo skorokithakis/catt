@@ -2,7 +2,6 @@ import random
 from pathlib import Path
 
 import netifaces
-
 import youtube_dl
 
 from .util import guess_mime
