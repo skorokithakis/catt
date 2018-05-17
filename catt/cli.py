@@ -9,11 +9,13 @@ from pathlib import Path
 from threading import Thread
 
 import click
+from pychromecast.controllers.dashcast import APP_DASHCAST as DASHCAST_APP_ID
 import requests
 
 from .controllers import (
     Cache,
     CastState,
+    CattCastError,
     get_chromecast,
     get_chromecasts,
     PlaybackError,
@@ -179,6 +181,48 @@ def process_subtitle(ctx, param, value):
         raise CattCliError("Subtitle file [{}] does not exist".format(value))
 
     return value
+
+@cli.command(short_help="Makes your Chromecast display any webpage")
+@click.argument("url")
+@click.pass_obj
+def cast_url(settings, url):
+    app_ready = "Application ready"
+    try:
+        info_controller = setup_cast(settings["device"], prep="control").info
+        if info_controller["app_id"] == DASHCAST_APP_ID and info_controller["status_text"] != app_ready:
+            print("Removing old website...")
+            setup_cast(settings["device"]).kill()
+            time.sleep(5)
+            while True:
+                info_controller = setup_cast(settings["device"], prep="control").info
+                if info_controller["app_id"] != DASHCAST_APP_ID:
+                    break
+                time.sleep(1)
+    except CattCastError as e:
+        if e.message == "Chromecast is inactive.":
+            pass
+        else:
+            raise e
+
+    cst, stream = setup_cast(settings["device"], video_url=url, prep="dashcast", controller="dashcast")
+
+    print("Loading DashCast...")
+    cst.play_media_url(stream.video_url, title=stream.video_title,
+                       thumb=stream.video_thumbnail,
+                       content_type=stream.guessed_content_type)
+    while True:
+        try:
+            info_controller = setup_cast(settings["device"], prep="control").info
+            if info_controller["app_id"] == DASHCAST_APP_ID and info_controller["status_text"] != app_ready:
+                break
+        except CattCastError as e:
+            if e.message == "Chromecast is inactive.":
+                pass
+        time.sleep(1)
+    click.echo("Casting URL %s on \"%s\"..." % (stream.video_title, cst.cc_name))
+    cst.play_media_url(stream.video_url, title=stream.video_title,
+                       thumb=stream.video_thumbnail,
+                       content_type=stream.guessed_content_type)
 
 
 @cli.command(short_help="Send a video to a Chromecast for playing.")

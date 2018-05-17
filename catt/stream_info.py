@@ -1,6 +1,7 @@
 import random
 from pathlib import Path
 
+import click
 import netifaces
 import youtube_dl
 
@@ -22,46 +23,48 @@ ULTRA_FORMAT = BEST_MAX_4K
 STANDARD_FORMAT = BEST_MAX_2K + MAX_50FPS + TWITCH_NO_60FPS
 
 
-class YouTubeExtractorFailedException(Exception):
+class CattInfoError(click.ClickException):
     pass
 
 
 class StreamInfo:
-    def __init__(self, video_url, model=None):
+    def __init__(self, video_url, model=None, is_standard_website=False):
+        self.is_standard_website = is_standard_website
+        if self.is_standard_website:
+            self.is_local_file = False
+            self.local_ip = None
+            self.port = None
+            self._video_url = video_url
+            self.is_standard_website = True
+            return
+
         if "://" not in video_url:
             self._local_file = video_url
             self.local_ip = self._get_local_ip()
             self.port = random.randrange(45000, 47000)
             self.is_local_file = True
-            self.is_standard_website = False
         else:
-            self.is_local_file = False
+            self._ydl = youtube_dl.YoutubeDL({"quiet": True, "no_warnings": True})
+            self._preinfo = self._get_stream_preinfo(video_url)
+            # Some playlist urls needs to be re-processed (such as youtube channel urls).
+            if self._preinfo.get("ie_key"):
+                self._preinfo = self._get_stream_preinfo(self._preinfo["url"])
             self.local_ip = None
             self.port = None
-            try:
-                self.is_standard_website = False
-                self._ydl = youtube_dl.YoutubeDL({"quiet": True, "no_warnings": True})
-                self._preinfo = self._get_stream_preinfo(video_url)
-                # Some playlist urls needs to be re-processed (such as youtube channel urls).
-                if self._preinfo.get("ie_key"):
-                    self._preinfo = self._get_stream_preinfo(self._preinfo["url"])
+            self.is_local_file = False
 
-                if model in AUDIO_MODELS:
-                    self._best_format = AUDIO_FORMAT
-                elif model in ULTRA_MODELS:
-                    self._best_format = ULTRA_FORMAT
-                else:
-                    self._best_format = STANDARD_FORMAT
+            if model in AUDIO_MODELS:
+                self._best_format = AUDIO_FORMAT
+            elif model in ULTRA_MODELS:
+                self._best_format = ULTRA_FORMAT
+            else:
+                self._best_format = STANDARD_FORMAT
 
-                if self.is_playlist:
-                    self._entries = list(self._preinfo["entries"])
-                    self._active_entry = None
-                else:
-                    self._info = self._get_stream_info(self._preinfo)
-
-            except YouTubeExtractorFailedException:
-                self._video_url = video_url
-                self.is_standard_website = True
+            if self.is_playlist:
+                self._entries = list(self._preinfo["entries"])
+                self._active_entry = None
+            else:
+                self._info = self._get_stream_info(self._preinfo)
 
     @property
     def is_remote_file(self):
@@ -188,13 +191,13 @@ class StreamInfo:
         try:
             return self._ydl.extract_info(video_url, process=False)
         except youtube_dl.utils.DownloadError:
-            raise YouTubeExtractorFailedException("Remote resource not found.")
+            raise CattInfoError("Remote resource not found.")
 
     def _get_stream_info(self, preinfo):
         try:
             return self._ydl.process_ie_result(preinfo, download=False)
         except (youtube_dl.utils.ExtractorError, youtube_dl.utils.DownloadError):
-            raise YouTubeExtractorFailedException("Youtube-dl extractor failed.")
+            raise CattInfoError("Youtube-dl extractor failed.")
 
     def _get_stream_url(self, info):
         format_selector = self._ydl.build_format_selector(self._best_format)
@@ -202,7 +205,7 @@ class StreamInfo:
         try:
             best_format = next(format_selector(info))
         except StopIteration:
-            raise YouTubeExtractorFailedException("No suitable format was found.")
+            raise CattInfoError("No suitable format was found.")
         # This is thrown when url points directly to media file.
         except KeyError:
             best_format = info

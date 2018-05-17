@@ -82,12 +82,15 @@ def setup_cast(device_name, video_url=None, prep=None, controller=None):
         cache.set_data(cast.name, cast.host)
     cast.wait()
 
+    if controller == "dashcast":
+        cc_info = (cast.device.manufacturer, cast.model_name)
+        controller = DashCastController(cast, DASHCAST_APP["app_name"], DASHCAST_APP["app_id"], prep=prep)
+        stream = StreamInfo(video_url, model=cc_info, is_standard_website=True)
+        return (controller, stream)
+
     if video_url:
         cc_info = (cast.device.manufacturer, cast.model_name)
-        stream = StreamInfo(video_url, model=cc_info, host=cast.host)
-        if stream.is_standard_website:
-            controller = DashCastController(cast, DASHCAST_APP["app_name"], DASHCAST_APP["app_id"], prep=prep)
-            return (controller, stream)
+        stream = StreamInfo(video_url, model=cc_info)
 
     if controller:
         if controller == "default":
@@ -118,6 +121,7 @@ def setup_cast(device_name, video_url=None, prep=None, controller=None):
         controller = YoutubeCastController(cast, app["app_name"], app["app_id"], prep=prep)
     else:
         controller = DefaultCastController(cast, app["app_name"], app["app_id"], prep=prep)
+
     return (controller, stream) if stream else controller
 
 
