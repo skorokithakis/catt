@@ -251,7 +251,7 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs):
             cst.play_media_id(stream.playlist_entry_id)
 
     else:
-        click.echo("Casting remote url %s..." % video_url)
+        click.echo("Casting remote file %s..." % video_url)
         click.echo("Playing %s on \"%s\"..." % (stream.video_title, cst.cc_name))
         if cst.info_type == "url":
             cst.play_media_url(stream.video_url, title=stream.video_title,
