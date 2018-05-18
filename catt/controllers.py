@@ -13,7 +13,10 @@ from .util import warning
 from .youtube import YouTubeController
 
 
-APP_INFO = [{"app_name": "youtube", "app_id": "233637DE", "supported_device_types": ["cast"]}]
+APP_INFO = [
+    {"app_name": "youtube", "app_id": "233637DE", "supported_device_types": ["cast"]},
+    {"app_name": "dashcast", "app_id": DASHCAST_APP_ID, "supported_device_types": ["cast"]},
+]
 DEFAULT_APP = {"app_name": "default", "app_id": "CC1AD845"}
 DASHCAST_APP = {"app_name": "dashcast", "app_id": DASHCAST_APP_ID}
 BACKDROP_APP_ID = "E8C28D3C"
@@ -83,10 +86,8 @@ def setup_cast(device_name, video_url=None, prep=None, controller=None):
     cast.wait()
 
     if controller == "dashcast":
-        cc_info = (cast.device.manufacturer, cast.model_name)
         controller = DashCastController(cast, DASHCAST_APP["app_name"], DASHCAST_APP["app_id"], prep=prep)
-        stream = StreamInfo(video_url, model=cc_info, is_standard_website=True)
-        return (controller, stream)
+        return controller
 
     if video_url:
         cc_info = (cast.device.manufacturer, cast.model_name)
@@ -344,7 +345,7 @@ class CastController:
     def _prep_control(self):
         """Make shure chromecast is in an active state."""
 
-        if self._cast.app_id == DASHCAST_APP["app_id"]:
+        if self._cast.app_id == DASHCAST_APP_ID:
             return
         if self._cast.app_id == BACKDROP_APP_ID or not self._cast.app_id:
             raise CattCastError("Chromecast is inactive.")
@@ -463,10 +464,9 @@ class DashCastController(CastController):
     def __init__(self, cast, name, app_id, prep=None):
         self._controller = PyChromecastDashCastController()
         super(DashCastController, self).__init__(cast, name, app_id, prep=prep)
-        self.info_type = "url"
 
-    def play_media_url(self, video_url, **kwargs):
-        self._controller.load_url(video_url, force=True)
+    def load_url(self, url, **kwargs):
+        self._controller.load_url(url, force=True)
 
 
 class YoutubeCastController(CastController):

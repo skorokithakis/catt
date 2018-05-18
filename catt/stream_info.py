@@ -28,16 +28,7 @@ class CattInfoError(click.ClickException):
 
 
 class StreamInfo:
-    def __init__(self, video_url, model=None, is_standard_website=False):
-        self.is_standard_website = is_standard_website
-        if self.is_standard_website:
-            self.is_local_file = False
-            self.local_ip = None
-            self.port = None
-            self._video_url = video_url
-            self.is_standard_website = True
-            return
-
+    def __init__(self, video_url, model=None):
         if "://" not in video_url:
             self._local_file = video_url
             self.local_ip = self._get_local_ip()
@@ -72,20 +63,14 @@ class StreamInfo:
 
     @property
     def is_playlist(self):
-        if self.is_standard_website:
-            return False
         return not self.is_local_file and "entries" in self._preinfo
 
     @property
     def extractor(self):
-        if self.is_standard_website:
-            return None
         return self._preinfo["extractor"].split(":")[0] if not self.is_local_file else None
 
     @property
     def video_title(self):
-        if self.is_standard_website:
-            return self.video_url
         if self.is_local_file:
             return Path(self._local_file).name
         elif self.is_playlist:
@@ -100,8 +85,6 @@ class StreamInfo:
 
     @property
     def video_url(self):
-        if self.is_standard_website:
-            return self._video_url
         if self.is_local_file:
             return "http://%s:%s/?loaded_from_catt" % (self.local_ip, self.port)
         elif self.is_playlist:
@@ -111,20 +94,14 @@ class StreamInfo:
 
     @property
     def video_id(self):
-        if self.is_standard_website:
-            return self.video_url
         return self._preinfo["id"] if self.is_remote_file else None
 
     @property
     def video_thumbnail(self):
-        if self.is_standard_website:
-            return None
         return self._preinfo.get("thumbnail") if self.is_remote_file else None
 
     @property
     def guessed_content_type(self):
-        if self.is_standard_website:
-            return None
         if self.is_local_file:
             return guess_mime(self.video_title)
         elif self.is_remote_file and self._info.get("direct"):
