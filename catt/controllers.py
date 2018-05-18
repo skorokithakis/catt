@@ -477,7 +477,7 @@ class DashCastController(CastController):
         self._load_url(url)  # this will actually take us to the "Waiting for URL" screen
         while not self._is_waiting_for_url():
             time.sleep(1)
-        self._load_url(url)
+        self._load_url(url)  # this will finally load the URL
 
     def _load_url(self, url, **kwargs):
         self._controller.load_url(url, force=True)
