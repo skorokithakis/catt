@@ -19,7 +19,6 @@ APP_INFO = [
     {"app_name": "dashcast", "app_id": DASHCAST_APP_ID, "supported_device_types": ["cast"]},
 ]
 DEFAULT_APP = {"app_name": "default", "app_id": "CC1AD845"}
-DASHCAST_APP = {"app_name": "dashcast", "app_id": DASHCAST_APP_ID}
 BACKDROP_APP_ID = "E8C28D3C"
 
 
@@ -86,10 +85,6 @@ def setup_cast(device_name, video_url=None, prep=None, controller=None):
         cache.set_data(cast.name, cast.host)
     cast.wait()
 
-    if controller == "dashcast":
-        controller = DashCastController(cast, DASHCAST_APP["app_name"], DASHCAST_APP["app_id"], prep=prep)
-        return controller
-
     if video_url:
         cc_info = (cast.device.manufacturer, cast.model_name)
         stream = StreamInfo(video_url, model=cc_info)
@@ -121,6 +116,8 @@ def setup_cast(device_name, video_url=None, prep=None, controller=None):
 
     if app["app_name"] == "youtube":
         controller = YoutubeCastController(cast, app["app_name"], app["app_id"], prep=prep)
+    elif app["app_name"] == "dashcast":
+        controller = DashCastController(cast, app["app_name"], app["app_id"], prep=prep)
     else:
         controller = DefaultCastController(cast, app["app_name"], app["app_id"], prep=prep)
 
