@@ -10,12 +10,10 @@ from threading import Thread
 
 import click
 import requests
-from pychromecast.controllers.dashcast import APP_DASHCAST as DASHCAST_APP_ID
 
 from .controllers import (
     Cache,
     CastState,
-    CattCastError,
     get_chromecast,
     get_chromecasts,
     PlaybackError,
@@ -187,35 +185,7 @@ def process_subtitle(ctx, param, value):
 @click.argument("url")
 @click.pass_obj
 def cast_url(settings, url):
-    app_ready = "Application ready"
-    try:
-        info_controller = setup_cast(settings["device"], prep="control").info
-        if info_controller["app_id"] == DASHCAST_APP_ID and info_controller["status_text"] != app_ready:
-            print("Removing old website...")
-            setup_cast(settings["device"]).kill()
-            while True:
-                time.sleep(1)
-                info_controller = setup_cast(settings["device"], prep="control").info
-                if info_controller["app_id"] != DASHCAST_APP_ID:
-                    break
-    except CattCastError as e:
-        if e.message == "Chromecast is inactive.":
-            pass
-        else:
-            raise e
-
     cst = setup_cast(settings["device"], prep="app", controller="dashcast")
-    print("Loading DashCast...")
-    cst.load_url(url)
-    while True:
-        try:
-            info_controller = setup_cast(settings["device"], prep="control").info
-            if info_controller["app_id"] == DASHCAST_APP_ID and info_controller["status_text"] != app_ready:
-                break
-        except CattCastError as e:
-            if e.message == "Chromecast is inactive.":
-                pass
-        time.sleep(1)
     click.echo("Casting URL %s on \"%s\"..." % (url, cst.cc_name))
     cst.load_url(url)
 

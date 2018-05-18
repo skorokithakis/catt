@@ -1,6 +1,7 @@
 import json
 import tempfile
 import threading
+import time
 from pathlib import Path
 
 import pychromecast
@@ -461,12 +462,37 @@ class DefaultCastController(CastController):
 
 
 class DashCastController(CastController):
+    app_ready = "Application ready"
+
     def __init__(self, cast, name, app_id, prep=None):
         self._controller = PyChromecastDashCastController()
         super(DashCastController, self).__init__(cast, name, app_id, prep=prep)
 
     def load_url(self, url, **kwargs):
+        if self._is_showing_url():
+            # the catch with Chromecast is that it becomes unresponsive after loading a URL
+            # because the new URL does not know it's on Chromecast and therefore does not answer
+            # so the only solution is to kill the DashCast app and load it again
+            self.kill()
+            while self._is_app_loaded():
+                time.sleep(1)
+
+        self._load_url(url)  # this will actually take us to the "Waiting for URL" screen
+        while not self._is_waiting_for_url():
+            time.sleep(1)
+        self._load_url(url)
+
+    def _load_url(self, url, **kwargs):
         self._controller.load_url(url, force=True)
+
+    def _is_app_loaded(self):
+        return self._cast.app_id == DASHCAST_APP_ID
+
+    def _is_showing_url(self):
+        return self._is_app_loaded() and self.info["status_text"] != DashCastController.app_ready
+
+    def _is_waiting_for_url(self):
+        return self._is_app_loaded() and self.info["status_text"] == DashCastController.app_ready
 
 
 class YoutubeCastController(CastController):
