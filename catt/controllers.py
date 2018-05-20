@@ -121,7 +121,6 @@ def setup_cast(device_name, video_url=None, prep=None, controller=None):
         controller = DashCastController(cast, app["app_name"], app["app_id"], prep=prep)
     else:
         controller = DefaultCastController(cast, app["app_name"], app["app_id"], prep=prep)
-
     return (controller, stream) if stream else controller
 
 
@@ -231,9 +230,9 @@ class CastState(CattStore):
 
 class CastStatusListener:
     def __init__(self, app_id, active_app_id):
+        self.app_id = app_id
         self.app_ready = threading.Event()
         self.backdrop_ready = threading.Event()
-        self.app_id = app_id
         self._clear_or_set_backdrop_event(active_app_id)
         if app_id == active_app_id:
             self.app_ready.set()
