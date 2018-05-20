@@ -357,8 +357,6 @@ class CastController:
 
     def _prep_control(self):
         """Make sure chromecast is in an active state."""
-        if self._cast.app_id == DASHCAST_APP_ID:
-            return
         if self._cast.app_id == BACKDROP_APP_ID or not self._cast.app_id:
             raise CattCastError("Chromecast is inactive.")
         self._cast.media_controller.block_until_active(1.0)
