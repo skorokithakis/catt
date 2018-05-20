@@ -117,7 +117,7 @@ def setup_cast(device_name, video_url=None, prep=None, controller=None):
         controller = YoutubeCastController(cast, app["app_name"], app["app_id"], prep=prep)
     elif app["app_name"] == "dashcast":
         if cast.cast_type not in app["supported_device_types"]:
-            warning("The %s app is not available for this device." % app["app_name"].capitalize())
+            raise CattCastError("The %s app is not available for this device." % app["app_name"].capitalize())
         controller = DashCastController(cast, app["app_name"], app["app_id"], prep=prep)
     else:
         controller = DefaultCastController(cast, app["app_name"], app["app_id"], prep=prep)
@@ -232,20 +232,26 @@ class CastState(CattStore):
 class CastStatusListener:
     def __init__(self, app_id, active_app_id):
         self.app_ready = threading.Event()
-        self.set_app_id(app_id, active_app_id)
-
-    def set_app_id(self, app_id, active_app_id=None):
+        self.backdrop_ready = threading.Event()
         self.app_id = app_id
+        self._clear_or_set_backdrop_event(active_app_id)
         if app_id == active_app_id:
             self.app_ready.set()
         else:
             self.app_ready.clear()
 
     def new_cast_status(self, status):
+        self._clear_or_set_backdrop_event(status.app_id)
         if self._is_app_ready(status):
             self.app_ready.set()
         else:
             self.app_ready.clear()
+
+    def _clear_or_set_backdrop_event(self, active_app_id):
+        if BACKDROP_APP_ID == active_app_id:
+            self.backdrop_ready.set()
+        else:
+            self.backdrop_ready.clear()
 
     def _is_app_ready(self, status):
         if status.app_id != self.app_id:
@@ -483,12 +489,10 @@ class DashCastController(CastController):
             # After a URL is loaded, the loaded page assumes control of Chromecast
             # and therefore ignore any future command we to DashCast.
             # Albeit annoying, the solution is quite simple: we kill the dashcast app.
-            self._cast_listener.set_app_id(BACKDROP_APP_ID, self._cast.app_id)
             self.kill()
-            self._cast_listener.app_ready.wait()
-            self._cast_listener.set_app_id(DASHCAST_APP_ID)
+            self._cast_listener.backdrop_ready.wait()
 
-        self._cast.start_app(DASHCAST_APP_ID)
+        self._cast.start_app(self._cast_listener.app_id)
         self._cast_listener.app_ready.wait()
 
 
