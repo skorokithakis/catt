@@ -181,7 +181,7 @@ def process_subtitle(ctx, param, value):
     return value
 
 
-@cli.command(short_help="Makes your Chromecast display any webpage")
+@cli.command(short_help="Cast any webpage to Chromecast")
 @click.argument("url")
 @click.pass_obj
 def cast_url(settings, url):

@@ -1,7 +1,6 @@
 import json
 import tempfile
 import threading
-import time
 from pathlib import Path
 
 import pychromecast
@@ -117,6 +116,8 @@ def setup_cast(device_name, video_url=None, prep=None, controller=None):
     if app["app_name"] == "youtube":
         controller = YoutubeCastController(cast, app["app_name"], app["app_id"], prep=prep)
     elif app["app_name"] == "dashcast":
+        if cast.cast_type not in app["supported_device_types"]:
+            warning("The %s app is not available for this device." % app["app_name"].capitalize())
         controller = DashCastController(cast, app["app_name"], app["app_id"], prep=prep)
     else:
         controller = DefaultCastController(cast, app["app_name"], app["app_id"], prep=prep)
@@ -232,14 +233,29 @@ class CastStatusListener:
     def __init__(self, app_id, active_app_id):
         self.app_id = app_id
         self.app_ready = threading.Event()
+        self.backdrop_ready = threading.Event()
+        if app_id == BACKDROP_APP_ID:
+            self.backdrop_ready.set()
         if app_id == active_app_id:
             self.app_ready.set()
 
     def new_cast_status(self, status):
-        if status.app_id == self.app_id:
+        if self._is_app_ready(status):
             self.app_ready.set()
+            self.backdrop_ready.clear()
         else:
+            if status.app_id == BACKDROP_APP_ID:
+                self.backdrop_ready.set()
+            else:
+                self.backdrop_ready.clear()
             self.app_ready.clear()
+
+    def _is_app_ready(self, status):
+        if status.app_id != self.app_id:
+            return False
+        if self.app_id != DASHCAST_APP_ID:
+            return True
+        return status.status_text == DashCastController.app_ready
 
 
 class MediaStatusListener:
@@ -334,22 +350,20 @@ class CastController:
                         status.stream_type == "BUFFERED") else False
 
     def _prep_app(self):
-        """Make shure desired chromecast app is running."""
-
+        """Make sure desired chromecast app is running."""
         if not self._cast_listener.app_ready.is_set():
             self._cast.start_app(self._cast_listener.app_id)
             self._cast_listener.app_ready.wait()
 
     def _prep_control(self):
-        """Make shure chromecast is in an active state."""
-
+        """Make sure chromecast is in an active state."""
         if self._cast.app_id == DASHCAST_APP_ID:
             return
         if self._cast.app_id == BACKDROP_APP_ID or not self._cast.app_id:
             raise CattCastError("Chromecast is inactive.")
         self._cast.media_controller.block_until_active(1.0)
         if self._cast.media_controller.status.player_state in ["UNKNOWN", "IDLE"]:
-            raise CattCastError("Nothing is currently playing. [APP_ID={}]".format(self._cast.app_id))
+            raise CattCastError("Nothing is currently playing.")
 
     def play_media_url(self, video_url, **kwargs):
         """
@@ -466,30 +480,16 @@ class DashCastController(CastController):
         super(DashCastController, self).__init__(cast, name, app_id, prep=prep)
 
     def load_url(self, url, **kwargs):
-        if self._is_showing_url():
-            # the catch with Chromecast is that it becomes unresponsive after loading a URL
-            # because the new URL does not know it's on Chromecast and therefore does not answer
-            # so the only solution is to kill the DashCast app and load it again
-            self.kill()
-            while self._is_app_loaded():
-                time.sleep(1)
-
-        self._load_url(url)  # this will actually take us to the "Waiting for URL" screen
-        while not self._is_waiting_for_url():
-            time.sleep(1)
-        self._load_url(url)  # this will finally load the URL
-
-    def _load_url(self, url, **kwargs):
         self._controller.load_url(url, force=True)
 
-    def _is_app_loaded(self):
-        return self._cast.app_id == DASHCAST_APP_ID
+    def _prep_app(self):
+        """Make sure desired chromecast app is running."""
+        if self._cast.app_id == DASHCAST_APP_ID:
+            self.kill()
+            self._cast_listener.backdrop_ready.wait()
 
-    def _is_showing_url(self):
-        return self._is_app_loaded() and self.info["status_text"] != DashCastController.app_ready
-
-    def _is_waiting_for_url(self):
-        return self._is_app_loaded() and self.info["status_text"] == DashCastController.app_ready
+        self._cast.start_app(DASHCAST_APP_ID)
+        self._cast_listener.app_ready.wait()
 
 
 class YoutubeCastController(CastController):
