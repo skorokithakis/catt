@@ -231,23 +231,20 @@ class CastState(CattStore):
 
 class CastStatusListener:
     def __init__(self, app_id, active_app_id):
-        self.app_id = app_id
         self.app_ready = threading.Event()
-        self.backdrop_ready = threading.Event()
-        if app_id == BACKDROP_APP_ID:
-            self.backdrop_ready.set()
+        self.set_app_id(app_id, active_app_id)
+
+    def set_app_id(self, app_id, active_app_id=None):
+        self.app_id = app_id
         if app_id == active_app_id:
             self.app_ready.set()
+        else:
+            self.app_ready.clear()
 
     def new_cast_status(self, status):
         if self._is_app_ready(status):
             self.app_ready.set()
-            self.backdrop_ready.clear()
         else:
-            if status.app_id == BACKDROP_APP_ID:
-                self.backdrop_ready.set()
-            else:
-                self.backdrop_ready.clear()
             self.app_ready.clear()
 
     def _is_app_ready(self, status):
@@ -483,8 +480,10 @@ class DashCastController(CastController):
     def _prep_app(self):
         """Make sure desired chromecast app is running."""
         if self._cast.app_id == DASHCAST_APP_ID:
+            self._cast_listener.set_app_id(BACKDROP_APP_ID, self._cast.app_id)
             self.kill()
-            self._cast_listener.backdrop_ready.wait()
+            self._cast_listener.app_ready.wait()
+            self._cast_listener.set_app_id(DASHCAST_APP_ID)
 
         self._cast.start_app(DASHCAST_APP_ID)
         self._cast_listener.app_ready.wait()
