@@ -480,6 +480,9 @@ class DashCastController(CastController):
     def _prep_app(self):
         """Make sure desired chromecast app is running."""
         if self._cast.app_id == DASHCAST_APP_ID:
+            # After a URL is loaded, the loaded page assumes control of Chromecast
+            # and therefore ignore any future command we to DashCast.
+            # Albeit annoying, the solution is quite simple: we kill the dashcast app.
             self._cast_listener.set_app_id(BACKDROP_APP_ID, self._cast.app_id)
             self.kill()
             self._cast_listener.app_ready.wait()

@@ -11,7 +11,7 @@ Cast All The Things
 
 Cast All The Things allows you to send videos from many, many online sources
 (YouTube, Vimeo, and a few hundred others) to your Chromecast. It also allows
-you to cast local files.
+you to cast local files or tell Chromecast to render URLs.
 
 
 Installation
@@ -40,6 +40,18 @@ CATT can also cast local files (if they're in a format the Chromecast supports
 natively)::
 
     catt cast ./myvideo.mp4
+
+If you have subtitles and the name is similar to the local file, CATT will add them automatically.
+You can, of course, specify any other subtitle if you want. Although Chromecast only supports WEBVTT,
+TTML and Line 21 subtitles, CATT conveniently converts SRTs to WEBVTT for you on the fly. Here is how to use it:
+
+    catt cast -s ./mysubtitle.srt /myvideo.mp4
+
+CATT can also tell your Chromecast to display any website::
+
+    catt cast_url https://en.wikipedia.org/wiki/Rickrolling
+
+Please notice that Chromecast has a slow CPU but a reasonably recent version of Google Chrome. The display resolution is 1280x720
 
 You can also control your Chromecast through ``catt`` commands, for example with
 ``catt pause``. Try running ``catt --help`` to see the full list of commands.
@@ -97,3 +109,6 @@ Features
 
 * Casts videos to Chromecast.
 * From `many, many online sources <http://rg3.github.io/youtube-dl/supportedsites.html>`_.
+* Casts local files (videos, photos and music)
+* Casts any website to Chromecast
+
