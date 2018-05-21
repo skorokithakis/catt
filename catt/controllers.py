@@ -234,8 +234,6 @@ class CastStatusListener:
         self.app_ready = threading.Event()
         if app_id == active_app_id and app_id != DASHCAST_APP_ID:
             self.app_ready.set()
-        else:
-            self.app_ready.clear()
 
     def new_cast_status(self, status):
         if self._is_app_ready(status):
