@@ -232,25 +232,16 @@ class CastStatusListener:
     def __init__(self, app_id, active_app_id):
         self.app_id = app_id
         self.app_ready = threading.Event()
-        self.backdrop_ready = threading.Event()
-        self._clear_or_set_backdrop_event(active_app_id)
-        if app_id == active_app_id:
+        if app_id == active_app_id and app_id != DASHCAST_APP_ID:
             self.app_ready.set()
         else:
             self.app_ready.clear()
 
     def new_cast_status(self, status):
-        self._clear_or_set_backdrop_event(status.app_id)
         if self._is_app_ready(status):
             self.app_ready.set()
         else:
             self.app_ready.clear()
-
-    def _clear_or_set_backdrop_event(self, active_app_id):
-        if BACKDROP_APP_ID == active_app_id:
-            self.backdrop_ready.set()
-        else:
-            self.backdrop_ready.clear()
 
     def _is_app_ready(self, status):
         if status.app_id != self.app_id:
@@ -484,13 +475,9 @@ class DashCastController(CastController):
 
     def _prep_app(self):
         """Make sure desired chromecast app is running."""
-        if self._cast.app_id == DASHCAST_APP_ID:
-            # After a URL is loaded, the loaded page assumes control of Chromecast
-            # and therefore ignore any future command we to DashCast.
-            # Albeit annoying, the solution is quite simple: we kill the dashcast app.
-            self.kill()
-            self._cast_listener.backdrop_ready.wait()
-
+        # we must force the launch of the DashCast app because it, by design,
+        # becomes unresponsive after a website is loaded
+        self._cast.socket_client.receiver_controller.launch_app(self._cast_listener.app_id, force_launch=True)
         self._cast.start_app(self._cast_listener.app_id)
         self._cast_listener.app_ready.wait()
 
