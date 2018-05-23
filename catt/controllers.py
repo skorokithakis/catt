@@ -242,11 +242,21 @@ class CastStatusListener:
             self.app_ready.clear()
 
     def _is_app_ready(self, status):
-        if status.app_id != self.app_id:
-            return False
-        if self.app_id != DASHCAST_APP_ID:
-            return True
-        return status.status_text == DashCastController.app_ready
+        if status.app_id == self.app_id == DASHCAST_APP_ID:
+            # DashCast is an exception and therefore needs special treatment.
+            # Whenever it's loaded, it's initial status is "Application is starting",
+            # as shown here: https://github.com/stestagg/dashcast/blob/master/receiver.html#L163
+            # While in that status, it's still not ready to start receiving nor loading URLs
+            # Therefore we must wait until its status change to "Application ready"
+            # https://github.com/stestagg/dashcast/blob/master/receiver.html#L143
+            #
+            # If one does not wait for the status to become "Application ready",
+            # casting the URL will trigger a race condition as the URL may arrive before the
+            # "Application ready" status. In this case, casting will not work.
+            # One simple way to confirm changes is to uncomment the line below
+            # print(status.status_text)
+            return status.status_text == "Application ready"
+        return status.app_id == self.app_id
 
 
 class MediaStatusListener:
@@ -462,8 +472,6 @@ class DefaultCastController(CastController):
 
 
 class DashCastController(CastController):
-    app_ready = "Application ready"
-
     def __init__(self, cast, name, app_id, prep=None):
         self._controller = PyChromecastDashCastController()
         super(DashCastController, self).__init__(cast, name, app_id, prep=prep)
@@ -476,7 +484,6 @@ class DashCastController(CastController):
         # we must force the launch of the DashCast app because it, by design,
         # becomes unresponsive after a website is loaded
         self._cast.socket_client.receiver_controller.launch_app(self._cast_listener.app_id, force_launch=True)
-        self._cast.start_app(self._cast_listener.app_id)
         self._cast_listener.app_ready.wait()
 
 
