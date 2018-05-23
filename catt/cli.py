@@ -181,6 +181,15 @@ def process_subtitle(ctx, param, value):
     return value
 
 
+@cli.command(short_help="Cast any webpage to Chromecast")
+@click.argument("url")
+@click.pass_obj
+def cast_url(settings, url):
+    cst = setup_cast(settings["device"], prep="app", controller="dashcast")
+    click.echo("Casting URL %s on \"%s\"..." % (url, cst.cc_name))
+    cst.load_url(url)
+
+
 @cli.command(short_help="Send a video to a Chromecast for playing.")
 @click.argument("video_url", callback=process_url)
 @click.option("-s", "--subtitle",
