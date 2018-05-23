@@ -8,6 +8,8 @@ Cast All The Things
 .. image:: https://img.shields.io/travis/skorokithakis/catt.svg
         :target: https://travis-ci.org/skorokithakis/catt
 
+.. image:: https://badges.gitter.im/Join%20Chat.svg
+        :target: https://gitter.im/skorokithakis/catt
 
 Cast All The Things allows you to send videos from many, many online sources
 (YouTube, Vimeo, and a few hundred others) to your Chromecast. It also allows
