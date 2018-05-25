@@ -45,7 +45,7 @@ natively)::
 
 If you have subtitles and the name is similar to the name of the local file, ``catt`` will add them automatically.
 You can, of course, specify any other subtitle if you want. Although Chromecast only supports WEBVTT,
-TTML and Line 21 subtitles, ``catt`` conveniently converts SRTs to WEBVTT for you on the fly. Here is how to use it:
+TTML and Line 21 subtitles, ``catt`` conveniently converts SRTs to WEBVTT for you on the fly. Here is how to use it::
 
     catt cast -s ./mysubtitle.srt /myvideo.mp4
 
