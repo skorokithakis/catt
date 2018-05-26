@@ -249,7 +249,7 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs):
             cst.play_media_id(stream.video_id)
 
 
-@cli.command(short_help="Cast any webpage to Chromecast")
+@cli.command(short_help="Cast any webpage to a Chromecast.")
 @click.argument("url")
 @click.pass_obj
 def cast_site(settings, url):
