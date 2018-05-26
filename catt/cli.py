@@ -16,7 +16,6 @@ from .controllers import (
     CastState,
     get_chromecast,
     get_chromecasts,
-    PlaybackError,
     setup_cast,
     StateFileError
 )
@@ -218,25 +217,22 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs):
             cst.kill(idle_only=True)
             raise CattCliError("Playlist is empty.")
         click.echo("Casting remote playlist %s..." % video_url)
-        if random_play:
-            stream.set_playlist_entry(random.randrange(0, stream.playlist_length))
+        if not random_play and cst.playlist_capability and stream.playlist_all_ids:
+            cst.play_playlist(stream.playlist_all_ids)
         else:
-            try:
-                if not stream.playlist_all_ids:
-                    raise ValueError
-                cst.play_playlist(stream.playlist_all_ids)
-                return
-            except (PlaybackError, ValueError):
+            if random_play:
+                stream.set_playlist_entry(random.randrange(0, stream.playlist_length))
+            else:
                 warning("Playlist playback not possible, playing first video.")
                 stream.set_playlist_entry(0)
-        click.echo("Playing %s on \"%s\"..." % (stream.playlist_entry_title, cst.cc_name))
-        if cst.info_type == "url":
-            cst.play_media_url(stream.playlist_entry_url,
-                               title=stream.playlist_entry_title,
-                               thumb=stream.playlist_entry_thumbnail,
-                               content_type=stream.guessed_content_type)
-        elif cst.info_type == "id":
-            cst.play_media_id(stream.playlist_entry_id)
+            click.echo("Playing %s on \"%s\"..." % (stream.playlist_entry_title, cst.cc_name))
+            if cst.info_type == "url":
+                cst.play_media_url(stream.playlist_entry_url,
+                                   title=stream.playlist_entry_title,
+                                   thumb=stream.playlist_entry_thumbnail,
+                                   content_type=stream.guessed_content_type)
+            elif cst.info_type == "id":
+                cst.play_media_id(stream.playlist_entry_id)
 
     else:
         click.echo("Casting remote file %s..." % video_url)
