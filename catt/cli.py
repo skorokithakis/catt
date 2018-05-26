@@ -171,23 +171,11 @@ def load_subtitle_if_exists(subtitle, video, local_ip, port):
 def process_subtitle(ctx, param, value):
     if value is None:
         return None
-
     if "://" in value:
         return value
-
     if not Path(value).is_file():
         raise CattCliError("Subtitle file [{}] does not exist".format(value))
-
     return value
-
-
-@cli.command(short_help="Cast any webpage to Chromecast")
-@click.argument("url")
-@click.pass_obj
-def cast_url(settings, url):
-    cst = setup_cast(settings["device"], prep="app", controller="dashcast")
-    click.echo("Casting URL %s on \"%s\"..." % (url, cst.cc_name))
-    cst.load_url(url)
 
 
 @cli.command(short_help="Send a video to a Chromecast for playing.")
@@ -259,6 +247,15 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs):
                                content_type=stream.guessed_content_type)
         elif cst.info_type == "id":
             cst.play_media_id(stream.video_id)
+
+
+@cli.command(short_help="Cast any webpage to a Chromecast.")
+@click.argument("url")
+@click.pass_obj
+def cast_site(settings, url):
+    cst = setup_cast(settings["device"], prep="app", controller="dashcast")
+    click.echo("Casting %s on \"%s\"..." % (url, cst.cc_name))
+    cst.load_url(url)
 
 
 @cli.command(short_help="Add a video to the queue.")
