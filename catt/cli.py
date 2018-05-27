@@ -221,10 +221,11 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs):
             cst.play_playlist(stream.playlist_all_ids)
         else:
             if random_play:
-                stream.set_playlist_entry(random.randrange(0, stream.playlist_length))
+                entry = random.randrange(0, stream.playlist_length)
             else:
                 warning("Playlist playback not possible, playing first video.")
-                stream.set_playlist_entry(0)
+                entry = 0
+            stream.set_playlist_entry(entry)
             click.echo("Playing %s on \"%s\"..." % (stream.playlist_entry_title, cst.cc_name))
             if cst.info_type == "url":
                 cst.play_media_url(stream.playlist_entry_url,
