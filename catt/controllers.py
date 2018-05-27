@@ -148,10 +148,6 @@ class StateFileError(Exception):
     pass
 
 
-class PlaybackError(Exception):
-    pass
-
-
 class CattStore:
     def __init__(self, store_path):
         self.store_path = store_path
@@ -286,6 +282,7 @@ class CastController:
         self.name = name
         self.info_type = None
         self.save_capability = None
+        self.playlist_capability = None
 
         self._cast_listener = CastStatusListener(app_id, self._cast.app_id)
         self._cast.register_status_listener(self._cast_listener)
@@ -381,7 +378,7 @@ class CastController:
         raise NotImplementedError
 
     def play_playlist(self, playlist_id):
-        raise PlaybackError
+        raise NotImplementedError
 
     def play(self):
         self._cast.media_controller.play()
@@ -493,6 +490,7 @@ class YoutubeCastController(CastController):
         super(YoutubeCastController, self).__init__(cast, name, app_id, prep=prep)
         self.info_type = "id"
         self.save_capability = "partial"
+        self.playlist_capability = "complete"
 
     # The controller's start_new_session method needs a video id.
     def _prep_yt(self, video_id):
