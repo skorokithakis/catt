@@ -62,8 +62,21 @@ class StreamInfo:
         return not self.is_local_file and not self.is_playlist
 
     @property
+    def _is_direct_link(self):
+        return self.is_remote_file and "direct" in self._info
+
+    @property
     def is_playlist(self):
         return not self.is_local_file and "entries" in self._preinfo
+
+    @property
+    def _active_entry_is_direct_link(self):
+        if self.is_playlist and self._active_entry:
+            url = self._active_entry.get("url")
+            return ("formats" not in self._active_entry or
+                    (url and "direct" in self._get_stream_preinfo(url)))
+        else:
+            return False
 
     @property
     def extractor(self):
@@ -104,7 +117,7 @@ class StreamInfo:
     def guessed_content_type(self):
         if self.is_local_file:
             return guess_mime(self.video_title)
-        elif self.is_remote_file and self._info.get("direct"):
+        elif self._is_direct_link:
             return guess_mime(self._info["webpage_url_basename"])
         else:
             return None
@@ -135,7 +148,7 @@ class StreamInfo:
     @property
     def playlist_entry_url(self):
         if self.is_playlist:
-            return self._get_stream_url(self._get_stream_info(self._active_entry))
+            return self._get_stream_url(self._active_entry)
         else:
             return None
 
@@ -156,9 +169,10 @@ class StreamInfo:
         if self.is_playlist:
             # Some playlist entries needs to be re-processed.
             if self._entries[number].get("ie_key"):
-                self._active_entry = self._get_stream_preinfo(self._entries[number]["url"])
+                entry = self._get_stream_preinfo(self._entries[number]["url"])
             else:
-                self._active_entry = self._entries[number]
+                entry = self._entries[number]
+            self._active_entry = self._get_stream_info(entry)
 
     def _get_local_ip(self):
         interface = netifaces.gateways()['default'][netifaces.AF_INET][1]
@@ -177,14 +191,11 @@ class StreamInfo:
             raise CattInfoError("Youtube-dl extractor failed.")
 
     def _get_stream_url(self, info):
-        format_selector = self._ydl.build_format_selector(self._best_format)
+        if self._is_direct_link or self._active_entry_is_direct_link:
+            return info["url"]
 
+        format_selector = self._ydl.build_format_selector(self._best_format)
         try:
-            best_format = next(format_selector(info))
+            return next(format_selector(info))["url"]
         except StopIteration:
             raise CattInfoError("No suitable format was found.")
-        # This is thrown when url points directly to media file.
-        except KeyError:
-            best_format = info
-
-        return best_format["url"]
