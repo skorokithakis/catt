@@ -27,6 +27,10 @@ class CattInfoError(click.ClickException):
     pass
 
 
+class StreamInfoError(Exception):
+    pass
+
+
 class StreamInfo:
     def __init__(self, video_url, model=None):
         if "://" not in video_url:
@@ -53,7 +57,7 @@ class StreamInfo:
 
             if self.is_playlist:
                 self._entries = list(self._preinfo["entries"])
-                self._active_entry = None
+                self._info = None
             else:
                 self._info = self._get_stream_info(self._preinfo)
 
@@ -70,13 +74,8 @@ class StreamInfo:
         return not self.is_local_file and "entries" in self._preinfo
 
     @property
-    def _active_entry_is_direct_link(self):
-        if self.is_playlist and self._active_entry:
-            url = self._active_entry.get("url")
-            return ("formats" not in self._active_entry or
-                    (url and "direct" in self._get_stream_preinfo(url)))
-        else:
-            return False
+    def _is_playlist_with_active_entry(self):
+        return self.is_playlist and self._info
 
     @property
     def extractor(self):
@@ -86,32 +85,29 @@ class StreamInfo:
     def video_title(self):
         if self.is_local_file:
             return Path(self._local_file).name
-        elif self.is_playlist:
-            return None
+        elif self._is_direct_link:
+            return self._preinfo["webpage_url_basename"].split(".")[0]
+        elif self.is_remote_file or self._is_playlist_with_active_entry:
+            return self._info["title"]
         else:
-            # "preinfo" does not contain a "title" key, when the user casts
-            # an url that points directly to a media file.
-            try:
-                return self._preinfo["title"]
-            except KeyError:
-                return self._preinfo["webpage_url_basename"].split(".")[0]
+            return None
 
     @property
     def video_url(self):
         if self.is_local_file:
             return "http://%s:%s/?loaded_from_catt" % (self.local_ip, self.port)
-        elif self.is_playlist:
-            return None
-        else:
+        elif self.is_remote_file or self._is_playlist_with_active_entry:
             return self._get_stream_url(self._info)
+        else:
+            return None
 
     @property
     def video_id(self):
-        return self._preinfo["id"] if self.is_remote_file else None
+        return self._info["id"] if self.is_remote_file else None
 
     @property
     def video_thumbnail(self):
-        return self._preinfo.get("thumbnail") if self.is_remote_file else None
+        return self._info.get("thumbnail") if self.is_remote_file else None
 
     @property
     def guessed_content_type(self):
@@ -141,38 +137,16 @@ class StreamInfo:
     def playlist_id(self):
         return self._preinfo["id"] if self.is_playlist else None
 
-    @property
-    def playlist_entry_title(self):
-        return self._active_entry["title"] if self.is_playlist else None
-
-    @property
-    def playlist_entry_url(self):
-        if self.is_playlist:
-            return self._get_stream_url(self._active_entry)
-        else:
-            return None
-
-    @property
-    def playlist_entry_id(self):
-        return self._active_entry["id"] if self.is_playlist else None
-
-    @property
-    def playlist_entry_thumbnail(self):
-        return self._active_entry.get("thumbnail") if self.is_playlist else None
-
     def set_playlist_entry(self, number):
-        """
-        Must be called with valid entry number
-        before playlist entry properties can be accessed.
-        """
-
         if self.is_playlist:
             # Some playlist entries needs to be re-processed.
             if self._entries[number].get("ie_key"):
                 entry = self._get_stream_preinfo(self._entries[number]["url"])
             else:
                 entry = self._entries[number]
-            self._active_entry = self._get_stream_info(entry)
+            self._info = self._get_stream_info(entry)
+        else:
+            raise StreamInfoError("called on non-playlist")
 
     def _get_local_ip(self):
         interface = netifaces.gateways()['default'][netifaces.AF_INET][1]
@@ -191,11 +165,14 @@ class StreamInfo:
             raise CattInfoError("Youtube-dl extractor failed.")
 
     def _get_stream_url(self, info):
-        if self._is_direct_link or self._active_entry_is_direct_link:
-            return info["url"]
-
         format_selector = self._ydl.build_format_selector(self._best_format)
+
         try:
-            return next(format_selector(info))["url"]
+            best_format = next(format_selector(info))
         except StopIteration:
             raise CattInfoError("No suitable format was found.")
+        # This is thrown when url points directly to media file.
+        except KeyError:
+            best_format = info
+
+        return best_format["url"]

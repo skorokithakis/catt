@@ -190,27 +190,20 @@ def process_subtitle(ctx, param, value):
 @click.pass_obj
 def cast(settings, video_url, subtitle, force_default, random_play, no_subs):
     controller = "default" if force_default else None
+    subtitle_url = None
+    playlist_playback = False
     cst, stream = setup_cast(settings["device"], video_url=video_url,
                              prep="app", controller=controller)
 
     if stream.is_local_file:
         click.echo("Casting local file %s..." % video_url)
-        click.echo("Playing %s on \"%s\"..." % (stream.video_title, cst.cc_name))
-        if subtitle is None and no_subs:
-            subtitle_url = None
-        else:
+        if not (subtitle is None and no_subs):
             subtitle_url = load_subtitle_if_exists(subtitle, video_url, stream.local_ip, stream.port + 1)
-
         thr = Thread(target=serve_file,
                      args=(video_url, stream.local_ip, stream.port, stream.guessed_content_type))
-
         thr.setDaemon(True)
         thr.start()
-        cst.play_media_url(stream.video_url, content_type=stream.guessed_content_type,
-                           title=stream.video_title, subtitles=subtitle_url)
         click.echo("Serving local file, press Ctrl+C when done.")
-        while thr.is_alive():
-            time.sleep(1)
 
     elif stream.is_playlist:
         if stream.playlist_length == 0:
@@ -218,7 +211,7 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs):
             raise CattCliError("Playlist is empty.")
         click.echo("Casting remote playlist %s..." % video_url)
         if not random_play and cst.playlist_capability and stream.playlist_all_ids:
-            cst.play_playlist(stream.playlist_all_ids)
+            playlist_playback = True
         else:
             if random_play:
                 entry = random.randrange(0, stream.playlist_length)
@@ -226,24 +219,25 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs):
                 warning("Playlist playback not possible, playing first video.")
                 entry = 0
             stream.set_playlist_entry(entry)
-            click.echo("Playing %s on \"%s\"..." % (stream.playlist_entry_title, cst.cc_name))
-            if cst.info_type == "url":
-                cst.play_media_url(stream.playlist_entry_url,
-                                   title=stream.playlist_entry_title,
-                                   thumb=stream.playlist_entry_thumbnail,
-                                   content_type=stream.guessed_content_type)
-            elif cst.info_type == "id":
-                cst.play_media_id(stream.playlist_entry_id)
 
     else:
         click.echo("Casting remote file %s..." % video_url)
+
+    if playlist_playback:
+        cst.play_playlist(stream.playlist_all_ids)
+    else:
         click.echo("Playing %s on \"%s\"..." % (stream.video_title, cst.cc_name))
         if cst.info_type == "url":
             cst.play_media_url(stream.video_url, title=stream.video_title,
-                               thumb=stream.video_thumbnail,
-                               content_type=stream.guessed_content_type)
+                               content_type=stream.guessed_content_type,
+                               subtitles=subtitle_url, thumb=stream.video_thumbnail)
         elif cst.info_type == "id":
             cst.play_media_id(stream.video_id)
+        else:
+            raise ValueError("invalid or undefined info type")
+        if stream.is_local_file:
+            while thr.is_alive():
+                time.sleep(1)
 
 
 @cli.command(short_help="Cast any webpage to a Chromecast.")
