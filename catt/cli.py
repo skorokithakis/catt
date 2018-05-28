@@ -240,7 +240,7 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs):
                 time.sleep(1)
 
 
-@cli.command(short_help="Cast any webpage to a Chromecast.")
+@cli.command(short_help="Cast any website to a Chromecast.")
 @click.argument("url")
 @click.pass_obj
 def cast_site(settings, url):

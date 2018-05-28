@@ -54,7 +54,7 @@ TTML and Line 21 subtitles, ``catt`` conveniently converts SRTs to WEBVTT for yo
 
 ``catt`` can also tell your Chromecast to display any website::
 
-    catt cast_url https://en.wikipedia.org/wiki/Rickrolling
+    catt cast_site https://en.wikipedia.org/wiki/Rickrolling
 
 Please note that the Chromecast has a slow CPU but a reasonably recent version of Google Chrome. The display
 resolution is 1280x720.
