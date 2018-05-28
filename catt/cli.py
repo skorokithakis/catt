@@ -203,7 +203,6 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs):
                      args=(video_url, stream.local_ip, stream.port, stream.guessed_content_type))
         thr.setDaemon(True)
         thr.start()
-        click.echo("Serving local file, press Ctrl+C when done.")
 
     elif stream.is_playlist:
         if stream.playlist_length == 0:
@@ -236,6 +235,7 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs):
         else:
             raise ValueError("invalid or undefined info type")
         if stream.is_local_file:
+            click.echo("Serving local file, press Ctrl+C when done.")
             while thr.is_alive():
                 time.sleep(1)
 
