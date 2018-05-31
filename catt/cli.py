@@ -231,7 +231,7 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs):
 
 
 @cli.command(short_help="Cast any website to a Chromecast.")
-@click.argument("url")
+@click.argument("url", callback=process_url)
 @click.pass_obj
 def cast_site(settings, url):
     cst = setup_cast(settings["device"], prep="app", controller="dashcast")
