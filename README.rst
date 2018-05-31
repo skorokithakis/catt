@@ -104,7 +104,10 @@ Before committing, please make sure you install ``pre-commit`` and install its h
     pip install pre-commit
     pre-commit install
 
-That's all, now you can commit and the hooks will run.
+That's all, now you can commit and the hooks will run. Black (which is used to format
+the code) requires Python 3.6 for formatting the code, do make an effort to run it, as
+the CI will yell at you if the code is not formatted.
+
 
 Thanks!
 

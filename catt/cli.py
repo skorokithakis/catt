@@ -11,17 +11,9 @@ from threading import Thread
 import click
 import requests
 
-from .controllers import (
-    Cache,
-    CastState,
-    get_chromecast,
-    get_chromecasts,
-    setup_cast,
-    StateFileError
-)
+from .controllers import Cache, CastState, StateFileError, get_chromecast, get_chromecasts, setup_cast
 from .http_server import serve_file
 from .util import warning
-
 
 CONFIG_DIR = Path(click.get_app_dir("catt"))
 CONFIG_PATH = Path(CONFIG_DIR, "catt.cfg")
@@ -83,10 +75,8 @@ def get_device(ctx, param, value):
 
 
 @click.group()
-@click.option("--delete-cache", is_flag=True,
-              help="Empty the Chromecast discovery cache.")
-@click.option("-d", "--device", metavar="NAME",
-              callback=get_device, help="Select Chromecast device.")
+@click.option("--delete-cache", is_flag=True, help="Empty the Chromecast discovery cache.")
+@click.option("-d", "--device", metavar="NAME", callback=get_device, help="Select Chromecast device.")
 @click.pass_context
 def cli(ctx, delete_cache, device):
     if delete_cache:
@@ -94,8 +84,7 @@ def cli(ctx, delete_cache, device):
     ctx.obj["device"] = device
 
 
-@cli.command(short_help="Write the name of default Chromecast "
-                        "device to config file.")
+@cli.command(short_help="Write the name of default Chromecast " "device to config file.")
 @click.pass_obj
 def write_config(settings):
     if settings.get("device"):
@@ -113,8 +102,7 @@ def hunt_subtitle(video):
     for entry_path in video_path.parent.iterdir():
         if entry_path.is_dir():
             continue
-        if entry_path.stem.lower().startswith(video_path_stem_lower) and \
-                entry_path.suffix.lower() in [".vtt", ".srt"]:
+        if entry_path.stem.lower().startswith(video_path_stem_lower) and entry_path.suffix.lower() in [".vtt", ".srt"]:
             return str(entry_path.resolve())
     return None
 
@@ -122,9 +110,7 @@ def hunt_subtitle(video):
 def convert_srt_to_webvtt_helper(content):
     content = re.sub(r"^(.*? \-\-\> .*?)$", lambda m: m.group(1).replace(",", "."), content, flags=re.MULTILINE)
 
-    with tempfile.NamedTemporaryFile(mode='w+b',
-                                     suffix=".vtt",
-                                     delete=False) as vttfile:
+    with tempfile.NamedTemporaryFile(mode="w+b", suffix=".vtt", delete=False) as vttfile:
         target_filename = vttfile.name
         vttfile.write("WEBVTT\n\n".encode())
         vttfile.write(content.encode())
@@ -132,9 +118,9 @@ def convert_srt_to_webvtt_helper(content):
 
 
 def convert_srt_to_webvtt(filename):
-    for possible_encoding in ['utf-8', 'iso-8859-15']:
+    for possible_encoding in ["utf-8", "iso-8859-15"]:
         try:
-            with open(filename, 'r', encoding=possible_encoding) as srtfile:
+            with open(filename, "r", encoding=possible_encoding) as srtfile:
                 content = srtfile.read()
                 return convert_srt_to_webvtt_helper(content)
         except UnicodeDecodeError:
@@ -159,8 +145,7 @@ def load_subtitle_if_exists(subtitle, video, local_ip, port):
     if subtitle.lower().endswith(".srt"):
         subtitle = convert_srt_to_webvtt(subtitle)
 
-    thr = Thread(target=serve_file,
-                 args=(subtitle, local_ip, port, "text/vtt;charset=utf-8"))
+    thr = Thread(target=serve_file, args=(subtitle, local_ip, port, "text/vtt;charset=utf-8"))
     thr.setDaemon(True)
     thr.start()
     subtitle_url = "http://{}:{}/{}".format(local_ip, port, subtitle)
@@ -179,28 +164,29 @@ def process_subtitle(ctx, param, value):
 
 @cli.command(short_help="Send a video to a Chromecast for playing.")
 @click.argument("video_url", callback=process_url)
-@click.option("-s", "--subtitle",
-              callback=process_subtitle, help="Specify a Subtitle")
-@click.option("-f", "--force-default", is_flag=True,
-              help="Force use of the default Chromecast app (use if a custom app doesn't work).")
-@click.option("-r", "--random-play", is_flag=True,
-              help="Play random item from playlist, if applicable.")
-@click.option("--no-subs", is_flag=True, default=False,
-              help="Don't try to load subtitles automatically from the local folder.")
+@click.option("-s", "--subtitle", callback=process_subtitle, help="Specify a Subtitle")
+@click.option(
+    "-f",
+    "--force-default",
+    is_flag=True,
+    help="Force use of the default Chromecast app (use if a custom app doesn't work).",
+)
+@click.option("-r", "--random-play", is_flag=True, help="Play random item from playlist, if applicable.")
+@click.option(
+    "--no-subs", is_flag=True, default=False, help="Don't try to load subtitles automatically from the local folder."
+)
 @click.pass_obj
 def cast(settings, video_url, subtitle, force_default, random_play, no_subs):
     controller = "default" if force_default else None
     subtitle_url = None
     playlist_playback = False
-    cst, stream = setup_cast(settings["device"], video_url=video_url,
-                             prep="app", controller=controller)
+    cst, stream = setup_cast(settings["device"], video_url=video_url, prep="app", controller=controller)
 
     if stream.is_local_file:
         click.echo("Casting local file %s..." % video_url)
         if subtitle or not no_subs:
             subtitle_url = load_subtitle_if_exists(subtitle, video_url, stream.local_ip, stream.port + 1)
-        thr = Thread(target=serve_file,
-                     args=(video_url, stream.local_ip, stream.port, stream.guessed_content_type))
+        thr = Thread(target=serve_file, args=(video_url, stream.local_ip, stream.port, stream.guessed_content_type))
         thr.setDaemon(True)
         thr.start()
 
@@ -225,11 +211,15 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs):
     if playlist_playback:
         cst.play_playlist(stream.playlist_all_ids)
     else:
-        click.echo("Playing %s on \"%s\"..." % (stream.video_title, cst.cc_name))
+        click.echo('Playing %s on "%s"...' % (stream.video_title, cst.cc_name))
         if cst.info_type == "url":
-            cst.play_media_url(stream.video_url, title=stream.video_title,
-                               content_type=stream.guessed_content_type,
-                               subtitles=subtitle_url, thumb=stream.video_thumbnail)
+            cst.play_media_url(
+                stream.video_url,
+                title=stream.video_title,
+                content_type=stream.guessed_content_type,
+                subtitles=subtitle_url,
+                thumb=stream.video_thumbnail,
+            )
         elif cst.info_type == "id":
             cst.play_media_id(stream.video_id)
         else:
@@ -245,7 +235,7 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs):
 @click.pass_obj
 def cast_site(settings, url):
     cst = setup_cast(settings["device"], prep="app", controller="dashcast")
-    click.echo("Casting %s on \"%s\"..." % (url, cst.cc_name))
+    click.echo('Casting %s on "%s"...' % (url, cst.cc_name))
     cst.load_url(url)
 
 
@@ -281,8 +271,7 @@ def stop(settings):
 
 
 @cli.command(short_help="Rewind a video by TIME duration.")
-@click.argument("timedesc", type=CATT_TIME,
-                required=False, default="30", metavar="TIME")
+@click.argument("timedesc", type=CATT_TIME, required=False, default="30", metavar="TIME")
 @click.pass_obj
 def rewind(settings, timedesc):
     cst = setup_cast(settings["device"], prep="control")
@@ -290,8 +279,7 @@ def rewind(settings, timedesc):
 
 
 @cli.command(short_help="Fastforward a video by TIME duration.")
-@click.argument("timedesc", type=CATT_TIME,
-                required=False, default="30", metavar="TIME")
+@click.argument("timedesc", type=CATT_TIME, required=False, default="30", metavar="TIME")
 @click.pass_obj
 def ffwd(settings, timedesc):
     cst = setup_cast(settings["device"], prep="control")
@@ -322,8 +310,7 @@ def volume(settings, level):
 
 
 @cli.command(short_help="Turn up volume by a DELTA increment.")
-@click.argument("delta", type=click.IntRange(1, 100),
-                required=False, default=10, metavar="DELTA")
+@click.argument("delta", type=click.IntRange(1, 100), required=False, default=10, metavar="DELTA")
 @click.pass_obj
 def volumeup(settings, delta):
     cst = setup_cast(settings["device"])
@@ -331,8 +318,7 @@ def volumeup(settings, delta):
 
 
 @cli.command(short_help="Turn down volume by a DELTA increment.")
-@click.argument("delta", type=click.IntRange(1, 100),
-                required=False, default=10, metavar="DELTA")
+@click.argument("delta", type=click.IntRange(1, 100), required=False, default=10, metavar="DELTA")
 @click.pass_obj
 def volumedown(settings, delta):
     cst = setup_cast(settings["device"])
@@ -362,8 +348,7 @@ def scan():
 
 
 @cli.command(short_help="Save the current state of the Chromecast for later use.")
-@click.argument("path",
-                type=click.Path(writable=True), callback=process_path, required=False)
+@click.argument("path", type=click.Path(writable=True), callback=process_path, required=False)
 @click.pass_obj
 def save(settings, path):
     cst = setup_cast(settings["device"], prep="control")
@@ -381,8 +366,7 @@ def save(settings, path):
 
 
 @cli.command(short_help="Return Chromecast to saved state.")
-@click.argument("path",
-                type=click.Path(exists=True), callback=process_path, required=False)
+@click.argument("path", type=click.Path(exists=True), callback=process_path, required=False)
 @click.pass_obj
 def restore(settings, path):
     cst = setup_cast(settings["device"])

@@ -4,26 +4,38 @@ Controller to interface with the YouTube-app.
 
 import re
 import threading
+
+import requests
+from pychromecast.controllers import BaseController
+
 try:
     from json import JSONDecodeError
 except ImportError:
     JSONDecodeError = ValueError
 
-import requests
-from pychromecast.controllers import BaseController
 
 YOUTUBE_BASE_URL = "https://www.youtube.com/"
 YOUTUBE_WATCH_VIDEO_URL = YOUTUBE_BASE_URL + "watch?v="
 
 # id param is const(YouTube sets it as random xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx so it should be fine).
 RANDOM_ID = "12345678-9ABC-4DEF-0123-0123456789AB"
-VIDEO_ID_PARAM = '%7B%22videoId%22%3A%22{video_id}%22%2C%22currentTime%22%3A5%2C%22currentIndex%22%3A0%7D'
+VIDEO_ID_PARAM = "%7B%22videoId%22%3A%22{video_id}%22%2C%22currentTime%22%3A5%2C%22currentIndex%22%3A0%7D"
 TERMINATE_PARAM = "terminate"
 
 REQUEST_URL_SET_PLAYLIST = YOUTUBE_BASE_URL + "api/lounge/bc/bind?"
-BASE_REQUEST_PARAMS = {"device": "REMOTE_CONTROL", "id": RANDOM_ID, "name": "Desktop&app=youtube-desktop",
-                       "mdx-version": 3, "loungeIdToken": None, "VER": 8, "v": 2, "t": 1, "ui": 1, "RID": 75956,
-                       "CVER": 1}
+BASE_REQUEST_PARAMS = {
+    "device": "REMOTE_CONTROL",
+    "id": RANDOM_ID,
+    "name": "Desktop&app=youtube-desktop",
+    "mdx-version": 3,
+    "loungeIdToken": None,
+    "VER": 8,
+    "v": 2,
+    "t": 1,
+    "ui": 1,
+    "RID": 75956,
+    "CVER": 1,
+}
 
 SET_PLAYLIST_METHOD = {"method": "setPlaylist", "params": VIDEO_ID_PARAM, "TYPE": None}
 REQUEST_PARAMS_SET_PLAYLIST = dict(**dict(BASE_REQUEST_PARAMS, **SET_PLAYLIST_METHOD))
@@ -37,7 +49,7 @@ REQUEST_URL_LOUNGE_TOKEN = YOUTUBE_BASE_URL + "api/lounge/pairing/get_lounge_tok
 REQUEST_DATA_LOUNGE_TOKEN = "screen_ids={screenId}&session_token={XSRFToken}"
 
 YOUTUBE_SESSION_TOKEN_REGEX = 'XSRF_TOKEN\W*(.*)="'
-SID_REGEX = '"c","(.*?)",\"'
+SID_REGEX = '"c","(.*?)","'
 PLAYLIST_ID_REGEX = 'listId":"(.*?)"'
 FIRST_VIDEO_ID_REGEX = 'firstVideoId":"(.*?)"'
 GSESSION_ID_REGEX = '"S","(.*?)"]'
@@ -67,8 +79,7 @@ class YouTubeController(BaseController):
     """ Controller to interact with Youtube."""
 
     def __init__(self):
-        super(YouTubeController, self).__init__(
-            "urn:x-cast:com.google.youtube.mdx", "233637DE")
+        super(YouTubeController, self).__init__("urn:x-cast:com.google.youtube.mdx", "233637DE")
 
         self._xsrf_token = None
         self._lounge_token = None
@@ -118,7 +129,7 @@ class YouTubeController(BaseController):
         headers = {
             "Origin": YOUTUBE_BASE_URL,
             "Content-Type": "application/x-www-form-urlencoded",
-            "Referer": (referer or self.video_url)
+            "Referer": (referer or self.video_url),
         }
         response = requests.post(url, headers=headers, data=data, params=params)
         response.raise_for_status()
@@ -184,8 +195,8 @@ class YouTubeController(BaseController):
         if not self._lounge_token:
             raise ValueError("lounge token is None. _get_lounge_token must be called")
         url_params = REQUEST_PARAMS_SET_PLAYLIST.copy()
-        url_params['loungeIdToken'] = self._lounge_token
-        url_params['params'] = VIDEO_ID_PARAM.format(video_id=self.video_id)
+        url_params["loungeIdToken"] = self._lounge_token
+        url_params["params"] = VIDEO_ID_PARAM.format(video_id=self.video_id)
         response = self._do_post(REQUEST_URL_SET_PLAYLIST, data=REQUEST_DATA_SET_PLAYLIST, params=url_params)
         content = str(response.content)
         if response.status_code == 401 and content.find(EXPIRED_LOUNGE_ID_RESPONSE_CONTENT) != -1:
@@ -201,8 +212,8 @@ class YouTubeController(BaseController):
         First video(the playlist base video) and now playing are also returned if  playlist is initialized.
         """
         url_params = BASE_REQUEST_PARAMS.copy()
-        url_params['loungeIdToken'] = self._lounge_token
-        response = self._do_post(REQUEST_URL_SET_PLAYLIST, data='', params=url_params)
+        url_params["loungeIdToken"] = self._lounge_token
+        response = self._do_post(REQUEST_URL_SET_PLAYLIST, data="", params=url_params)
         self._extract_session_parameters(str(response.content))
         return response
 
@@ -288,7 +299,7 @@ class YouTubeController(BaseController):
         """
         try:
             self.clear_playlist()
-            self._manage_playlist(data='', video_id=self.video_id, TYPE=TERMINATE_PARAM)
+            self._manage_playlist(data="", video_id=self.video_id, TYPE=TERMINATE_PARAM)
         except requests.RequestException:
             # Session has expired or not in sync.Clean session parameters anyway.
             pass
@@ -339,7 +350,7 @@ class YouTubeController(BaseController):
         :param youtube_id: The video id to add to the queue
         """
         if not self.in_session:
-            raise YoutubeSessionError('Session must be initialized to add to queue')
+            raise YoutubeSessionError("Session must be initialized to add to queue")
         if not self.playlist:
             self.playlist = [self.video_id]
         elif youtube_id in self.playlist:

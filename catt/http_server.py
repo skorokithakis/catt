@@ -7,7 +7,6 @@ from pathlib import Path
 
 def serve_file(filename, address="", port=45114, content_type=None):
     class FileHandler(BaseHTTPRequestHandler):
-
         def format_size(self, size):
             for size_unity in ["B", "KB", "MB", "GB", "TB"]:
                 if size < 1024:
@@ -28,14 +27,8 @@ def serve_file(filename, address="", port=45114, content_type=None):
                 self.send_response(200)
                 self.send_header("Content-type", content_type)
                 self.send_header("Content-Length", length)
-                self.send_header('Access-Control-Allow-Origin', '*')
-                self.send_header(
-                    "Last-Modified",
-                    time.strftime(
-                        "%a %d %b %Y %H:%M:%S GMT",
-                        time.localtime(mtime)
-                    )
-                )
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.send_header("Last-Modified", time.strftime("%a %d %b %Y %H:%M:%S GMT", time.localtime(mtime)))
                 self.end_headers()
 
                 while True:

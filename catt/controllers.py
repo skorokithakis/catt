@@ -12,7 +12,6 @@ from .stream_info import StreamInfo
 from .util import warning
 from .youtube import YouTubeController
 
-
 APP_INFO = [
     {"app_name": "youtube", "app_id": "233637DE", "supported_device_types": ["cast"]},
     {"app_name": "dashcast", "app_id": DASHCAST_APP_ID, "supported_device_types": ["cast"]},
@@ -39,7 +38,7 @@ def get_chromecast(device_name):
         try:
             return next(cc for cc in devices if cc.name == device_name)
         except StopIteration:
-            raise CattCastError("Specified device \"%s\" not found." % device_name)
+            raise CattCastError('Specified device "%s" not found.' % device_name)
     else:
         return devices[0]
 
@@ -107,8 +106,7 @@ def setup_cast(device_name, video_url=None, prep=None, controller=None):
         except StopIteration:
             app = DEFAULT_APP
 
-    if (not controller and app["app_name"] != "default" and
-            cast.cast_type not in app["supported_device_types"]):
+    if not controller and app["app_name"] != "default" and cast.cast_type not in app["supported_device_types"]:
         if stream:
             warning("The %s app is not available for this device." % app["app_name"].capitalize())
         app = DEFAULT_APP
@@ -137,6 +135,7 @@ def catch_namespace_error(func):
             func(*args, **kwargs)
         except pychromecast.error.UnsupportedNamespace:
             raise CattCastError("Chromecast app operation was interrupted.")
+
     return wrapper
 
 
@@ -218,8 +217,7 @@ class CastState(CattStore):
             data = self._read_store()
             if set(next(iter(data.values())).keys()) != set(["controller", "data"]):
                 raise ValueError
-        except (json.decoder.JSONDecodeError,
-                ValueError, StopIteration, AttributeError):
+        except (json.decoder.JSONDecodeError, ValueError, StopIteration, AttributeError):
             raise StateFileError
         return data.get(name)
 
@@ -315,10 +313,12 @@ class CastController:
     @property
     def media_info(self):
         status = self._cast.media_controller.status
-        return {"title": status.title,
-                "content_id": status.content_id,
-                "current_time": status.current_time if self._is_seekable else None,
-                "thumb": status.images[0].url if status.images else None}
+        return {
+            "title": status.title,
+            "content_id": status.content_id,
+            "current_time": status.current_time if self._is_seekable else None,
+            "thumb": status.images[0].url if status.images else None,
+        }
 
     @property
     def cast_info(self):
@@ -329,11 +329,14 @@ class CastController:
             duration, current = status.duration, status.current_time
             remaining = duration - current
             progress = int((1.0 * current / duration) * 100)
-            cinfo.update({"duration": duration,
-                          "remaining": remaining, "progress": progress})
+            cinfo.update({"duration": duration, "remaining": remaining, "progress": progress})
 
-        cinfo.update({"player_state": status.player_state,
-                      "volume_level": str(int(round(self._cast.status.volume_level, 2) * 100))})
+        cinfo.update(
+            {
+                "player_state": status.player_state,
+                "volume_level": str(int(round(self._cast.status.volume_level, 2) * 100)),
+            }
+        )
         return cinfo
 
     @property
@@ -344,8 +347,7 @@ class CastController:
     @property
     def _is_seekable(self):
         status = self._cast.media_controller.status
-        return True if (status.duration and
-                        status.stream_type == "BUFFERED") else False
+        return True if (status.duration and status.stream_type == "BUFFERED") else False
 
     def _prep_app(self):
         """Make sure desired chromecast app is running."""
@@ -426,8 +428,7 @@ class CastController:
         :type idle_only: bool
         """
 
-        if (idle_only and
-                self._cast.media_controller.status.player_state not in ["UNKNOWN", "IDLE"]):
+        if idle_only and self._cast.media_controller.status.player_state not in ["UNKNOWN", "IDLE"]:
             return
         self._cast.quit_app()
 
@@ -452,20 +453,26 @@ class DefaultCastController(CastController):
     def __init__(self, cast, name, app_id, prep=None):
         super(DefaultCastController, self).__init__(cast, name, app_id, prep=prep)
         self.info_type = "url"
-        self.save_capability = "complete" if (self._is_seekable and
-                                              self._cast.app_id == DEFAULT_APP["app_id"]) else None
+        self.save_capability = (
+            "complete" if (self._is_seekable and self._cast.app_id == DEFAULT_APP["app_id"]) else None
+        )
 
     def play_media_url(self, video_url, **kwargs):
         content_type = kwargs.get("content_type") or "video/mp4"
-        self._controller.play_media(video_url, content_type,
-                                    current_time=kwargs.get("current_time"),
-                                    title=kwargs.get("title"), thumb=kwargs.get("thumb"),
-                                    subtitles=kwargs.get("subtitles"))
+        self._controller.play_media(
+            video_url,
+            content_type,
+            current_time=kwargs.get("current_time"),
+            title=kwargs.get("title"),
+            thumb=kwargs.get("thumb"),
+            subtitles=kwargs.get("subtitles"),
+        )
         self._controller.block_until_active()
 
     def restore(self, data):
-        self.play_media_url(data["content_id"], current_time=data["current_time"],
-                            title=data["title"], thumb=data["thumb"])
+        self.play_media_url(
+            data["content_id"], current_time=data["current_time"], title=data["title"], thumb=data["thumb"]
+        )
 
 
 class DashCastController(CastController):
@@ -509,7 +516,7 @@ class YoutubeCastController(CastController):
 
     @catch_namespace_error
     def add(self, video_id):
-        echo("Adding video id \"%s\" to the queue." % video_id)
+        echo('Adding video id "%s" to the queue.' % video_id)
         self._prep_yt(video_id)
         # You can't add videos to the queue while the app is buffering.
         self._media_listener.not_buffering.wait()

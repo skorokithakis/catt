@@ -7,7 +7,6 @@ import youtube_dl
 
 from .util import guess_mime
 
-
 AUDIO_MODELS = [("Google Inc.", "Chromecast Audio")]
 ULTRA_MODELS = [("Xiaomi", "MIBOX3"), ("Google Inc.", "Chromecast Ultra")]
 
@@ -149,8 +148,8 @@ class StreamInfo:
             raise StreamInfoError("called on non-playlist")
 
     def _get_local_ip(self):
-        interface = netifaces.gateways()['default'][netifaces.AF_INET][1]
-        return netifaces.ifaddresses(interface)[netifaces.AF_INET][0]['addr']
+        interface = netifaces.gateways()["default"][netifaces.AF_INET][1]
+        return netifaces.ifaddresses(interface)[netifaces.AF_INET][0]["addr"]
 
     def _get_stream_preinfo(self, video_url):
         try:
