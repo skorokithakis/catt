@@ -14,7 +14,7 @@ from .youtube import YouTubeController
 
 APP_INFO = [
     {"app_name": "youtube", "app_id": "233637DE", "supported_device_types": ["cast"]},
-    {"app_name": "dashcast", "app_id": DASHCAST_APP_ID, "supported_device_types": ["cast"]},
+    {"app_name": "dashcast", "app_id": DASHCAST_APP_ID, "supported_device_types": ["cast", "audio"]},
 ]
 DEFAULT_APP = {"app_name": "default", "app_id": "CC1AD845"}
 BACKDROP_APP_ID = "E8C28D3C"
