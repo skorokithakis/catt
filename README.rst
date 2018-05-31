@@ -99,6 +99,13 @@ To run ``catt`` in development, you can use the following command::
 
     python -m catt.cli --help
 
+Before committing, please make sure you install ``pre-commit`` and install its hooks::
+
+    pip install pre-commit
+    pre-commit install
+
+That's all, now you can commit and the hooks will run.
+
 Thanks!
 
 
