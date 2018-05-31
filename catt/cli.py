@@ -32,7 +32,7 @@ class CattTimeParamType(click.ParamType):
             if (tlen > 1 and any(t > 59 for t in tdesc)) or tlen > 3:
                 raise ValueError
         except ValueError:
-            self.fail("%s is not a valid time description" % value, param, ctx)
+            self.fail("%s is not a valid time description." % value, param, ctx)
 
         tdesc.reverse()
         return sum(tdesc[p] * 60 ** p for p in range(tlen))
@@ -97,6 +97,7 @@ def write_config(settings):
 
 def hunt_subtitle(video):
     """"Searches for subtitles in the current folder"""
+
     video_path = Path(video)
     video_path_stem_lower = video_path.stem.lower()
     for entry_path in video_path.parent.iterdir():
@@ -125,7 +126,7 @@ def convert_srt_to_webvtt(filename):
                 return convert_srt_to_webvtt_helper(content)
         except UnicodeDecodeError:
             pass
-    raise CattCliError("Could not find the proper encoding of {}. Please convert it to utf-8".format(filename))
+    raise CattCliError("Could not find the proper encoding of {}. Please convert it to utf-8.".format(filename))
 
 
 def load_subtitle_if_exists(subtitle, video, local_ip, port):
@@ -158,13 +159,13 @@ def process_subtitle(ctx, param, value):
     if "://" in value:
         return value
     if not Path(value).is_file():
-        raise CattCliError("Subtitle file [{}] does not exist".format(value))
+        raise CattCliError("Subtitle file [{}] does not exist.".format(value))
     return value
 
 
 @cli.command(short_help="Send a video to a Chromecast for playing.")
 @click.argument("video_url", callback=process_url)
-@click.option("-s", "--subtitle", callback=process_subtitle, help="Specify a Subtitle")
+@click.option("-s", "--subtitle", callback=process_subtitle, help="Specify a Subtitle.")
 @click.option(
     "-f",
     "--force-default",
