@@ -485,8 +485,9 @@ class DashCastController(CastController):
 
     def _prep_app(self):
         """Make sure desired chromecast app is running."""
-        # we must force the launch of the DashCast app because it, by design,
-        # becomes unresponsive after a website is loaded
+
+        # We must force the launch of the DashCast app because it, by design,
+        # becomes unresponsive after a website is loaded.
         self._cast.socket_client.receiver_controller.launch_app(self._cast_listener.app_id, force_launch=True)
         self._cast_listener.app_ready.wait()
 
