@@ -55,7 +55,7 @@ def process_url(ctx, param, value):
     if "://" not in value:
         if ctx.info_name != "cast":
             raise CattCliError("Local file not allowed as argument to this command.")
-        if not Path(value).exists():
+        if not Path(value).is_file():
             raise CattCliError("The chosen file does not exist.")
     return value
 
@@ -358,7 +358,7 @@ def save(settings, path):
         warning("Please be advised that playlist data will not be saved.")
 
     print_status(cst.media_info)
-    if path and path.exists():
+    if path and path.is_file():
         click.confirm("File already exists. Overwrite?", abort=True)
     click.echo("Saving...")
     state = CastState(path or STATE_PATH, create_dir=True if not path else False)

@@ -187,7 +187,7 @@ class Cache(CattStore):
         super(Cache, self).__init__(cache_path)
         self._create_store_dir()
 
-        if not self.store_path.exists():
+        if not self.store_path.is_file():
             devices = pychromecast.get_chromecasts()
             self._write_store({d.name: d.host for d in devices})
 
@@ -209,7 +209,7 @@ class CastState(CattStore):
         super(CastState, self).__init__(state_path)
         if create_dir:
             self._create_store_dir()
-        if not self.store_path.exists():
+        if not self.store_path.is_file():
             self._write_store({})
 
     def get_data(self, name):
