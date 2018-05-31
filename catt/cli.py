@@ -197,7 +197,7 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs):
 
     if stream.is_local_file:
         click.echo("Casting local file %s..." % video_url)
-        if not (subtitle is None and no_subs):
+        if subtitle or not no_subs:
             subtitle_url = load_subtitle_if_exists(subtitle, video_url, stream.local_ip, stream.port + 1)
         thr = Thread(target=serve_file,
                      args=(video_url, stream.local_ip, stream.port, stream.guessed_content_type))
