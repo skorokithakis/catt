@@ -11,7 +11,7 @@ from threading import Thread
 import click
 import requests
 
-from .controllers import Cache, CastState, StateFileError, get_chromecast, get_chromecasts, setup_cast
+from .controllers import Cache, CastState, StateFileError, StateMode, get_chromecast, get_chromecasts, setup_cast
 from .http_server import serve_file
 from .util import warning
 
@@ -362,7 +362,10 @@ def save(settings, path):
     if path and path.is_file():
         click.confirm("File already exists. Overwrite?", abort=True)
     click.echo("Saving...")
-    state = CastState(path or STATE_PATH, create_dir=True if not path else False)
+    if path:
+        state = CastState(path, StateMode.ARBI)
+    else:
+        state = CastState(STATE_PATH, StateMode.CONF)
     state.set_data(cst.cc_name, {"controller": cst.name, "data": cst.media_info})
 
 
@@ -370,8 +373,10 @@ def save(settings, path):
 @click.argument("path", type=click.Path(exists=True), callback=process_path, required=False)
 @click.pass_obj
 def restore(settings, path):
+    if not path and not STATE_PATH.is_file():
+        raise CattCliError("Save file in config dir has not been created.")
     cst = setup_cast(settings["device"])
-    state = CastState(path or STATE_PATH)
+    state = CastState(path or STATE_PATH, StateMode.READ)
     try:
         data = state.get_data(cst.cc_name)
     except StateFileError:
