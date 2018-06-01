@@ -102,11 +102,11 @@ class StreamInfo:
 
     @property
     def video_id(self):
-        return self._info["id"] if self.is_remote_file else None
+        return self._info["id"] if self.is_remote_file or self._is_playlist_with_active_entry else None
 
     @property
     def video_thumbnail(self):
-        return self._info.get("thumbnail") if self.is_remote_file else None
+        return self._info.get("thumbnail") if self.is_remote_file or self._is_playlist_with_active_entry else None
 
     @property
     def guessed_content_type(self):
