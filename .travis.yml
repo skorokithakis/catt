@@ -1,4 +1,7 @@
 language: python
+
+cache: pip
+
 python:
   - "3.4"
   - "3.5"
@@ -6,7 +9,7 @@ python:
 
 install: "pip install -r requirements_dev.txt"
 
-# command to run tests, e.g. python setup.py test
 script:
-  - python3.6 $(which pre-commit) run -a
+  # Only run this on Python 3.6.
+  - command -v python3.6 && pre-commit run -a
   - python setup.py test
