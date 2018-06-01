@@ -8,5 +8,5 @@ install: "pip install -r requirements_dev.txt"
 
 # command to run tests, e.g. python setup.py test
 script:
-  - pre-commit run -a
+  - python3.6 $(which pre-commit) run -a
   - python setup.py test
