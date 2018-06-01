@@ -1,7 +1,7 @@
 import json
 import tempfile
 import threading
-from enum import Enum, auto
+from enum import Enum
 from pathlib import Path
 
 import pychromecast
@@ -206,9 +206,9 @@ class Cache(CattStore):
 
 
 class StateMode(Enum):
-    READ = auto()
-    CONF = auto()
-    ARBI = auto()
+    READ = 1
+    CONF = 2
+    ARBI = 3
 
 
 class CastState(CattStore):
