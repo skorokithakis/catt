@@ -205,12 +205,18 @@ class Cache(CattStore):
 
 
 class CastState(CattStore):
-    def __init__(self, state_path, create_dir=False):
+    def __init__(self, state_path, mode="read"):
         super(CastState, self).__init__(state_path)
-        if create_dir:
+        if mode == "conf":
             self._create_store_dir()
-        if not self.store_path.is_file():
+            if not self.store_path.is_file():
+                self._write_store({})
+        elif mode == "arbi":
             self._write_store({})
+        elif mode == "read":
+            pass
+        else:
+            raise ValueError("invalid mode")
 
     def get_data(self, name):
         try:
