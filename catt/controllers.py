@@ -1,6 +1,7 @@
 import json
 import tempfile
 import threading
+from enum import Enum, auto
 from pathlib import Path
 
 import pychromecast
@@ -204,19 +205,21 @@ class Cache(CattStore):
         return data.get(name)
 
 
+class StateMode(Enum):
+    READ = auto()
+    CONF = auto()
+    ARBI = auto()
+
+
 class CastState(CattStore):
-    def __init__(self, state_path, mode="read"):
+    def __init__(self, state_path, mode):
         super(CastState, self).__init__(state_path)
-        if mode == "conf":
+        if mode == StateMode.CONF:
             self._create_store_dir()
             if not self.store_path.is_file():
                 self._write_store({})
-        elif mode == "arbi":
+        elif mode == StateMode.ARBI:
             self._write_store({})
-        elif mode == "read":
-            pass
-        else:
-            raise ValueError("invalid mode")
 
     def get_data(self, name):
         try:
