@@ -268,7 +268,7 @@ class MediaStatusListener:
         self.playing = threading.Event()
         if state != "BUFFERING":
             self.not_buffering.set()
-        elif state == "PLAYING":
+        if state == "PLAYING":
             self.playing.set()
 
     def new_media_status(self, status):
