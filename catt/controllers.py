@@ -213,6 +213,8 @@ class StateMode(Enum):
 
 class CastState(CattStore):
     def __init__(self, state_path, mode):
+        if not isinstance(mode, StateMode):
+            raise ValueError("invalid mode")
         super(CastState, self).__init__(state_path)
         if mode == StateMode.CONF:
             self._create_store_dir()
