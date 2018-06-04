@@ -58,3 +58,5 @@ docs/_build/
 
 # PyBuilder
 target/
+
+.mypy_cache/

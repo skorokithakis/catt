@@ -12,4 +12,5 @@ install: "pip install -r requirements_dev.txt"
 script:
   # Only run this on Python 3.6.
   - if [[ TRAVIS_PYTHON_VERSION == 3.6* ]] ; then pre-commit run -a; fi
+  - mypy --ignore-missing-imports --follow-imports=skip catt
   - python setup.py test
