@@ -11,7 +11,7 @@ from pychromecast.controllers import BaseController
 try:
     from json import JSONDecodeError
 except ImportError:
-    JSONDecodeError = ValueError
+    JSONDecodeError = ValueError  # type: ignore
 
 
 YOUTUBE_BASE_URL = "https://www.youtube.com/"
