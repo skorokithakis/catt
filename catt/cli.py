@@ -41,7 +41,7 @@ class CattTimeParamType(click.ParamType):
 CATT_TIME = CattTimeParamType()
 
 
-def human_time(seconds):
+def human_time(seconds: int):
     return time.strftime("%H:%M:%S", time.gmtime(seconds))
 
 
