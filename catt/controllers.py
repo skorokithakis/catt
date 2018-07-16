@@ -28,8 +28,7 @@ def get_chromecasts(fail=True):
         raise CattCastError("No devices found.")
 
     devices.sort(key=lambda cc: cc.name)
-    # We need to ensure that all Chromecast objects contain DIAL info.
-    return [pychromecast.Chromecast(cc.host) for cc in devices]
+    return devices
 
 
 def get_chromecast(device_name):
