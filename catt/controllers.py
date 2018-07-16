@@ -19,6 +19,7 @@ APP_INFO = [
 ]
 DEFAULT_APP = {"app_name": "default", "app_id": "CC1AD845"}
 BACKDROP_APP_ID = "E8C28D3C"
+DEVICES_WITH_TWO_MODEL_NAMES = {"Eureka Dongle": "Chromecast"}
 
 
 def get_chromecasts(fail=True):
@@ -84,7 +85,8 @@ def setup_cast(device_name, video_url=None, prep=None, controller=None):
     cast.wait()
 
     if video_url:
-        cc_info = (cast.device.manufacturer, cast.model_name)
+        model_name = DEVICES_WITH_TWO_MODEL_NAMES.get(cast.model_name, cast.model_name)
+        cc_info = (cast.device.manufacturer, model_name)
         stream = StreamInfo(video_url, model=cc_info)
 
     if controller:
