@@ -21,6 +21,7 @@ APP_INFO = [
 DEFAULT_APP = {"app_name": "default", "app_id": "CC1AD845"}
 BACKDROP_APP_ID = "E8C28D3C"
 DEVICES_WITH_TWO_MODEL_NAMES = {"Eureka Dongle": "Chromecast"}
+DEFAULT_PORT = 8009
 
 
 def get_chromecasts(fail=True):
@@ -73,16 +74,18 @@ def setup_cast(device_name, video_url=None, prep=None, controller=None):
     """
 
     cache = Cache()
-    cached_ip = cache.get_data(device_name)
+    cached_ip, cached_port = cache.get_data(device_name)
     stream = None
 
     try:
         if not cached_ip:
             raise ValueError
-        cast = pychromecast.Chromecast(cached_ip)
+        # tries = 1 is necessary in order to stop pychromecast engaging
+        # in a retry behaviour when ip is correct, but port is wrong.
+        cast = pychromecast.Chromecast(cached_ip, port=cached_port, tries=1)
     except (pychromecast.error.ChromecastConnectionError, ValueError):
         cast = get_chromecast(device_name)
-        cache.set_data(cast.name, cast.host)
+        cache.set_data(cast.name, cast)
     cast.wait()
 
     if video_url:
@@ -192,7 +195,14 @@ class Cache(CattStore):
 
         if not self.store_path.is_file():
             devices = get_chromecasts(fail=False)
-            self._write_store({d.name: d.host for d in devices})
+            cache_data = {d.name: self._create_device_entry(d) for d in devices}
+            self._write_store(cache_data)
+
+    def _create_device_entry(self, device):
+        device_data = {"ip": device.host}
+        if device.port != DEFAULT_PORT:
+            device_data["group_port"] = device.port
+        return device_data
 
     def get_data(self, name):
         data = self._read_store()
@@ -200,11 +210,19 @@ class Cache(CattStore):
         # network, we need to ensure auto-discovery.
         if not data:
             return None
-        # When the user does not specify a device, we need to make an attempt
-        # to consistently return the same IP, thus the alphabetical sorting.
-        if not name:
-            return data[min(data, key=str)]
-        return data.get(name)
+        if name:
+            fetched = data.get(name)
+        else:
+            # When the user does not specify a device, we need to make an attempt
+            # to consistently return the same IP, thus the alphabetical sorting.
+            fetched = data[min(data, key=str)]
+        return (fetched["ip"], fetched.get("group_port")) if fetched else (None, None)
+
+    def set_data(self, name, value):
+        data = self._read_store()
+        device_data = self._create_device_entry(value)
+        data.update({value.name: device_data})
+        self._write_store(data)
 
 
 class StateMode(Enum):
