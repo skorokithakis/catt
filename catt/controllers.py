@@ -9,6 +9,7 @@ from click import ClickException, echo
 from pychromecast.controllers.dashcast import APP_DASHCAST as DASHCAST_APP_ID
 from pychromecast.controllers.dashcast import DashCastController as PyChromecastDashCastController
 
+from .__init__ import __version__ as CATT_VERSION
 from .stream_info import StreamInfo
 from .util import warning
 from .youtube import YouTubeController
@@ -185,7 +186,7 @@ class CattStore:
 
 class Cache(CattStore):
     def __init__(self):
-        cache_path = Path(tempfile.gettempdir(), "catt_cache", "chromecast_hosts")
+        cache_path = Path(tempfile.gettempdir(), "catt_%s_cache" % CATT_VERSION, "chromecast_hosts")
         super(Cache, self).__init__(cache_path)
         self._create_store_dir()
 
