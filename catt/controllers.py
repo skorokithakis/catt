@@ -209,7 +209,7 @@ class Cache(CattStore):
         # In the case that cache has been initialized with no cc's on the
         # network, we need to ensure auto-discovery.
         if not data:
-            return None
+            return (None, None)
         if name:
             fetched = data.get(name)
         else:
