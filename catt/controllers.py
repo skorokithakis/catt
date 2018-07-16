@@ -21,10 +21,10 @@ DEFAULT_APP = {"app_name": "default", "app_id": "CC1AD845"}
 BACKDROP_APP_ID = "E8C28D3C"
 
 
-def get_chromecasts():
+def get_chromecasts(fail=True):
     devices = pychromecast.get_chromecasts()
 
-    if not devices:
+    if fail and not devices:
         raise CattCastError("No devices found.")
 
     devices.sort(key=lambda cc: cc.name)
@@ -189,7 +189,7 @@ class Cache(CattStore):
         self._create_store_dir()
 
         if not self.store_path.is_file():
-            devices = pychromecast.get_chromecasts()
+            devices = get_chromecasts(fail=False)
             self._write_store({d.name: d.host for d in devices})
 
     def get_data(self, name):
