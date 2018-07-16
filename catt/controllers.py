@@ -85,7 +85,7 @@ def setup_cast(device_name, video_url=None, prep=None, controller=None):
         cast = pychromecast.Chromecast(cached_ip, port=cached_port, tries=1)
     except (pychromecast.error.ChromecastConnectionError, ValueError):
         cast = get_chromecast(device_name)
-        cache.set_data(cast.name, cast)
+        cache.set_data(cast.name, cast.host, cast.port)
     cast.wait()
 
     if video_url:
@@ -195,13 +195,13 @@ class Cache(CattStore):
 
         if not self.store_path.is_file():
             devices = get_chromecasts(fail=False)
-            cache_data = {d.name: self._create_device_entry(d) for d in devices}
+            cache_data = {d.name: self._create_device_entry(d.host, d.port) for d in devices}
             self._write_store(cache_data)
 
-    def _create_device_entry(self, device):
-        device_data = {"ip": device.host}
-        if device.port != DEFAULT_PORT:
-            device_data["group_port"] = device.port
+    def _create_device_entry(self, ip, port):
+        device_data = {"ip": ip}
+        if port != DEFAULT_PORT:
+            device_data["group_port"] = port
         return device_data
 
     def get_data(self, name):
@@ -218,10 +218,9 @@ class Cache(CattStore):
             fetched = data[min(data, key=str)]
         return (fetched["ip"], fetched.get("group_port")) if fetched else (None, None)
 
-    def set_data(self, name, value):
+    def set_data(self, name, ip, port):
         data = self._read_store()
-        device_data = self._create_device_entry(value)
-        data.update({value.name: device_data})
+        data[name] = self._create_device_entry(ip, port)
         self._write_store(data)
 
 
