@@ -4,7 +4,6 @@ import tempfile
 import threading
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional, Tuple, Union
 
 import pychromecast
 from click import ClickException, echo
@@ -173,10 +172,10 @@ class CattStore:
         with self.store_path.open("w") as store:
             json.dump(data, store)
 
-    def get_data(self, *args: Any) -> Tuple[Optional[bytes], Union[None, int, str]]:
+    def get_data(self, *args):
         raise NotImplementedError
 
-    def set_data(self, *args: Any) -> None:
+    def set_data(self, *args) -> None:
         raise NotImplementedError
 
     def clear(self):
@@ -205,7 +204,7 @@ class Cache(CattStore):
             device_data["group_port"] = port
         return device_data
 
-    def get_data(self, name: str) -> Tuple[Union[None, bytes], Union[None, int]]:  # type: ignore
+    def get_data(self, name: str):  # type: ignore
         data = self._read_store()
         # In the case that cache has been initialized with no cc's on the
         # network, we need to ensure auto-discovery.
@@ -241,7 +240,7 @@ class CastState(CattStore):
         elif mode == StateMode.ARBI:
             self._write_store({})
 
-    def get_data(self, name: str) -> Tuple[Union[None, bytes], Union[None, str]]:  # type: ignore
+    def get_data(self, name: str):  # type: ignore
         try:
             data = self._read_store()
             if set(next(iter(data.values())).keys()) != set(["controller", "data"]):
