@@ -172,13 +172,11 @@ class CattStore:
         with self.store_path.open("w") as store:
             json.dump(data, store)
 
-    def get_data(self, *args):
-        raise NotImplementedError
+    # def get_data(self, *args):
+    #     raise NotImplementedError
 
-    def set_data(self, name, value):
-        data = self._read_store()
-        data[name] = value
-        self._write_store(data)
+    # def set_data(self, *args):
+    #     raise NotImplementedError
 
     def clear(self):
         try:
@@ -220,7 +218,7 @@ class Cache(CattStore):
             fetched = data[min(data, key=str)]
         return (fetched["ip"], fetched.get("group_port")) if fetched else (None, None)
 
-    def set_data(self, name, ip, port):
+    def set_data(self, name: str, ip: str, port: int) -> None:
         data = self._read_store()
         data[name] = self._create_device_entry(ip, port)
         self._write_store(data)
@@ -242,7 +240,7 @@ class CastState(CattStore):
         elif mode == StateMode.ARBI:
             self._write_store({})
 
-    def get_data(self, name):
+    def get_data(self, name: str) -> str:
         try:
             data = self._read_store()
             if set(next(iter(data.values())).keys()) != set(["controller", "data"]):
@@ -250,6 +248,11 @@ class CastState(CattStore):
         except (json.decoder.JSONDecodeError, ValueError, StopIteration, AttributeError):
             raise StateFileError
         return data.get(name)
+
+    def set_data(self, name, value):
+        data = self._read_store()
+        data[name] = value
+        self._write_store(data)
 
 
 class CastStatusListener:
