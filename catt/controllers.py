@@ -1,3 +1,4 @@
+import hashlib
 import json
 import tempfile
 import threading
@@ -189,7 +190,8 @@ class CattStore:
 
 class Cache(CattStore):
     def __init__(self):
-        cache_path = Path(tempfile.gettempdir(), "catt_%s_cache" % CATT_VERSION, "chromecast_hosts")
+        vhash = hashlib.sha1(CATT_VERSION.encode()).hexdigest()[:8]
+        cache_path = Path(tempfile.gettempdir(), "catt_%s_cache" % vhash, "chromecast_hosts")
         super(Cache, self).__init__(cache_path)
         self._create_store_dir()
 
