@@ -4,6 +4,7 @@ import tempfile
 import threading
 from enum import Enum
 from pathlib import Path
+from typing import Any, Optional, Tuple, Union
 
 import pychromecast
 from click import ClickException, echo
@@ -172,11 +173,11 @@ class CattStore:
         with self.store_path.open("w") as store:
             json.dump(data, store)
 
-    # def get_data(self, *args):
-    #     raise NotImplementedError
+    def get_data(self, *args: Any) -> Tuple[Optional[bytes], Union[None, int, str]]:
+        raise NotImplementedError
 
-    # def set_data(self, *args):
-    #     raise NotImplementedError
+    def set_data(self, *args: Any) -> None:
+        raise NotImplementedError
 
     def clear(self):
         try:
@@ -204,7 +205,7 @@ class Cache(CattStore):
             device_data["group_port"] = port
         return device_data
 
-    def get_data(self, name):
+    def get_data(self, name: str) -> Tuple[Union[None, bytes], Union[None, int]]:  # type: ignore
         data = self._read_store()
         # In the case that cache has been initialized with no cc's on the
         # network, we need to ensure auto-discovery.
@@ -216,9 +217,9 @@ class Cache(CattStore):
             # When the user does not specify a device, we need to make an attempt
             # to consistently return the same IP, thus the alphabetical sorting.
             fetched = data[min(data, key=str)]
-        return (fetched["ip"], fetched.get("group_port")) if fetched else (None, None)
+        return (fetched["ip"], fetched.get("group_port", 0)) if fetched else (None, None)
 
-    def set_data(self, name: str, ip: str, port: int) -> None:
+    def set_data(self, name: str, ip: str, port: int) -> None:  # type: ignore
         data = self._read_store()
         data[name] = self._create_device_entry(ip, port)
         self._write_store(data)
@@ -240,7 +241,7 @@ class CastState(CattStore):
         elif mode == StateMode.ARBI:
             self._write_store({})
 
-    def get_data(self, name: str) -> str:
+    def get_data(self, name: str) -> Tuple[Union[None, bytes], Union[None, str]]:  # type: ignore
         try:
             data = self._read_store()
             if set(next(iter(data.values())).keys()) != set(["controller", "data"]):
@@ -249,7 +250,7 @@ class CastState(CattStore):
             raise StateFileError
         return data.get(name)
 
-    def set_data(self, name, value):
+    def set_data(self, name: str, value: str) -> None:  # type: ignore
         data = self._read_store()
         data[name] = value
         self._write_store(data)

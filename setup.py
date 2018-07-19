@@ -15,7 +15,7 @@ with open("README.rst") as readme_file:
 
 requirements = ["youtube-dl>=2017.3.15", "PyChromecast>=2.0.0", "Click>=5.0", "netifaces>=0.10.7", "requests>=2.18.4"]
 
-test_requirements = []
+test_requirements = []  # type: ignore
 
 setup(
     name="catt",

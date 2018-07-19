@@ -13,3 +13,8 @@ repos:
     rev: v1.3.0
     hooks:
     -   id: flake8
+-   repo: git://github.com/skorokithakis/pre-commit-mypy
+    rev: v0.1.0
+    hooks:
+    - id: mypy
+      args: [-s]
