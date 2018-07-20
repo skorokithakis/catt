@@ -7,7 +7,7 @@ import youtube_dl
 
 from .util import guess_mime
 
-AUDIO_MODELS = [("Google Inc.", "Chromecast Audio")]
+AUDIO_DEVICE_TYPES = ["audio", "group"]
 ULTRA_MODELS = [("Xiaomi", "MIBOX3"), ("Google Inc.", "Chromecast Ultra")]
 
 BEST_MAX_2K = "best[width <=? 1920][height <=? 1080]"
@@ -31,7 +31,7 @@ class StreamInfoError(Exception):
 
 
 class StreamInfo:
-    def __init__(self, video_url, model=None):
+    def __init__(self, video_url, model=None, device_type=None):
         if "://" not in video_url:
             self._local_file = video_url
             self.local_ip = self._get_local_ip()
@@ -47,7 +47,7 @@ class StreamInfo:
             self.port = None
             self.is_local_file = False
 
-            if model in AUDIO_MODELS:
+            if device_type in AUDIO_DEVICE_TYPES:
                 self._best_format = AUDIO_FORMAT
             elif model in ULTRA_MODELS:
                 self._best_format = ULTRA_FORMAT
