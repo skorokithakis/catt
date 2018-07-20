@@ -1,3 +1,4 @@
+import hashlib
 import json
 import tempfile
 import threading
@@ -9,6 +10,7 @@ from click import ClickException, echo
 from pychromecast.controllers.dashcast import APP_DASHCAST as DASHCAST_APP_ID
 from pychromecast.controllers.dashcast import DashCastController as PyChromecastDashCastController
 
+from .__init__ import __version__ as CATT_VERSION
 from .stream_info import StreamInfo
 from .util import warning
 from .youtube import YouTubeController
@@ -19,17 +21,18 @@ APP_INFO = [
 ]
 DEFAULT_APP = {"app_name": "default", "app_id": "CC1AD845"}
 BACKDROP_APP_ID = "E8C28D3C"
+DEVICES_WITH_TWO_MODEL_NAMES = {"Eureka Dongle": "Chromecast"}
+DEFAULT_PORT = 8009
 
 
-def get_chromecasts():
+def get_chromecasts(fail=True):
     devices = pychromecast.get_chromecasts()
 
-    if not devices:
+    if fail and not devices:
         raise CattCastError("No devices found.")
 
     devices.sort(key=lambda cc: cc.name)
-    # We need to ensure that all Chromecast objects contain DIAL info.
-    return [pychromecast.Chromecast(cc.host) for cc in devices]
+    return devices
 
 
 def get_chromecast(device_name):
@@ -72,21 +75,24 @@ def setup_cast(device_name, video_url=None, prep=None, controller=None):
     """
 
     cache = Cache()
-    cached_ip = cache.get_data(device_name)
+    cached_ip, cached_port = cache.get_data(device_name)
     stream = None
 
     try:
         if not cached_ip:
             raise ValueError
-        cast = pychromecast.Chromecast(cached_ip)
+        # tries = 1 is necessary in order to stop pychromecast engaging
+        # in a retry behaviour when ip is correct, but port is wrong.
+        cast = pychromecast.Chromecast(cached_ip, port=cached_port, tries=1)
     except (pychromecast.error.ChromecastConnectionError, ValueError):
         cast = get_chromecast(device_name)
-        cache.set_data(cast.name, cast.host)
+        cache.set_data(cast.name, cast.host, cast.port)
     cast.wait()
 
     if video_url:
-        cc_info = (cast.device.manufacturer, cast.model_name)
-        stream = StreamInfo(video_url, model=cc_info)
+        model_name = DEVICES_WITH_TWO_MODEL_NAMES.get(cast.model_name, cast.model_name)
+        cc_info = (cast.device.manufacturer, model_name)
+        stream = StreamInfo(video_url, model=cc_info, device_type=cast.cast_type)
 
     if controller:
         if controller == "default":
@@ -169,10 +175,8 @@ class CattStore:
     def get_data(self, *args):
         raise NotImplementedError
 
-    def set_data(self, name, value):
-        data = self._read_store()
-        data[name] = value
-        self._write_store(data)
+    def set_data(self, *args) -> None:
+        raise NotImplementedError
 
     def clear(self):
         try:
@@ -184,25 +188,40 @@ class CattStore:
 
 class Cache(CattStore):
     def __init__(self):
-        cache_path = Path(tempfile.gettempdir(), "catt_cache", "chromecast_hosts")
+        vhash = hashlib.sha1(CATT_VERSION.encode()).hexdigest()[:8]
+        cache_path = Path(tempfile.gettempdir(), "catt_%s_cache" % vhash, "chromecast_hosts")
         super(Cache, self).__init__(cache_path)
         self._create_store_dir()
 
         if not self.store_path.is_file():
-            devices = pychromecast.get_chromecasts()
-            self._write_store({d.name: d.host for d in devices})
+            devices = get_chromecasts(fail=False)
+            cache_data = {d.name: self._create_device_entry(d.host, d.port) for d in devices}
+            self._write_store(cache_data)
 
-    def get_data(self, name):
+    def _create_device_entry(self, ip, port):
+        device_data = {"ip": ip}
+        if port != DEFAULT_PORT:
+            device_data["group_port"] = port
+        return device_data
+
+    def get_data(self, name: str):  # type: ignore
         data = self._read_store()
         # In the case that cache has been initialized with no cc's on the
         # network, we need to ensure auto-discovery.
         if not data:
-            return None
-        # When the user does not specify a device, we need to make an attempt
-        # to consistently return the same IP, thus the alphabetical sorting.
-        if not name:
-            return data[min(data, key=str)]
-        return data.get(name)
+            return (None, None)
+        if name:
+            fetched = data.get(name)
+        else:
+            # When the user does not specify a device, we need to make an attempt
+            # to consistently return the same IP, thus the alphabetical sorting.
+            fetched = data[min(data, key=str)]
+        return (fetched["ip"], fetched.get("group_port", 0)) if fetched else (None, None)
+
+    def set_data(self, name: str, ip: str, port: int) -> None:  # type: ignore
+        data = self._read_store()
+        data[name] = self._create_device_entry(ip, port)
+        self._write_store(data)
 
 
 class StateMode(Enum):
@@ -221,7 +240,7 @@ class CastState(CattStore):
         elif mode == StateMode.ARBI:
             self._write_store({})
 
-    def get_data(self, name):
+    def get_data(self, name: str):  # type: ignore
         try:
             data = self._read_store()
             if set(next(iter(data.values())).keys()) != set(["controller", "data"]):
@@ -229,6 +248,11 @@ class CastState(CattStore):
         except (json.decoder.JSONDecodeError, ValueError, StopIteration, AttributeError):
             raise StateFileError
         return data.get(name)
+
+    def set_data(self, name: str, value: str) -> None:  # type: ignore
+        data = self._read_store()
+        data[name] = value
+        self._write_store(data)
 
 
 class CastStatusListener:
