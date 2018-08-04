@@ -47,7 +47,7 @@ def get_chromecast(device_name):
         return devices[0]
 
 
-def setup_cast(device_name, video_url=None, prep=None, controller=None):
+def setup_cast(device_name, video_url=None, prep=None, controller=None, ytdl_option=None):
     """
     Prepares selected chromecast and/or media file.
 
@@ -70,6 +70,8 @@ def setup_cast(device_name, video_url=None, prep=None, controller=None):
                        controller is bypassed, and the one specified here is
                        returned instead.
     :type controller: str
+    :param ytdl_option: YoutubeDL options
+    :type ytdl_option: tuple
     :returns: controllers.DefaultCastController or controllers.YoutubeCastController,
               and stream_info.StreamInfo if video_url is supplied.
     """
@@ -92,7 +94,7 @@ def setup_cast(device_name, video_url=None, prep=None, controller=None):
     if video_url:
         model_name = DEVICES_WITH_TWO_MODEL_NAMES.get(cast.model_name, cast.model_name)
         cc_info = (cast.device.manufacturer, model_name)
-        stream = StreamInfo(video_url, model=cc_info, device_type=cast.cast_type)
+        stream = StreamInfo(video_url, model=cc_info, device_type=cast.cast_type, ytdl_option=ytdl_option)
 
     if controller:
         if controller == "default":
