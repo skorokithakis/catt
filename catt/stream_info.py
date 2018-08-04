@@ -31,19 +31,18 @@ class StreamInfoError(Exception):
 
 
 class StreamInfo:
-    def __init__(self, video_url, model=None, device_type=None, ytdl_option=None):
+    def __init__(self, video_url, model=None, device_type=None, ytdl_options=None):
         if "://" not in video_url:
             self._local_file = video_url
             self.local_ip = self._get_local_ip()
             self.port = random.randrange(45000, 47000)
             self.is_local_file = True
         else:
-            self.ytdl_params = dict()
-            if ytdl_option:
-                self.ytdl_params = dict(ytdl_option)
-            self.ytdl_params.update({"quiet": True, "no_warnings": True})
+            ytdl_params = {"quiet": True, "no_warnings": True}
 
-            self._ydl = youtube_dl.YoutubeDL(self.ytdl_params)
+            if ytdl_options:
+                ytdl_params.update(ytdl_options)
+            self._ydl = youtube_dl.YoutubeDL(ytdl_params)
             self._preinfo = self._get_stream_preinfo(video_url)
             # Some playlist urls needs to be re-processed (such as youtube channel urls).
             if self._preinfo.get("ie_key"):
