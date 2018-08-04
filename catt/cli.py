@@ -44,10 +44,10 @@ CATT_TIME = CattTimeParamType()
 class YtdlOptParamType(click.ParamType):
     def convert(self, value, param, ctx):
         if "=" not in value:
-            self.fail("%s is not a valid key value pair." % value, param, ctx)
+            self.fail("%s is not a valid key/value pair." % value, param, ctx)
 
         ykey, yval = value.split("=", 1)
-        yval = {"true": True, "false": False}.get(yval.lower(), yval)
+        yval = {"true": True, "false": False}.get(yval.lower().strip(), yval)
         return (ykey, yval)
 
 
