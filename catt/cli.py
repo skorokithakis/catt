@@ -41,6 +41,19 @@ class CattTimeParamType(click.ParamType):
 CATT_TIME = CattTimeParamType()
 
 
+class YtdlOptParamType(click.ParamType):
+    def convert(self, value, param, ctx):
+        if "=" not in value:
+            self.fail("%s is not a valid key/value pair." % value, param, ctx)
+
+        ykey, yval = value.split("=", 1)
+        yval = {"true": True, "false": False}.get(yval.lower().strip(), yval)
+        return (ykey, yval)
+
+
+YTDL_OPT = YtdlOptParamType()
+
+
 def human_time(seconds: int):
     return time.strftime("%H:%M:%S", time.gmtime(seconds))
 
@@ -176,12 +189,22 @@ def process_subtitle(ctx, param, value):
 @click.option(
     "--no-subs", is_flag=True, default=False, help="Don't try to load subtitles automatically from the local folder."
 )
+@click.option(
+    "-y",
+    "--ytdl-option",
+    type=YTDL_OPT,
+    multiple=True,
+    metavar="OPT",
+    help="YouTube-DL option. Should be passed as `-y option=value`, and can be specified multiple times",
+)
 @click.pass_obj
-def cast(settings, video_url, subtitle, force_default, random_play, no_subs):
+def cast(settings, video_url, subtitle, force_default, random_play, no_subs, ytdl_option):
     controller = "default" if force_default else None
     subtitle_url = None
     playlist_playback = False
-    cst, stream = setup_cast(settings["device"], video_url=video_url, prep="app", controller=controller)
+    cst, stream = setup_cast(
+        settings["device"], video_url=video_url, prep="app", controller=controller, ytdl_options=ytdl_option
+    )
 
     if stream.is_local_file:
         click.echo("Casting local file %s..." % video_url)

@@ -20,6 +20,7 @@ MIXCLOUD_NO_DASH = "[format_id != dash-a1-x3]"
 AUDIO_FORMAT = BEST_ONLY_AUDIO + MIXCLOUD_NO_DASH + BEST_FALLBACK
 ULTRA_FORMAT = BEST_MAX_4K
 STANDARD_FORMAT = BEST_MAX_2K + MAX_50FPS + TWITCH_NO_60FPS
+DEFAULT_YTDL_OPTS = {"quiet": True, "no_warnings": True}
 
 
 class CattInfoError(click.ClickException):
@@ -31,14 +32,18 @@ class StreamInfoError(Exception):
 
 
 class StreamInfo:
-    def __init__(self, video_url, model=None, device_type=None):
+    def __init__(self, video_url, model=None, device_type=None, ytdl_options=None):
         if "://" not in video_url:
             self._local_file = video_url
             self.local_ip = self._get_local_ip()
             self.port = random.randrange(45000, 47000)
             self.is_local_file = True
         else:
-            self._ydl = youtube_dl.YoutubeDL({"quiet": True, "no_warnings": True})
+            self._ydl = (
+                youtube_dl.YoutubeDL(DEFAULT_YTDL_OPTS)
+                if not ytdl_options
+                else youtube_dl.YoutubeDL(dict(ytdl_options))
+            )
             self._preinfo = self._get_stream_preinfo(video_url)
             # Some playlist urls needs to be re-processed (such as youtube channel urls).
             if self._preinfo.get("ie_key"):
