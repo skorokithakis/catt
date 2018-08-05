@@ -191,19 +191,19 @@ def process_subtitle(ctx, param, value):
 )
 @click.option(
     "-y",
-    "--ytdl-options",
+    "--ytdl-option",
     type=YTDL_OPT,
     multiple=True,
     metavar="OPT",
-    help="Youtube-dl option. Should be passed as `-y key=value` format",
+    help="YouTube-DL option. Should be passed as `-y option=value`, and can be specified multiple times",
 )
 @click.pass_obj
-def cast(settings, video_url, subtitle, force_default, random_play, no_subs, ytdl_options):
+def cast(settings, video_url, subtitle, force_default, random_play, no_subs, ytdl_option):
     controller = "default" if force_default else None
     subtitle_url = None
     playlist_playback = False
     cst, stream = setup_cast(
-        settings["device"], video_url=video_url, prep="app", controller=controller, ytdl_options=ytdl_options
+        settings["device"], video_url=video_url, prep="app", controller=controller, ytdl_options=ytdl_option
     )
 
     if stream.is_local_file:
