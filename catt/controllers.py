@@ -525,7 +525,7 @@ class DashCastController(CastController):
 
         # We must force the launch of the DashCast app because it, by design,
         # becomes unresponsive after a website is loaded.
-        self._cast.socket_client.receiver_controller.launch_app(self._cast_listener.app_id, force_launch=True)
+        self._cast.start_app(self._cast_listener.app_id, force_launch=True)
         self._cast_listener.app_ready.wait()
 
 
