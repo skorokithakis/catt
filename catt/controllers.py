@@ -387,7 +387,12 @@ class CastController:
     @property
     def _is_audiovideo(self):
         status = self._cast.media_controller.status
-        return status.content_type.split("/")[0] in ["audio", "video"]
+        return status.content_type.split("/")[0] in ["audio", "video"] if status.content_type else False
+
+    @property
+    def _is_idle(self):
+        status = self._cast.media_controller.status
+        return status.player_state in ["UNKNOWN", "IDLE"]
 
     def _prep_app(self):
         """Make sure desired chromecast app is running."""
@@ -400,7 +405,7 @@ class CastController:
         if self._cast.app_id == BACKDROP_APP_ID or not self._cast.app_id:
             raise CattCastError("Chromecast is inactive.")
         self._cast.media_controller.block_until_active(1.0)
-        if self._cast.media_controller.status.player_state in ["UNKNOWN", "IDLE"]:
+        if self._is_idle:
             raise CattCastError("Nothing is currently playing.")
 
     def play_media_url(self, video_url, **kwargs):
@@ -468,7 +473,7 @@ class CastController:
         :type idle_only: bool
         """
 
-        if idle_only and self._cast.media_controller.status.player_state not in ["UNKNOWN", "IDLE"]:
+        if idle_only and (not self._is_idle or not self._is_audiovideo):
             return
         self._cast.quit_app()
 
