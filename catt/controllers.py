@@ -387,7 +387,8 @@ class CastController:
     @property
     def _is_audiovideo(self):
         status = self._cast.media_controller.status
-        return status.content_type.split("/")[0] in ["audio", "video"] if status.content_type else False
+        content_type = status.content_type.split("/") if status.content_type else None
+        return any(c in ["audio", "video"] for c in content_type) if content_type else False
 
     @property
     def _is_idle(self):
