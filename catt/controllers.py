@@ -368,12 +368,10 @@ class CastController:
             progress = int((1.0 * current / duration) * 100)
             cinfo.update({"duration": duration, "remaining": remaining, "progress": progress})
 
-        cinfo.update(
-            {
-                "player_state": status.player_state,
-                "volume_level": str(int(round(self._cast.status.volume_level, 2) * 100)),
-            }
-        )
+        if self._is_audiovideo:
+            cinfo.update({"player_state": status.player_state})
+
+        cinfo.update({"volume_level": str(int(round(self._cast.status.volume_level, 2) * 100))})
         return cinfo
 
     @property
@@ -385,6 +383,11 @@ class CastController:
     def _is_seekable(self):
         status = self._cast.media_controller.status
         return True if (status.duration and status.stream_type == "BUFFERED") else False
+
+    @property
+    def _is_audiovideo(self):
+        status = self._cast.media_controller.status
+        return status.content_type.split("/")[0] in ["audio", "video"]
 
     def _prep_app(self):
         """Make sure desired chromecast app is running."""
