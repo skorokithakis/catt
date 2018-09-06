@@ -528,6 +528,9 @@ class DashCastController(CastController):
         self._cast.start_app(self._cast_listener.app_id, force_launch=True)
         self._cast_listener.app_ready.wait()
 
+    def _prep_control(self):
+        self._not_supported()
+
 
 class YoutubeCastController(CastController):
     def __init__(self, cast, name, app_id, prep=None):
