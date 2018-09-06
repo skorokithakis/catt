@@ -235,7 +235,7 @@ class StateMode(Enum):
 
 
 class CastState(CattStore):
-    def __init__(self, state_path, mode):
+    def __init__(self, state_path: Path, mode: StateMode) -> None:
         super(CastState, self).__init__(state_path)
         if mode == StateMode.CONF:
             self._create_store_dir()
