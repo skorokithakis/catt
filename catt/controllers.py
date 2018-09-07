@@ -368,12 +368,10 @@ class CastController:
             progress = int((1.0 * current / duration) * 100)
             cinfo.update({"duration": duration, "remaining": remaining, "progress": progress})
 
-        cinfo.update(
-            {
-                "player_state": status.player_state,
-                "volume_level": str(int(round(self._cast.status.volume_level, 2) * 100)),
-            }
-        )
+        if self._is_audiovideo:
+            cinfo.update({"player_state": status.player_state})
+
+        cinfo.update({"volume_level": str(int(round(self._cast.status.volume_level, 2) * 100))})
         return cinfo
 
     @property
@@ -386,6 +384,21 @@ class CastController:
         status = self._cast.media_controller.status
         return True if (status.duration and status.stream_type == "BUFFERED") else False
 
+    @property
+    def _is_audiovideo(self):
+        status = self._cast.media_controller.status
+        content_type = status.content_type.split("/")[0] if status.content_type else None
+        # We can't check against valid types, as some custom apps employ
+        # a different scheme (like "application/dash+xml").
+        return content_type != "image" if content_type else False
+
+    @property
+    def _is_idle(self):
+        status = self._cast.media_controller.status
+        # Dashcast (and maybe others) returns player_state == "UNKNOWN" while being active.
+        # Checking stream_type appears to be reliable.
+        return status.player_state in ["UNKNOWN", "IDLE"] and status.stream_type != "UNKNOWN"
+
     def _prep_app(self):
         """Make sure desired chromecast app is running."""
         if not self._cast_listener.app_ready.is_set():
@@ -397,7 +410,7 @@ class CastController:
         if self._cast.app_id == BACKDROP_APP_ID or not self._cast.app_id:
             raise CattCastError("Chromecast is inactive.")
         self._cast.media_controller.block_until_active(1.0)
-        if self._cast.media_controller.status.player_state in ["UNKNOWN", "IDLE"]:
+        if self._is_idle:
             raise CattCastError("Nothing is currently playing.")
 
     def play_media_url(self, video_url, **kwargs):
@@ -465,7 +478,7 @@ class CastController:
         :type idle_only: bool
         """
 
-        if idle_only and self._cast.media_controller.status.player_state not in ["UNKNOWN", "IDLE"]:
+        if idle_only and not self._is_idle:
             return
         self._cast.quit_app()
 
@@ -527,6 +540,9 @@ class DashCastController(CastController):
         # becomes unresponsive after a website is loaded.
         self._cast.start_app(self._cast_listener.app_id, force_launch=True)
         self._cast_listener.app_ready.wait()
+
+    def _prep_control(self):
+        self._not_supported()
 
 
 class YoutubeCastController(CastController):
