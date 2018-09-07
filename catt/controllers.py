@@ -393,7 +393,9 @@ class CastController:
     @property
     def _is_idle(self):
         status = self._cast.media_controller.status
-        return status.player_state in ["UNKNOWN", "IDLE"]
+        # Dashcast (and maybe others) returns player_state == "UNKNOWN" while being active.
+        # Checking stream_type appears to be reliable.
+        return status.player_state in ["UNKNOWN", "IDLE"] and status.stream_type != "UNKNOWN"
 
     def _prep_app(self):
         """Make sure desired chromecast app is running."""
