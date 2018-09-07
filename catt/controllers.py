@@ -388,6 +388,8 @@ class CastController:
     def _is_audiovideo(self):
         status = self._cast.media_controller.status
         content_type = status.content_type.split("/")[0] if status.content_type else None
+        # We can't check against valid types, as some custom apps employ
+        # a different scheme (like "application/dash+xml").
         return content_type != "image" if content_type else False
 
     @property
