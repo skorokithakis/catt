@@ -387,8 +387,8 @@ class CastController:
     @property
     def _is_audiovideo(self):
         status = self._cast.media_controller.status
-        content_type = status.content_type.split("/") if status.content_type else None
-        return any(c in ["audio", "video"] for c in content_type) if content_type else False
+        content_type = status.content_type.split("/")[0] if status.content_type else None
+        return content_type != "image" if content_type else False
 
     @property
     def _is_idle(self):
@@ -474,7 +474,7 @@ class CastController:
         :type idle_only: bool
         """
 
-        if idle_only and (not self._is_idle or not self._is_audiovideo):
+        if idle_only and not self._is_idle:
             return
         self._cast.quit_app()
 
