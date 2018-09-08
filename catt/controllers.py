@@ -254,7 +254,10 @@ class CastState(CattStore):
                 raise ValueError
         except (json.decoder.JSONDecodeError, ValueError, StopIteration, AttributeError):
             raise StateFileError
-        return data.get(name)
+        if name:
+            return data.get(name)
+        else:
+            return next(iter(data.values()))
 
     def set_data(self, name: str, value: str) -> None:  # type: ignore
         data = self._read_store()

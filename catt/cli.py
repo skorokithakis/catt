@@ -387,9 +387,11 @@ def save(settings, path):
     click.echo("Saving...")
     if path:
         state = CastState(path, StateMode.ARBI)
+        cc_name = "*"
     else:
         state = CastState(STATE_PATH, StateMode.CONF)
-    state.set_data(cst.cc_name, {"controller": cst.name, "data": cst.media_info})
+        cc_name = cst.cc_name
+    state.set_data(cc_name, {"controller": cst.name, "data": cst.media_info})
 
 
 @cli.command(short_help="Return Chromecast to saved state.")
@@ -401,7 +403,7 @@ def restore(settings, path):
     cst = setup_cast(settings["device"])
     state = CastState(path or STATE_PATH, StateMode.READ)
     try:
-        data = state.get_data(cst.cc_name)
+        data = state.get_data(cst.cc_name if not path else None)
     except StateFileError:
         raise CattCliError("The chosen file is not a valid save file.")
     if not data:
