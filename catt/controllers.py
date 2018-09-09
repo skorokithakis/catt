@@ -383,12 +383,12 @@ class CastController:
     @property
     def is_streaming_local_file(self):
         status = self._cast.media_controller.status
-        return True if status.content_id.endswith("?loaded_from_catt") else False
+        return status.content_id.endswith("?loaded_from_catt")
 
     @property
     def _is_seekable(self):
         status = self._cast.media_controller.status
-        return True if (status.duration and status.stream_type == "BUFFERED") else False
+        return status.duration and status.stream_type == "BUFFERED"
 
     @property
     def _is_audiovideo(self):
@@ -407,12 +407,14 @@ class CastController:
 
     def _prep_app(self):
         """Make sure desired chromecast app is running."""
+
         if not self._cast_listener.app_ready.is_set():
             self._cast.start_app(self._cast_listener.app_id)
             self._cast_listener.app_ready.wait()
 
     def _prep_control(self):
         """Make sure chromecast is in an active state."""
+
         if self._cast.app_id == BACKDROP_APP_ID or not self._cast.app_id:
             raise CattCastError("Chromecast is inactive.")
         self._cast.media_controller.block_until_active(1.0)
