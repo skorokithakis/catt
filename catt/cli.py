@@ -97,7 +97,7 @@ def cli(ctx, delete_cache, device):
     ctx.obj["device"] = device
 
 
-@cli.command(short_help="Write the name of default Chromecast " "device to config file.")
+@cli.command(short_help="Write the name of default Chromecast device to config file.")
 @click.pass_obj
 def write_config(settings):
     if settings.get("device"):
@@ -109,7 +109,7 @@ def write_config(settings):
 
 
 def hunt_subtitle(video):
-    """"Searches for subtitles in the current folder"""
+    """Searches for subtitles in the current folder"""
 
     video_path = Path(video)
     video_path_stem_lower = video_path.stem.lower()
@@ -195,7 +195,7 @@ def process_subtitle(ctx, param, value):
     type=YTDL_OPT,
     multiple=True,
     metavar="OPT",
-    help="YouTube-DL option. Should be passed as `-y option=value`, and can be specified multiple times",
+    help="YouTube-DL option. Should be passed as `-y option=value`, and can be specified multiple times.",
 )
 @click.pass_obj
 def cast(settings, video_url, subtitle, force_default, random_play, no_subs, ytdl_option):
