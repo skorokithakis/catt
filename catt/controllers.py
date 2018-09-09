@@ -117,16 +117,19 @@ def setup_cast(device_name, video_url=None, prep=None, controller=None, ytdl_opt
         except StopIteration:
             app = DEFAULT_APP
 
-    if not controller and app["app_name"] != "default" and cast.cast_type not in app["supported_device_types"]:
-        if stream:
-            warning("The %s app is not available for this device." % app["app_name"].capitalize())
+    if app["app_name"] != "default" and cast.cast_type not in app["supported_device_types"]:
+        msg = "The %s app is not available for this device." % app["app_name"].capitalize()
+        if controller:
+            raise CattCastError(msg)
+        elif stream:
+            warning(msg)
         app = DEFAULT_APP
 
     if app["app_name"] == "youtube":
         controller = YoutubeCastController(cast, app["app_name"], app["app_id"], prep=prep)
-    elif app["app_name"] == "dashcast":
-        if cast.cast_type not in app["supported_device_types"]:
-            raise CattCastError("The %s app is not available for this device." % app["app_name"].capitalize())
+    # We also check for controller, in the unlikely event that youtube-dl
+    # gets an extractor named "dashcast".
+    elif app["app_name"] == "dashcast" and controller:
         controller = DashCastController(cast, app["app_name"], app["app_id"], prep=prep)
     else:
         controller = DefaultCastController(cast, app["app_name"], app["app_id"], prep=prep)
@@ -251,7 +254,10 @@ class CastState(CattStore):
                 raise ValueError
         except (json.decoder.JSONDecodeError, ValueError, StopIteration, AttributeError):
             raise StateFileError
-        return data.get(name)
+        if name:
+            return data.get(name)
+        else:
+            return next(iter(data.values()))
 
     def set_data(self, name: str, value: str) -> None:  # type: ignore
         data = self._read_store()
