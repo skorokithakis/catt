@@ -39,11 +39,7 @@ class StreamInfo:
             self.port = random.randrange(45000, 47000)
             self.is_local_file = True
         else:
-            self._ydl = (
-                youtube_dl.YoutubeDL(DEFAULT_YTDL_OPTS)
-                if not ytdl_options
-                else youtube_dl.YoutubeDL(dict(ytdl_options))
-            )
+            self._ydl = youtube_dl.YoutubeDL(dict(ytdl_options) if ytdl_options else DEFAULT_YTDL_OPTS)
             self._preinfo = self._get_stream_preinfo(video_url)
             # Some playlist urls needs to be re-processed (such as youtube channel urls).
             if self._preinfo.get("ie_key"):

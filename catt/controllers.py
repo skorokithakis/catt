@@ -383,12 +383,12 @@ class CastController:
     @property
     def is_streaming_local_file(self):
         status = self._cast.media_controller.status
-        return True if status.content_id.endswith("?loaded_from_catt") else False
+        return status.content_id.endswith("?loaded_from_catt")
 
     @property
     def _is_seekable(self):
         status = self._cast.media_controller.status
-        return True if (status.duration and status.stream_type == "BUFFERED") else False
+        return status.duration and status.stream_type == "BUFFERED"
 
     @property
     def _is_audiovideo(self):
