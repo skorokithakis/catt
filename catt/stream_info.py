@@ -67,7 +67,7 @@ class StreamInfo:
 
     @property
     def _is_direct_link(self):
-        return self.is_remote_file and "direct" in self._info
+        return self.is_remote_file and self._info.get("direct")
 
     @property
     def is_playlist(self):
