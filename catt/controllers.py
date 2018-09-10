@@ -571,11 +571,14 @@ class YoutubeCastController(CastController):
                 self.add(video_id)
 
     @catch_namespace_error
-    def add(self, video_id):
+    def add(self, video_id, play_next=False):
         echo('Adding video id "%s" to the queue.' % video_id)
         # You can't add videos to the queue while the app is buffering.
         self._media_listener.not_buffering.wait()
-        self._controller.add_to_queue(video_id)
+        if play_next:
+            self._controller.play_next(video_id)
+        else:
+            self._controller.add_to_queue(video_id)
 
     @catch_namespace_error
     def restore(self, data):
