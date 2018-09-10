@@ -9,11 +9,11 @@ import pychromecast
 from click import ClickException, echo
 from pychromecast.controllers.dashcast import APP_DASHCAST as DASHCAST_APP_ID
 from pychromecast.controllers.dashcast import DashCastController as PyChromecastDashCastController
+from pychromecast.controllers.youtube import YouTubeController
 
 from .__init__ import __version__ as CATT_VERSION
 from .stream_info import StreamInfo
 from .util import warning
-from .youtube import YouTubeController
 
 APP_INFO = [
     {"app_name": "youtube", "app_id": "233637DE", "supported_device_types": ["cast"]},
@@ -561,13 +561,7 @@ class YoutubeCastController(CastController):
         self.save_capability = "partial"
         self.playlist_capability = "complete"
 
-    # The controller's start_new_session method needs a video id.
-    def _prep_yt(self, video_id):
-        if not self._controller.in_session:
-            self._controller.start_new_session(video_id)
-
     def play_media_id(self, video_id):
-        self._prep_yt(video_id)
         self._controller.play_video(video_id)
 
     def play_playlist(self, playlist):
@@ -579,7 +573,6 @@ class YoutubeCastController(CastController):
     @catch_namespace_error
     def add(self, video_id):
         echo('Adding video id "%s" to the queue.' % video_id)
-        self._prep_yt(video_id)
         # You can't add videos to the queue while the app is buffering.
         self._media_listener.not_buffering.wait()
         self._controller.add_to_queue(video_id)
