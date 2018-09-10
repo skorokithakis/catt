@@ -274,6 +274,16 @@ def add(settings, video_url, play_next):
     cst.add(stream.video_id, play_next=play_next)
 
 
+@cli.command(short_help="Remove a video from the queue.")
+@click.argument("video_url", callback=process_url)
+@click.pass_obj
+def remove(settings, video_url):
+    cst, stream = setup_cast(settings["device"], video_url=video_url, prep="control")
+    if (cst.name != "default" and cst.name != stream.extractor) or not stream.is_remote_file:
+        raise CattCliError("This url cannot be removed from the queue.")
+    cst.remove(stream.video_id)
+
+
 @cli.command(short_help="Pause a video.")
 @click.pass_obj
 def pause(settings):

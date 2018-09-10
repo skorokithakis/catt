@@ -503,7 +503,10 @@ class CastController:
         self.kill(idle_only=True)
         raise CattCastError("This action is not supported by the %s controller." % self.name.capitalize())
 
-    def add(self, video_id):
+    def add(self, video_id, *args):
+        self._not_supported()
+
+    def remove(self, video_id):
         self._not_supported()
 
 
@@ -579,6 +582,12 @@ class YoutubeCastController(CastController):
             self._controller.play_next(video_id)
         else:
             self._controller.add_to_queue(video_id)
+
+    @catch_namespace_error
+    def remove(self, video_id):
+        echo('Removing video id "%s" from the queue.' % video_id)
+        self._media_listener.not_buffering.wait()
+        self._controller.remove_video(video_id)
 
     @catch_namespace_error
     def restore(self, data):
