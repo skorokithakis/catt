@@ -2,7 +2,7 @@ import random
 from pathlib import Path
 
 import click
-import netifaces
+import ifaddr
 import youtube_dl
 
 from .util import guess_mime
@@ -149,8 +149,8 @@ class StreamInfo:
             raise StreamInfoError("called on non-playlist")
 
     def _get_local_ip(self):
-        interface = netifaces.gateways()["default"][netifaces.AF_INET][1]
-        return netifaces.ifaddresses(interface)[netifaces.AF_INET][0]["addr"]
+        adapter = next(a for a in ifaddr.get_adapters() if not any(i.ip == "127.0.0.1" for i in a.ips))
+        return adapter.ips[0].ip
 
     def _get_stream_preinfo(self, video_url):
         try:
