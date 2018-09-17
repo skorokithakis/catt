@@ -1,3 +1,4 @@
+import ipaddress
 import random
 from pathlib import Path
 
@@ -32,10 +33,10 @@ class StreamInfoError(Exception):
 
 
 class StreamInfo:
-    def __init__(self, video_url, model=None, device_type=None, ytdl_options=None):
+    def __init__(self, video_url, host=None, model=None, device_type=None, ytdl_options=None):
         if "://" not in video_url:
             self._local_file = video_url
-            self.local_ip = self._get_local_ip()
+            self.local_ip = self._get_local_ip(host)
             self.port = random.randrange(45000, 47000)
             self.is_local_file = True
         else:
@@ -148,9 +149,19 @@ class StreamInfo:
         else:
             raise StreamInfoError("called on non-playlist")
 
-    def _get_local_ip(self):
-        adapter = next(a for a in ifaddr.get_adapters() if not any(i.ip == "127.0.0.1" for i in a.ips))
-        return adapter.ips[0].ip
+    def _get_local_ip(self, host):
+        for adapter in ifaddr.get_adapters():
+            for aip in adapter.ips:
+                try:
+                    ipaddress.IPv4Address(aip.ip)
+                except ipaddress.AddressValueError:
+                    continue
+                catt_net = ipaddress.ip_network("%s/%s" % (aip.ip, aip.network_prefix), strict=False)
+                cc_net = ipaddress.ip_network("%s/%s" % (host, aip.network_prefix), strict=False)
+                if catt_net == cc_net:
+                    return aip.ip
+                else:
+                    continue
 
     def _get_stream_preinfo(self, video_url):
         try:
