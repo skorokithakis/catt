@@ -180,8 +180,6 @@ class StreamInfo:
             return self._ydl.process_ie_result(preinfo, download=False)
         except (youtube_dl.utils.ExtractorError, youtube_dl.utils.DownloadError):
             raise CattInfoError("Youtube-dl extractor failed.")
-        except ValueError:
-            raise CattInfoError("The specified format filter is invalid.")
 
     def _get_stream_url(self, info):
         try:
