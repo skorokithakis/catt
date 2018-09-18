@@ -151,15 +151,17 @@ class StreamInfo:
 
     def _get_local_ip(self, host):
         for adapter in ifaddr.get_adapters():
-            for aip in adapter.ips:
+            for adapter_ip in adapter.ips:
+                aip = adapter_ip.ip[0] if isinstance(adapter_ip.ip, tuple) else adapter_ip.ip
                 try:
-                    ipaddress.IPv4Address(aip.ip)
-                except ipaddress.AddressValueError:
+                    if not isinstance(ipaddress.ip_address(host), type(ipaddress.ip_address(aip))):
+                        raise ValueError
+                except ValueError:
                     continue
-                catt_net = ipaddress.ip_network("%s/%s" % (aip.ip, aip.network_prefix), strict=False)
-                cc_net = ipaddress.ip_network("%s/%s" % (host, aip.network_prefix), strict=False)
+                ipt = [(ip, adapter_ip.network_prefix) for ip in (aip, host)]
+                catt_net, cc_net = [ipaddress.ip_network("%s/%s" % ip, strict=False) for ip in ipt]
                 if catt_net == cc_net:
-                    return aip.ip
+                    return aip
                 else:
                     continue
 
