@@ -96,7 +96,9 @@ def setup_cast(device_name, video_url=None, prep=None, controller=None, ytdl_opt
     if video_url:
         model_name = DEVICES_WITH_TWO_MODEL_NAMES.get(cast.model_name, cast.model_name)
         cc_info = (cast.device.manufacturer, model_name)
-        stream = StreamInfo(video_url, model=cc_info, device_type=cast.cast_type, ytdl_options=ytdl_options)
+        stream = StreamInfo(
+            video_url, model=cc_info, host=cast.host, device_type=cast.cast_type, ytdl_options=ytdl_options
+        )
 
     if controller:
         if controller == "default":

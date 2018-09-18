@@ -1,8 +1,9 @@
+import ipaddress
 import random
 from pathlib import Path
 
 import click
-import netifaces
+import ifaddr
 import youtube_dl
 
 from .util import guess_mime
@@ -32,10 +33,10 @@ class StreamInfoError(Exception):
 
 
 class StreamInfo:
-    def __init__(self, video_url, model=None, device_type=None, ytdl_options=None):
+    def __init__(self, video_url, host=None, model=None, device_type=None, ytdl_options=None):
         if "://" not in video_url:
             self._local_file = video_url
-            self.local_ip = self._get_local_ip()
+            self.local_ip = self._get_local_ip(host)
             self.port = random.randrange(45000, 47000)
             self.is_local_file = True
         else:
@@ -148,9 +149,21 @@ class StreamInfo:
         else:
             raise StreamInfoError("called on non-playlist")
 
-    def _get_local_ip(self):
-        interface = netifaces.gateways()["default"][netifaces.AF_INET][1]
-        return netifaces.ifaddresses(interface)[netifaces.AF_INET][0]["addr"]
+    def _get_local_ip(self, host):
+        for adapter in ifaddr.get_adapters():
+            for adapter_ip in adapter.ips:
+                aip = adapter_ip.ip[0] if isinstance(adapter_ip.ip, tuple) else adapter_ip.ip
+                try:
+                    if not isinstance(ipaddress.ip_address(host), type(ipaddress.ip_address(aip))):
+                        raise ValueError
+                except ValueError:
+                    continue
+                ipt = [(ip, adapter_ip.network_prefix) for ip in (aip, host)]
+                catt_net, cc_net = [ipaddress.ip_network("%s/%s" % ip, strict=False) for ip in ipt]
+                if catt_net == cc_net:
+                    return aip
+                else:
+                    continue
 
     def _get_stream_preinfo(self, video_url):
         try:
