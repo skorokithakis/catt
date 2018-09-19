@@ -5,8 +5,8 @@ import threading
 from enum import Enum
 from pathlib import Path
 
+import click
 import pychromecast
-from click import ClickException, echo
 from pychromecast.controllers.dashcast import APP_DASHCAST as DASHCAST_APP_ID
 from pychromecast.controllers.dashcast import DashCastController as PyChromecastDashCastController
 from pychromecast.controllers.youtube import YouTubeController
@@ -155,7 +155,7 @@ def catch_namespace_error(func):
     return wrapper
 
 
-class CattCastError(ClickException):
+class CattCastError(click.ClickException):
     pass
 
 
@@ -575,7 +575,6 @@ class YoutubeCastController(CastController):
 
     @catch_namespace_error
     def add(self, video_id, play_next=False):
-        echo('Adding video id "%s" to the queue.' % video_id)
         # You can't add videos to the queue while the app is buffering.
         self._media_listener.not_buffering.wait()
         if play_next:
@@ -585,7 +584,6 @@ class YoutubeCastController(CastController):
 
     @catch_namespace_error
     def remove(self, video_id):
-        echo('Removing video id "%s" from the queue.' % video_id)
         self._media_listener.not_buffering.wait()
         self._controller.remove_video(video_id)
 
