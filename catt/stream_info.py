@@ -49,7 +49,11 @@ class StreamInfo:
             self.port = None
             self.is_local_file = False
 
-            if device_type in AUDIO_DEVICE_TYPES:
+            if "format" in self._ydl.params:
+                # We pop the "format" item, as it will make get_stream_info fail,
+                # if it holds an invalid value.
+                self._best_format = self._ydl.params.pop("format")
+            elif device_type in AUDIO_DEVICE_TYPES:
                 self._best_format = AUDIO_FORMAT
             elif model in ULTRA_MODELS:
                 self._best_format = ULTRA_FORMAT
@@ -178,7 +182,10 @@ class StreamInfo:
             raise CattInfoError("Youtube-dl extractor failed.")
 
     def _get_stream_url(self, info):
-        format_selector = self._ydl.build_format_selector(self._best_format)
+        try:
+            format_selector = self._ydl.build_format_selector(self._best_format)
+        except ValueError:
+            raise CattInfoError("The specified format filter is invalid.")
 
         try:
             best_format = next(format_selector(info))
