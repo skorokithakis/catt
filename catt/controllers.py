@@ -505,10 +505,16 @@ class CastController:
         self.kill(idle_only=True)
         raise CattCastError("This action is not supported by the %s controller." % self.name.capitalize())
 
-    def add(self, video_id, *args):
+    def add(self, video_id):
+        self._not_supported()
+
+    def add_next(self, video_id):
         self._not_supported()
 
     def remove(self, video_id):
+        self._not_supported()
+
+    def clear(self):
         self._not_supported()
 
 
@@ -574,18 +580,23 @@ class YoutubeCastController(CastController):
         self._controller.play_video(video_id, playlist_id)
 
     @catch_namespace_error
-    def add(self, video_id, play_next=False):
+    def add(self, video_id):
         # You can't add videos to the queue while the app is buffering.
         self._media_listener.not_buffering.wait()
-        if play_next:
-            self._controller.play_next(video_id)
-        else:
-            self._controller.add_to_queue(video_id)
+        self._controller.add_to_queue(video_id)
+
+    @catch_namespace_error
+    def add_next(self, video_id):
+        self._media_listener.not_buffering.wait()
+        self._controller.play_next(video_id)
 
     @catch_namespace_error
     def remove(self, video_id):
         self._media_listener.not_buffering.wait()
         self._controller.remove_video(video_id)
+
+    def clear(self):
+        self._controller.clear_playlist()
 
     @catch_namespace_error
     def restore(self, data):

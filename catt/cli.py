@@ -272,7 +272,10 @@ def add(settings, video_url, play_next):
     if (cst.name != "default" and cst.name != stream.extractor) or not stream.is_remote_file:
         raise CattCliError("This url cannot be added to the queue.")
     click.echo('Adding video id "%s" to the queue.' % stream.video_id)
-    cst.add(stream.video_id, play_next=play_next)
+    if play_next:
+        cst.add_next(stream.video_id)
+    else:
+        cst.add(stream.video_id)
 
 
 @cli.command(short_help="Remove a video from the queue.")
@@ -284,6 +287,13 @@ def remove(settings, video_url):
         raise CattCliError("This url cannot be removed from the queue.")
     click.echo('Removing video id "%s" from the queue.' % stream.video_id)
     cst.remove(stream.video_id)
+
+
+@cli.command(short_help="Clear the queue.")
+@click.pass_obj
+def clear(settings):
+    cst = setup_cast(settings["device"])
+    cst.clear()
 
 
 @cli.command(short_help="Pause a video.")
