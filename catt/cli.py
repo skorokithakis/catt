@@ -189,6 +189,7 @@ def process_subtitle(ctx, param, value):
 @click.option(
     "--no-subs", is_flag=True, default=False, help="Don't try to load subtitles automatically from the local folder."
 )
+@click.option("-n", "--no-playlist", is_flag=True, help="Play only video, if url contains both video and playlist ids.")
 @click.option(
     "-y",
     "--ytdl-option",
@@ -198,7 +199,7 @@ def process_subtitle(ctx, param, value):
     help="YouTube-DL option. Should be passed as `-y option=value`, and can be specified multiple times.",
 )
 @click.pass_obj
-def cast(settings, video_url, subtitle, force_default, random_play, no_subs, ytdl_option):
+def cast(settings, video_url, subtitle, force_default, random_play, no_subs, no_playlist, ytdl_option):
     controller = "default" if force_default else None
     subtitle_url = None
     playlist_playback = False
@@ -214,7 +215,7 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs, ytd
         thr.setDaemon(True)
         thr.start()
 
-    elif stream.is_playlist:
+    elif stream.is_playlist and not (no_playlist and stream.video_id):
         if stream.playlist_length == 0:
             cst.kill(idle_only=True)
             raise CattCliError("Playlist is empty.")
@@ -233,7 +234,8 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs, ytd
         click.echo("Casting remote file %s..." % video_url)
 
     if playlist_playback:
-        cst.play_playlist(stream.playlist_all_ids[0], stream.playlist_id)
+        video_id = stream.video_id or stream.playlist_all_ids[0]
+        cst.play_playlist(stream.playlist_id, video_id=video_id)
     else:
         click.echo('Playing %s on "%s"...' % (stream.video_title, cst.cc_name))
         if cst.info_type == "url":

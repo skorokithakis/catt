@@ -439,7 +439,7 @@ class CastController:
 
         raise NotImplementedError
 
-    def play_playlist(self, *args):
+    def play_playlist(self, playlist_id, **kwargs):
         raise NotImplementedError
 
     def play(self):
@@ -576,9 +576,9 @@ class YoutubeCastController(CastController):
         self.clear()
         self._controller.play_video(video_id)
 
-    def play_playlist(self, video_id, playlist_id):
+    def play_playlist(self, playlist_id, **kwargs):
         self.clear()
-        self._controller.play_video(video_id, playlist_id)
+        self._controller.play_video(kwargs.get("video_id"), playlist_id)
 
     @catch_namespace_error
     def add(self, video_id):
