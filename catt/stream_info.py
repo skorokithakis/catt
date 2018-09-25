@@ -62,8 +62,6 @@ class StreamInfo:
 
             if self.is_playlist:
                 self._entries = list(self._preinfo["entries"])
-                self._info = None
-
                 self._ydl.params.update({"noplaylist": True})
                 vpreinfo = self._get_stream_preinfo(video_url)
                 self._info = self._get_stream_info(vpreinfo) if "entries" not in vpreinfo else None
