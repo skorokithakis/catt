@@ -129,9 +129,9 @@ def setup_cast(device_name, video_url=None, prep=None, controller=None, ytdl_opt
 
     if app["app_name"] == "youtube":
         controller = YoutubeCastController(cast, app["app_name"], app["app_id"], prep=prep)
-    # We also check for controller, in the unlikely event that youtube-dl
-    # gets an extractor named "dashcast".
-    elif app["app_name"] == "dashcast" and controller:
+    # We make these checks in order to avoid problems,
+    # in the unlikely event that youtube-dl gets an extractor named "dashcast".
+    elif controller == "dashcast" or (app["app_name"] == "dashcast" and not stream):
         controller = DashCastController(cast, app["app_name"], app["app_id"], prep=prep)
     else:
         controller = DefaultCastController(cast, app["app_name"], app["app_id"], prep=prep)
