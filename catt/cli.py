@@ -97,7 +97,7 @@ def cli(ctx, delete_cache, device):
     ctx.obj["device"] = device
 
 
-@cli.command(short_help="Write the name of default Chromecast device to config file.")
+@cli.command("write_config", short_help="Write the name of default Chromecast device to config file.")
 @click.pass_obj
 def write_config(settings):
     if settings.get("device"):
@@ -254,7 +254,7 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs, ytd
                 time.sleep(1)
 
 
-@cli.command(short_help="Cast any website to a Chromecast.")
+@cli.command("cast_site", short_help="Cast any website to a Chromecast.")
 @click.argument("url", callback=process_url)
 @click.pass_obj
 def cast_site(settings, url):
