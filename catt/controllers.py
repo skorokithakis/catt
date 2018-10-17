@@ -23,6 +23,7 @@ DEFAULT_APP = {"app_name": "default", "app_id": "CC1AD845"}
 BACKDROP_APP_ID = "E8C28D3C"
 DEVICES_WITH_TWO_MODEL_NAMES = {"Eureka Dongle": "Chromecast"}
 DEFAULT_PORT = 8009
+VALID_STATE_EVENTS = ["UNKNOWN", "IDLE", "BUFFERING", "PLAYING", "PAUSED"]
 
 
 def get_chromecasts(fail=True):
@@ -163,6 +164,10 @@ class StateFileError(Exception):
     pass
 
 
+class ListenerError(Exception):
+    pass
+
+
 class CattStore:
     def __init__(self, store_path):
         self.store_path = store_path
@@ -299,24 +304,30 @@ class CastStatusListener:
 
 
 class MediaStatusListener:
-    def __init__(self, state):
-        self.not_buffering = threading.Event()
-        self.playing = threading.Event()
-        if state != "BUFFERING":
-            self.not_buffering.set()
-        if state == "PLAYING":
-            self.playing.set()
+    def __init__(self, current_state, states, invert=False, fail=False):
+        if any(s not in VALID_STATE_EVENTS for s in states):
+            raise ListenerError("invalid state(s)")
+
+        if invert:
+            self._states_waited_for = [s for s in VALID_STATE_EVENTS if s not in states]
+        else:
+            self._states_waited_for = states
+        if fail and current_state in self._states_waited_for:
+            raise ListenerError("condition is already met (fail is set)")
+
+        self._state_event = threading.Event()
+        self._current_state = current_state
 
     def new_media_status(self, status):
-        if status.player_state == "BUFFERING":
-            self.not_buffering.clear()
-            self.playing.clear()
-        elif status.player_state == "PLAYING":
-            self.not_buffering.set()
-            self.playing.set()
+        self._current_state = status.player_state
+        if self._current_state in self._states_waited_for:
+            self._state_event.set()
         else:
-            self.not_buffering.set()
-            self.playing.clear()
+            self._state_event.clear()
+
+    def wait_for_states(self):
+        if self._current_state not in self._states_waited_for:
+            self._state_event.wait()
 
 
 class CastController:
@@ -329,8 +340,6 @@ class CastController:
 
         self._cast_listener = CastStatusListener(app_id, self._cast.app_id)
         self._cast.register_status_listener(self._cast_listener)
-        self._media_listener = MediaStatusListener(self._cast.media_controller.status.player_state)
-        self._cast.media_controller.register_status_listener(self._media_listener)
 
         try:
             self._cast.register_handler(self._controller)
@@ -422,6 +431,17 @@ class CastController:
         self._cast.media_controller.block_until_active(1.0)
         if self._is_idle:
             raise CattCastError("Nothing is currently playing.")
+
+    def wait_for(self, states, invert=False, fail=False):
+        states = [states] if isinstance(states, str) else states
+        media_listener = MediaStatusListener(
+            self._cast.media_controller.status.player_state, states, invert=invert, fail=fail
+        )
+        self._cast.media_controller.register_status_listener(media_listener)
+        media_listener.wait_for_states()
+
+    def wait_for_playback_end(self):
+        self.wait_for(["BUFFERING", "PLAYING"], invert=True, fail=True)
 
     def play_media_url(self, video_url, **kwargs):
         """
@@ -583,11 +603,11 @@ class YoutubeCastController(CastController):
         echo('Adding video id "%s" to the queue.' % video_id)
         self._prep_yt(video_id)
         # You can't add videos to the queue while the app is buffering.
-        self._media_listener.not_buffering.wait()
+        self.wait_for("BUFFERING", invert=True)
         self._controller.add_to_queue(video_id)
 
     @catch_namespace_error
     def restore(self, data):
         self.play_media_id(data["content_id"])
-        self._media_listener.playing.wait()
+        self.wait_for("PLAYING")
         self.seek(data["current_time"])
