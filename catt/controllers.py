@@ -1,5 +1,6 @@
 import hashlib
 import json
+import re
 import tempfile
 import threading
 from enum import Enum
@@ -48,40 +49,9 @@ def get_chromecast(device_name):
         return devices[0]
 
 
-def setup_cast(device_name, video_url=None, prep=None, controller=None, ytdl_options=None):
-    """
-    Prepares selected chromecast and/or media file.
-
-    :param device_name: Friendly name of chromecast device to use.
-    :type device_name: str or NoneType
-    :param video_url: If supplied, setup_cast will try to exctract a media url
-                      from this, for playback or queueing.
-    :type video_url: str
-    :param prep: If prep = "app", video_url, if supplied, is meant for playback.
-                 The relevant chromecast app is started during initialization
-                 of the CastController object.
-                 If prep = "control", video_url, if supplied, is meant for
-                 queueing. The state of the selected chromecast is determined
-                 during initialization of the CastController object.
-                 If prep = None, no preparation is done. Should only be used
-                 if the desired action can be carried out regardless of the
-                 state of the chromecast (like volume adjustment).
-    :type prep: str
-    :param controller: If supplied, the normal logic for determining the appropriate
-                       controller is bypassed, and the one specified here is
-                       returned instead.
-    :type controller: str
-    :param ytdl_options: Pairs of options to be passed to YoutubeDL.
-                         For the available options please refer to
-                         https://github.com/rg3/youtube-dl/blob/master/youtube_dl/YoutubeDL.py#L138-L317
-    :type ytdl_options: tuple
-    :returns: controllers.DefaultCastController or controllers.YoutubeCastController,
-              and stream_info.StreamInfo if video_url is supplied.
-    """
-
+def get_cast(device_name):
     cache = Cache()
     cached_ip, cached_port = cache.get_data(device_name)
-    stream = None
 
     try:
         if not cached_ip:
@@ -92,50 +62,74 @@ def setup_cast(device_name, video_url=None, prep=None, controller=None, ytdl_opt
     except (pychromecast.error.ChromecastConnectionError, ValueError):
         cast = get_chromecast(device_name)
         cache.set_data(cast.name, cast.host, cast.port)
-    cast.wait()
 
-    if video_url:
-        model_name = DEVICES_WITH_TWO_MODEL_NAMES.get(cast.model_name, cast.model_name)
-        cc_info = (cast.device.manufacturer, model_name)
-        stream = StreamInfo(
-            video_url, model=cc_info, host=cast.host, device_type=cast.cast_type, ytdl_options=ytdl_options
-        )
+    cast.wait()
+    return cast
+
+
+def get_stream(url, device_info=None, host=None, ytdl_options=None):
+    if device_info:
+        model_name = DEVICES_WITH_TWO_MODEL_NAMES.get(device_info.model_name, device_info.model_name)
+        cc_info = (device_info.manufacturer, model_name)
+        cast_type = device_info.cast_type
+    else:
+        cc_info = cast_type = None
+    return StreamInfo(url, host=host, model=cc_info, device_type=cast_type, ytdl_options=ytdl_options)
+
+
+def get_app(id_or_name, cast_type=None, strict=False, show_warning=False):
+    if id_or_name == "default":
+        return DEFAULT_APP
+
+    field = "app_id" if re.match("[0-9A-F]{8}$", id_or_name) else "app_name"
+    try:
+        app = next(a for a in APP_INFO if a[field] == id_or_name)
+    except StopIteration:
+        if strict:
+            raise AppSelectionError("app not found (strict is set)")
+        else:
+            app = DEFAULT_APP
+
+    if app["app_name"] != "default":
+        if not cast_type:
+            raise AppSelectionError("cast_type is needed for app selection")
+        elif cast_type not in app["supported_device_types"]:
+            msg = "The %s app is not available for this device." % app["app_name"].capitalize()
+            if strict:
+                raise CattCastError(msg)
+            elif show_warning:
+                warning(msg)
+            app = DEFAULT_APP
+    return app
+
+
+def get_controller(cast, app, prep=None):
+    if app["app_name"] == "youtube":
+        return YoutubeCastController(cast, app["app_name"], app["app_id"], prep=prep)
+    elif app["app_name"] == "dashcast":
+        return DashCastController(cast, app["app_name"], app["app_id"], prep=prep)
+    else:
+        return DefaultCastController(cast, app["app_name"], app["app_id"], prep=prep)
+
+
+def setup_cast(device_name, video_url=None, controller=None, ytdl_options=None, prep=None):
+    cast = get_cast(device_name)
+    cast_type = cast.cast_type
+    stream = (
+        get_stream(video_url, device_info=cast.device, host=cast.host, ytdl_options=ytdl_options) if video_url else None
+    )
 
     if controller:
-        if controller == "default":
-            app = DEFAULT_APP
-        else:
-            app = next(a for a in APP_INFO if a["app_name"] == controller)
+        app = get_app(controller, cast_type, strict=True)
     elif stream and prep == "app":
         if stream.is_local_file:
-            app = DEFAULT_APP
+            app = get_app("default")
         else:
-            try:
-                app = next(a for a in APP_INFO if a["app_name"] == stream.extractor)
-            except StopIteration:
-                app = DEFAULT_APP
+            app = get_app(stream.extractor, cast_type, show_warning=True if stream else False)
     else:
-        try:
-            app = next(a for a in APP_INFO if a["app_id"] == cast.app_id)
-        except StopIteration:
-            app = DEFAULT_APP
+        app = get_app(cast.app_id, cast_type)
 
-    if app["app_name"] != "default" and cast.cast_type not in app["supported_device_types"]:
-        msg = "The %s app is not available for this device." % app["app_name"].capitalize()
-        if controller:
-            raise CattCastError(msg)
-        elif stream:
-            warning(msg)
-        app = DEFAULT_APP
-
-    if app["app_name"] == "youtube":
-        controller = YoutubeCastController(cast, app["app_name"], app["app_id"], prep=prep)
-    # We make these checks in order to avoid problems,
-    # in the unlikely event that youtube-dl gets an extractor named "dashcast".
-    elif controller == "dashcast" or (app["app_name"] == "dashcast" and not stream):
-        controller = DashCastController(cast, app["app_name"], app["app_id"], prep=prep)
-    else:
-        controller = DefaultCastController(cast, app["app_name"], app["app_id"], prep=prep)
+    controller = get_controller(cast, app, prep=prep)
     return (controller, stream) if stream else controller
 
 
@@ -165,6 +159,10 @@ class StateFileError(Exception):
 
 
 class ListenerError(Exception):
+    pass
+
+
+class AppSelectionError(Exception):
     pass
 
 
