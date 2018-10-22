@@ -342,6 +342,8 @@ class CastController:
             self._prep_app()
         elif prep == "control":
             self._prep_control()
+        elif prep == "info":
+            self._prep_info()
 
     @property
     def cc_name(self):
@@ -416,13 +418,22 @@ class CastController:
             self._cast_listener.app_ready.wait()
 
     def _prep_control(self):
-        """Make sure chromecast is in an active state."""
+        """Make sure chromecast is not inactive or idle."""
 
-        if self._cast.app_id == BACKDROP_APP_ID or not self._cast.app_id:
-            raise CattCastError("Chromecast is inactive.")
+        self._check_inactive()
         self._cast.media_controller.block_until_active(1.0)
         if self._is_idle:
             raise CattCastError("Nothing is currently playing.")
+
+    def _prep_info(self):
+        """Make sure chromecast is not inactive."""
+
+        self._check_inactive()
+        self._cast.media_controller.block_until_active(1.0)
+
+    def _check_inactive(self):
+        if self._cast.app_id == BACKDROP_APP_ID or not self._cast.app_id:
+            raise CattCastError("Chromecast is inactive.")
 
     def play_media_url(self, video_url, **kwargs):
         """
