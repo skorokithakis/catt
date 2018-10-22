@@ -21,6 +21,7 @@ APP_INFO = [
 ]
 DEFAULT_APP = {"app_name": "default", "app_id": "CC1AD845"}
 BACKDROP_APP_ID = "E8C28D3C"
+NO_PLAYER_STATE_IDS = ["84912283"]
 DEVICES_WITH_TWO_MODEL_NAMES = {"Eureka Dongle": "Chromecast"}
 DEFAULT_PORT = 8009
 
@@ -403,9 +404,9 @@ class CastController:
     @property
     def _is_idle(self):
         status = self._cast.media_controller.status
-        # Dashcast (and maybe others) returns player_state == "UNKNOWN" while being active.
-        # Checking stream_type appears to be reliable.
-        return status.player_state in ["UNKNOWN", "IDLE"] and status.stream_type != "UNKNOWN"
+        # Dashcast (and maybe others) returns player_state == "UNKNOWN" while being active,
+        # so we maintain a list of those apps.
+        return status.player_state in ["UNKNOWN", "IDLE"] and self._cast.app_id not in NO_PLAYER_STATE_IDS
 
     def _prep_app(self):
         """Make sure desired chromecast app is running."""
