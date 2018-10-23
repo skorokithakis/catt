@@ -103,16 +103,20 @@ def get_app_info(id_or_name, cast_type=None, strict=False, show_warning=False):
     return app_info
 
 
-def get_controller(cast, app_info, prep=None):
-    if app_info["app_name"] == "youtube":
-        return YoutubeCastController(cast, app_info["app_name"], app_info["app_id"], prep=prep)
-    elif app_info["app_name"] == "dashcast":
-        return DashCastController(cast, app_info["app_name"], app_info["app_id"], prep=prep)
+def get_controller(cast, app_info, action=None, prep=None):
+    app_name = app_info["app_name"]
+    if app_name == "youtube":
+        controller = YoutubeCastController
+    elif app_name == "dashcast":
+        controller = DashCastController
     else:
-        return DefaultCastController(cast, app_info["app_name"], app_info["app_id"], prep=prep)
+        controller = DefaultCastController
+    if action and action not in dir(controller):
+        raise CattCastError("This action is not supported by the %s controller." % app_name)
+    return controller(cast, app_name, app_info["app_id"], prep=prep)
 
 
-def setup_cast(device_name, video_url=None, controller=None, ytdl_options=None, prep=None):
+def setup_cast(device_name, video_url=None, controller=None, ytdl_options=None, action=None, prep=None):
     cast = get_cast(device_name)
     cast_type = cast.cast_type
     stream = (
@@ -129,7 +133,7 @@ def setup_cast(device_name, video_url=None, controller=None, ytdl_options=None, 
     else:
         app_info = get_app_info(cast.app_id, cast_type)
 
-    controller = get_controller(cast, app_info, prep=prep)
+    controller = get_controller(cast, app_info, action=action, prep=prep)
     return (controller, stream) if stream else controller
 
 
@@ -519,13 +523,6 @@ class CastController:
 
         raise NotImplementedError
 
-    def _not_supported(self):
-        self.kill(idle_only=True)
-        raise CattCastError("This action is not supported by the %s controller." % self.name.capitalize())
-
-    def add(self, video_id):
-        self._not_supported()
-
 
 class DefaultCastController(CastController):
     def __init__(self, cast, name, app_id, prep=None):
@@ -568,9 +565,6 @@ class DashCastController(CastController):
         # becomes unresponsive after a website is loaded.
         self._cast.start_app(self._cast_listener.app_id, force_launch=True)
         self._cast_listener.app_ready.wait()
-
-    def _prep_control(self):
-        self._not_supported()
 
 
 class YoutubeCastController(CastController):

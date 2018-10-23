@@ -258,7 +258,7 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs, ytd
 @click.argument("url", callback=process_url)
 @click.pass_obj
 def cast_site(settings, url):
-    cst = setup_cast(settings["device"], prep="app", controller="dashcast")
+    cst = setup_cast(settings["device"], action="load_url", prep="app", controller="dashcast")
     click.echo('Casting %s on "%s"...' % (url, cst.cc_name))
     cst.load_url(url)
 
@@ -267,7 +267,7 @@ def cast_site(settings, url):
 @click.argument("video_url", callback=process_url)
 @click.pass_obj
 def add(settings, video_url):
-    cst, stream = setup_cast(settings["device"], video_url=video_url, prep="control")
+    cst, stream = setup_cast(settings["device"], video_url=video_url, action="add", prep="control")
     if (cst.name != "default" and cst.name != stream.extractor) or not stream.is_remote_file:
         raise CattCliError("This url cannot be added to the queue.")
     cst.add(stream.video_id)
