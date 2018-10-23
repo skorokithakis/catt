@@ -126,11 +126,14 @@ def setup_cast(device_name, video_url=None, controller=None, ytdl_options=None, 
 
     if controller:
         app_info = get_app_info(controller, cast_type, strict=True)
-    elif stream and prep == "app":
-        if stream.is_local_file:
-            app_info = get_app_info("default")
+    elif prep == "app":
+        if stream:
+            if stream.is_local_file:
+                app_info = get_app_info("default")
+            else:
+                app_info = get_app_info(stream.extractor, cast_type, show_warning=True if stream else False)
         else:
-            app_info = get_app_info(stream.extractor, cast_type, show_warning=True if stream else False)
+            app_info = get_app_info("default")
     else:
         app_info = get_app_info(cast.app_id, cast_type)
 
@@ -310,7 +313,6 @@ class MediaStatusListener:
     def __init__(self, current_state, states, invert=False, fail=False):
         if any(s not in VALID_STATE_EVENTS for s in states):
             raise ListenerError("invalid state(s)")
-
         if invert:
             self._states_waited_for = [s for s in VALID_STATE_EVENTS if s not in states]
         else:
