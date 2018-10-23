@@ -77,39 +77,39 @@ def get_stream(url, device_info=None, host=None, ytdl_options=None):
     return StreamInfo(url, host=host, model=cc_info, device_type=cast_type, ytdl_options=ytdl_options)
 
 
-def get_app(id_or_name, cast_type=None, strict=False, show_warning=False):
+def get_app_info(id_or_name, cast_type=None, strict=False, show_warning=False):
     if id_or_name == "default":
         return DEFAULT_APP
 
     field = "app_id" if re.match("[0-9A-F]{8}$", id_or_name) else "app_name"
     try:
-        app = next(a for a in APP_INFO if a[field] == id_or_name)
+        app_info = next(a for a in APP_INFO if a[field] == id_or_name)
     except StopIteration:
         if strict:
             raise AppSelectionError("app not found (strict is set)")
         else:
-            app = DEFAULT_APP
+            app_info = DEFAULT_APP
 
-    if app["app_name"] != "default":
+    if app_info["app_name"] != "default":
         if not cast_type:
             raise AppSelectionError("cast_type is needed for app selection")
-        elif cast_type not in app["supported_device_types"]:
-            msg = "The %s app is not available for this device." % app["app_name"].capitalize()
+        elif cast_type not in app_info["supported_device_types"]:
+            msg = "The %s app is not available for this device." % app_info["app_name"].capitalize()
             if strict:
                 raise CattCastError(msg)
             elif show_warning:
                 warning(msg)
-            app = DEFAULT_APP
-    return app
+            app_info = DEFAULT_APP
+    return app_info
 
 
-def get_controller(cast, app, prep=None):
-    if app["app_name"] == "youtube":
-        return YoutubeCastController(cast, app["app_name"], app["app_id"], prep=prep)
-    elif app["app_name"] == "dashcast":
-        return DashCastController(cast, app["app_name"], app["app_id"], prep=prep)
+def get_controller(cast, app_info, prep=None):
+    if app_info["app_name"] == "youtube":
+        return YoutubeCastController(cast, app_info["app_name"], app_info["app_id"], prep=prep)
+    elif app_info["app_name"] == "dashcast":
+        return DashCastController(cast, app_info["app_name"], app_info["app_id"], prep=prep)
     else:
-        return DefaultCastController(cast, app["app_name"], app["app_id"], prep=prep)
+        return DefaultCastController(cast, app_info["app_name"], app_info["app_id"], prep=prep)
 
 
 def setup_cast(device_name, video_url=None, controller=None, ytdl_options=None, prep=None):
@@ -120,16 +120,16 @@ def setup_cast(device_name, video_url=None, controller=None, ytdl_options=None, 
     )
 
     if controller:
-        app = get_app(controller, cast_type, strict=True)
+        app_info = get_app_info(controller, cast_type, strict=True)
     elif stream and prep == "app":
         if stream.is_local_file:
-            app = get_app("default")
+            app_info = get_app_info("default")
         else:
-            app = get_app(stream.extractor, cast_type, show_warning=True if stream else False)
+            app_info = get_app_info(stream.extractor, cast_type, show_warning=True if stream else False)
     else:
-        app = get_app(cast.app_id, cast_type)
+        app_info = get_app_info(cast.app_id, cast_type)
 
-    controller = get_controller(cast, app, prep=prep)
+    controller = get_controller(cast, app_info, prep=prep)
     return (controller, stream) if stream else controller
 
 
