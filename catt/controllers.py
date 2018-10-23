@@ -511,6 +511,7 @@ class PlaybackBaseMixin:
     def play_playlist(self, playlist_id):
         raise NotImplementedError
 
+    @catch_namespace_error
     def wait_for(self, states, invert=False, fail=False):
         states = [states] if isinstance(states, str) else states
         media_listener = MediaStatusListener(
@@ -520,7 +521,8 @@ class PlaybackBaseMixin:
         media_listener.wait_for_states()
 
     def wait_for_playback_end(self):
-        self.wait_for(["BUFFERING", "PLAYING"], invert=True, fail=True)
+        self.wait_for("PLAYING")
+        self.wait_for(["BUFFERING", "PLAYING"], invert=True)
 
     def restore(self, data):
         raise NotImplementedError
@@ -592,7 +594,6 @@ class YoutubeCastController(CastController, MediaControllerMixin, PlaybackBaseMi
             for video_id in playlist[1:]:
                 self.add(video_id)
 
-    @catch_namespace_error
     def add(self, video_id):
         echo('Adding video id "%s" to the queue.' % video_id)
         self._prep_yt(video_id)
@@ -600,7 +601,6 @@ class YoutubeCastController(CastController, MediaControllerMixin, PlaybackBaseMi
         self.wait_for("BUFFERING", invert=True)
         self._controller.add_to_queue(video_id)
 
-    @catch_namespace_error
     def restore(self, data):
         self.play_media_id(data["content_id"])
         self.wait_for("PLAYING")
