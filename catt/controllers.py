@@ -434,36 +434,32 @@ class CastController:
         if self._is_idle:
             raise CattCastError("Nothing is currently playing.")
 
-    def wait_for(self, states, invert=False, fail=False):
-        states = [states] if isinstance(states, str) else states
-        media_listener = MediaStatusListener(
-            self._cast.media_controller.status.player_state, states, invert=invert, fail=fail
-        )
-        self._cast.media_controller.register_status_listener(media_listener)
-        media_listener.wait_for_states()
+    def volume(self, level):
+        self._cast.set_volume(level)
 
-    def wait_for_playback_end(self):
-        self.wait_for(["BUFFERING", "PLAYING"], invert=True, fail=True)
+    def volumeup(self, delta):
+        self._cast.volume_up(delta)
 
-    def play_media_url(self, video_url, **kwargs):
+    def volumedown(self, delta):
+        self._cast.volume_down(delta)
+
+    def kill(self, idle_only=False):
         """
-        CastController subclasses need to implement
-        either play_media_url or play_media_id
-        """
+        Kills current Chromecast session.
 
-        raise NotImplementedError
-
-    def play_media_id(self, video_id):
-        """
-        CastController subclasses need to implement
-        either play_media_url or play_media_id
+        :param idle_only: If set, session is only killed if the active Chromecast app
+                          is idle. Use to avoid killing an active streaming session
+                          when catt fails with certain invalid actions (such as trying
+                          to cast an empty playlist).
+        :type idle_only: bool
         """
 
-        raise NotImplementedError
+        if idle_only and not self._is_idle:
+            return
+        self._cast.quit_app()
 
-    def play_playlist(self, playlist_id):
-        raise NotImplementedError
 
+class MediaControllerMixin:
     def play(self):
         self._cast.media_controller.play()
 
@@ -490,41 +486,33 @@ class CastController:
         else:
             raise CattCastError("Stream is not skippable.")
 
-    def volume(self, level):
-        self._cast.set_volume(level)
 
-    def volumeup(self, delta):
-        self._cast.volume_up(delta)
+class PlaybackBaseMixin:
+    def play_media_url(self, video_url, **kwargs):
+        raise NotImplementedError
 
-    def volumedown(self, delta):
-        self._cast.volume_down(delta)
+    def play_media_id(self, video_id):
+        raise NotImplementedError
 
-    def kill(self, idle_only=False):
-        """
-        Kills current Chromecast session.
+    def play_playlist(self, playlist_id):
+        raise NotImplementedError
 
-        :param idle_only: If set, session is only killed if the active Chromecast app
-                          is idle. Use to avoid killing an active streaming session
-                          when catt fails with certain invalid actions (such as trying
-                          to cast an empty playlist).
-        :type idle_only: bool
-        """
+    def wait_for(self, states, invert=False, fail=False):
+        states = [states] if isinstance(states, str) else states
+        media_listener = MediaStatusListener(
+            self._cast.media_controller.status.player_state, states, invert=invert, fail=fail
+        )
+        self._cast.media_controller.register_status_listener(media_listener)
+        media_listener.wait_for_states()
 
-        if idle_only and not self._is_idle:
-            return
-        self._cast.quit_app()
+    def wait_for_playback_end(self):
+        self.wait_for(["BUFFERING", "PLAYING"], invert=True, fail=True)
 
     def restore(self, data):
-        """
-        Recreates Chromecast state from save data.
-        Subclasses can implement this if its possible to recreate
-        a session from save data.
-        """
-
         raise NotImplementedError
 
 
-class DefaultCastController(CastController):
+class DefaultCastController(CastController, MediaControllerMixin, PlaybackBaseMixin):
     def __init__(self, cast, name, app_id, prep=None):
         super(DefaultCastController, self).__init__(cast, name, app_id, prep=prep)
         self.info_type = "url"
@@ -567,7 +555,7 @@ class DashCastController(CastController):
         self._cast_listener.app_ready.wait()
 
 
-class YoutubeCastController(CastController):
+class YoutubeCastController(CastController, MediaControllerMixin, PlaybackBaseMixin):
     def __init__(self, cast, name, app_id, prep=None):
         self._controller = YouTubeController()
         super(YoutubeCastController, self).__init__(cast, name, app_id, prep=prep)
