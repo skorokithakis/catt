@@ -268,7 +268,7 @@ def cast_site(settings, url):
 @click.pass_obj
 def add(settings, video_url):
     cst, stream = setup_cast(settings["device"], video_url=video_url, prep="control")
-    if (cst.name != "default" and cst.name != stream.extractor) or not stream.is_remote_file:
+    if cst.playlist_capability and (cst.name != stream.extractor or not stream.is_remote_file):
         raise CattCliError("This url cannot be added to the queue.")
     cst.add(stream.video_id)
 
@@ -352,14 +352,14 @@ def volumedown(settings, delta):
 @cli.command(short_help="Show some information about the currently-playing video.")
 @click.pass_obj
 def status(settings):
-    cst = setup_cast(settings["device"], prep="control")
+    cst = setup_cast(settings["device"], prep="info")
     print_status(cst.cast_info)
 
 
 @cli.command(short_help="Show complete information about the currently-playing video.")
 @click.pass_obj
 def info(settings):
-    cst = setup_cast(settings["device"], prep="control")
+    cst = setup_cast(settings["device"], prep="info")
     for (key, value) in cst.info.items():
         click.echo("%s: %s" % (key, value))
 
