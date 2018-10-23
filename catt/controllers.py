@@ -356,6 +356,31 @@ class CastController:
         elif prep == "info":
             self._prep_info()
 
+    def _prep_app(self):
+        """Make sure desired chromecast app is running."""
+
+        if not self._cast_listener.app_ready.is_set():
+            self._cast.start_app(self._cast_listener.app_id)
+            self._cast_listener.app_ready.wait()
+
+    def _prep_control(self):
+        """Make sure chromecast is not inactive or idle."""
+
+        self._check_inactive()
+        self._cast.media_controller.block_until_active(1.0)
+        if self._is_idle:
+            raise CattCastError("Nothing is currently playing.")
+
+    def _prep_info(self):
+        """Make sure chromecast is not inactive."""
+
+        self._check_inactive()
+        self._cast.media_controller.block_until_active(1.0)
+
+    def _check_inactive(self):
+        if self._cast.app_id == BACKDROP_APP_ID or not self._cast.app_id:
+            raise CattCastError("Chromecast is inactive.")
+
     @property
     def cc_name(self):
         return self._cast.device.friendly_name
@@ -420,31 +445,6 @@ class CastController:
         # Dashcast (and maybe others) returns player_state == "UNKNOWN" while being active,
         # so we maintain a list of those apps.
         return status.player_state in ["UNKNOWN", "IDLE"] and self._cast.app_id not in NO_PLAYER_STATE_IDS
-
-    def _prep_app(self):
-        """Make sure desired chromecast app is running."""
-
-        if not self._cast_listener.app_ready.is_set():
-            self._cast.start_app(self._cast_listener.app_id)
-            self._cast_listener.app_ready.wait()
-
-    def _prep_control(self):
-        """Make sure chromecast is not inactive or idle."""
-
-        self._check_inactive()
-        self._cast.media_controller.block_until_active(1.0)
-        if self._is_idle:
-            raise CattCastError("Nothing is currently playing.")
-
-    def _prep_info(self):
-        """Make sure chromecast is not inactive."""
-
-        self._check_inactive()
-        self._cast.media_controller.block_until_active(1.0)
-
-    def _check_inactive(self):
-        if self._cast.app_id == BACKDROP_APP_ID or not self._cast.app_id:
-            raise CattCastError("Chromecast is inactive.")
 
     def volume(self, level):
         self._cast.set_volume(level)
