@@ -69,12 +69,11 @@ def get_cast(device_name):
 
 
 def get_stream(url, device_info=None, host=None, ytdl_options=None):
+    cc_info = cast_type = None
     if device_info:
         model_name = DEVICES_WITH_TWO_MODEL_NAMES.get(device_info.model_name, device_info.model_name)
         cc_info = (device_info.manufacturer, model_name)
         cast_type = device_info.cast_type
-    else:
-        cc_info = cast_type = None
     return StreamInfo(url, host=host, model=cc_info, device_type=cast_type, ytdl_options=ytdl_options)
 
 
