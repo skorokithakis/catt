@@ -500,10 +500,6 @@ class PlaybackBaseMixin:
         except pychromecast.error.UnsupportedNamespace:
             raise CattCastError("Chromecast app operation was interrupted.")
 
-    def wait_for_playback_end(self):
-        self.wait_for("PLAYING")
-        self.wait_for(["BUFFERING", "PLAYING"], invert=True)
-
     def restore(self, data):
         raise NotImplementedError
 
