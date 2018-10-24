@@ -135,23 +135,6 @@ def setup_cast(device_name, video_url=None, controller=None, ytdl_options=None, 
     return (controller, stream) if stream else controller
 
 
-def catch_namespace_error(func):
-    """
-    Use this decorator for methods in CastController subclasses where the intended
-    action is dependent on the chromecast being in a particular state (such as not
-    buffering). If the cc app is then interrupted while catt is waiting for this state,
-    we fail in a nice way.
-    """
-
-    def wrapper(*args, **kwargs):
-        try:
-            func(*args, **kwargs)
-        except pychromecast.error.UnsupportedNamespace:
-            raise CattCastError("Chromecast app operation was interrupted.")
-
-    return wrapper
-
-
 class CattCastError(ClickException):
     pass
 
@@ -505,14 +488,17 @@ class PlaybackBaseMixin:
     def play_playlist(self, playlist_id):
         raise NotImplementedError
 
-    @catch_namespace_error
     def wait_for(self, states, invert=False, fail=False):
         states = [states] if isinstance(states, str) else states
         media_listener = MediaStatusListener(
             self._cast.media_controller.status.player_state, states, invert=invert, fail=fail
         )
         self._cast.media_controller.register_status_listener(media_listener)
-        media_listener.wait_for_states()
+
+        try:
+            media_listener.wait_for_states()
+        except pychromecast.error.UnsupportedNamespace:
+            raise CattCastError("Chromecast app operation was interrupted.")
 
     def wait_for_playback_end(self):
         self.wait_for("PLAYING")
