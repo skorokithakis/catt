@@ -106,12 +106,7 @@ def get_app_info(id_or_name, cast_type=None, strict=False, show_warning=False):
 
 def get_controller(cast, app_info, action=None, prep=None):
     app_name = app_info["app_name"]
-    if app_name == "youtube":
-        controller = YoutubeCastController
-    elif app_name == "dashcast":
-        controller = DashCastController
-    else:
-        controller = DefaultCastController
+    controller = {"youtube": YoutubeCastController, "dashcast": DashCastController}.get(app_name, DefaultCastController)
     if action and action not in dir(controller):
         raise CattCastError("This action is not supported by the %s controller." % app_name)
     return controller(cast, app_name, app_info["app_id"], prep=prep)
