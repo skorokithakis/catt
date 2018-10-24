@@ -258,7 +258,7 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs, ytd
 @click.argument("url", callback=process_url)
 @click.pass_obj
 def cast_site(settings, url):
-    cst = setup_cast(settings["device"], prep="app", controller="dashcast")
+    cst = setup_cast(settings["device"], controller="dashcast", action="load_url", prep="app")
     click.echo('Casting %s on "%s"...' % (url, cst.cc_name))
     cst.load_url(url)
 
@@ -267,7 +267,7 @@ def cast_site(settings, url):
 @click.argument("video_url", callback=process_url)
 @click.pass_obj
 def add(settings, video_url):
-    cst, stream = setup_cast(settings["device"], video_url=video_url, prep="control")
+    cst, stream = setup_cast(settings["device"], video_url=video_url, action="add", prep="control")
     if cst.playlist_capability and (cst.name != stream.extractor or not stream.is_remote_file):
         raise CattCliError("This url cannot be added to the queue.")
     cst.add(stream.video_id)
@@ -276,14 +276,14 @@ def add(settings, video_url):
 @cli.command(short_help="Pause a video.")
 @click.pass_obj
 def pause(settings):
-    cst = setup_cast(settings["device"], prep="control")
+    cst = setup_cast(settings["device"], action="pause", prep="control")
     cst.pause()
 
 
 @cli.command(short_help="Resume a video after it has been paused.")
 @click.pass_obj
 def play(settings):
-    cst = setup_cast(settings["device"], prep="control")
+    cst = setup_cast(settings["device"], action="play", prep="control")
     cst.play()
 
 
@@ -298,7 +298,7 @@ def stop(settings):
 @click.argument("timedesc", type=CATT_TIME, required=False, default="30", metavar="TIME")
 @click.pass_obj
 def rewind(settings, timedesc):
-    cst = setup_cast(settings["device"], prep="control")
+    cst = setup_cast(settings["device"], action="rewind", prep="control")
     cst.rewind(timedesc)
 
 
@@ -306,7 +306,7 @@ def rewind(settings, timedesc):
 @click.argument("timedesc", type=CATT_TIME, required=False, default="30", metavar="TIME")
 @click.pass_obj
 def ffwd(settings, timedesc):
-    cst = setup_cast(settings["device"], prep="control")
+    cst = setup_cast(settings["device"], action="ffwd", prep="control")
     cst.ffwd(timedesc)
 
 
@@ -314,14 +314,14 @@ def ffwd(settings, timedesc):
 @click.argument("timedesc", type=CATT_TIME, metavar="TIME")
 @click.pass_obj
 def seek(settings, timedesc):
-    cst = setup_cast(settings["device"], prep="control")
+    cst = setup_cast(settings["device"], action="seek", prep="control")
     cst.seek(timedesc)
 
 
 @cli.command(short_help="Skip to next video in queue (if any).")
 @click.pass_obj
 def skip(settings):
-    cst = setup_cast(settings["device"], prep="control")
+    cst = setup_cast(settings["device"], action="skip", prep="control")
     cst.skip()
 
 
