@@ -125,7 +125,7 @@ def setup_cast(device_name, video_url=None, controller=None, ytdl_options=None, 
             if stream.is_local_file:
                 app_info = get_app_info("default")
             else:
-                app_info = get_app_info(stream.extractor, cast_type, show_warning=True if stream else False)
+                app_info = get_app_info(stream.extractor, cast_type, show_warning=True)
         else:
             app_info = get_app_info("default")
     else:
