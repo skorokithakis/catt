@@ -131,8 +131,8 @@ def setup_cast(device_name, video_url=None, controller=None, ytdl_options=None, 
     else:
         app_info = get_app_info(cast.app_id, cast_type)
 
-    controller = get_controller(cast, app_info, action=action, prep=prep)
-    return (controller, stream) if stream else controller
+    cast_controller = get_controller(cast, app_info, action=action, prep=prep)
+    return (cast_controller, stream) if stream else cast_controller
 
 
 class CattCastError(ClickException):
