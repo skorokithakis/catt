@@ -50,19 +50,33 @@ def get_chromecast(device_name):
         return devices[0]
 
 
-def get_cast(device_name):
-    cache = Cache()
-    cached_ip, cached_port = cache.get_data(device_name)
+def get_cast(device_name, use_cache=True):
+    cc_ip = None
+    cc_port = DEFAULT_PORT
+    if use_cache:
+        cache = Cache()
+        cc_ip, cc_port = cache.get_data(device_name)
 
     try:
-        if not cached_ip:
+        if not cc_ip:
             raise ValueError
         # tries = 1 is necessary in order to stop pychromecast engaging
         # in a retry behaviour when ip is correct, but port is wrong.
-        cast = pychromecast.Chromecast(cached_ip, port=cached_port, tries=1)
+        cast = pychromecast.Chromecast(cc_ip, port=cc_port, tries=1)
     except (pychromecast.error.ChromecastConnectionError, ValueError):
         cast = get_chromecast(device_name)
-        cache.set_data(cast.name, cast.host, cast.port)
+        if use_cache:
+            cache.set_data(cast.name, cast.host, cast.port)
+
+    cast.wait()
+    return cast
+
+
+def get_cast_with_ip(cc_ip):
+    try:
+        cast = pychromecast.Chromecast(cc_ip)
+    except pychromecast.error.ChromecastConnectionError:
+        return None
 
     cast.wait()
     return cast
