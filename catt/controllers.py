@@ -343,20 +343,20 @@ class CastController:
             self._controller = self._cast.media_controller
 
         if prep == "app":
-            self._prep_app()
+            self.prep_app()
         elif prep == "control":
-            self._prep_control()
+            self.prep_control()
         elif prep == "info":
-            self._prep_info()
+            self.prep_info()
 
-    def _prep_app(self):
+    def prep_app(self):
         """Make sure desired chromecast app is running."""
 
         if not self._cast_listener.app_ready.is_set():
             self._cast.start_app(self._cast_listener.app_id)
             self._cast_listener.app_ready.wait()
 
-    def _prep_control(self):
+    def prep_control(self):
         """Make sure chromecast is not inactive or idle."""
 
         self._check_inactive()
@@ -364,7 +364,7 @@ class CastController:
         if self._is_idle:
             raise CattCastError("Nothing is currently playing.")
 
-    def _prep_info(self):
+    def prep_info(self):
         """Make sure chromecast is not inactive."""
 
         self._check_inactive()
@@ -552,7 +552,7 @@ class DashCastController(CastController):
     def load_url(self, url, **kwargs):
         self._controller.load_url(url, force=True)
 
-    def _prep_app(self):
+    def prep_app(self):
         """Make sure desired chromecast app is running."""
 
         # We must force the launch of the DashCast app because it, by design,
