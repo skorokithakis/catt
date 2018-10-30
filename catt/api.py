@@ -36,7 +36,7 @@ class CattDevice:
     def ctrl(self):
         if not self._cast:
             self._create_cast()
-        elif not self._cast_controller:
+        if not self._cast_controller:
             self._create_ctrl()
         return self._cast_controller
 
