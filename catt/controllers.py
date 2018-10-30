@@ -117,7 +117,7 @@ def get_app_info(id_or_name, cast_type=None, strict=False, show_warning=False):
     return app_info
 
 
-# I'm not shure it serves any purpose to have get_app_info and get_controller
+# I'm not sure it serves any purpose to have get_app_info and get_controller
 # as two separate functions. I'll probably merge them at some point.
 def get_controller(cast, app_info, action=None, prep=None):
     app_name = app_info["app_name"]
