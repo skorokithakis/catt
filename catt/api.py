@@ -6,9 +6,9 @@ def discover():
 
 
 class CattDevice:
-    def __init__(self, name=None, ip=None, lazy=False):
+    def __init__(self, name=None, ipaddr=None, lazy=False):
         self.name = name
-        self.ip = ip
+        self.ipaddr = ipaddr
 
         self._cast = None
         self._cast_controller = None
@@ -16,27 +16,36 @@ class CattDevice:
             self._create_cast()
 
     def __repr__(self):
-        return "<CattDevice: %s>" % (self.name or self.ip)
+        return "<CattDevice: %s>" % (self.name or self.ipaddr)
 
     def _create_cast(self):
-        if self._cast:
-            return
-        self._cast = get_cast_with_ip(self.ip) if self.ip else get_cast(self.name, use_cache=False)
+        self._cast = get_cast_with_ip(self.ipaddr) if self.ipaddr else get_cast(self.name, use_cache=False)
         self.name = self._cast.name
+        self.ipaddr = self._cast.host
 
-    def _create_controller(self, prep=None):
-        self._create_cast()
-        if self._cast_controller:
-            return
-        self._cast_controller = get_controller(self._cast, get_app_info("default"), prep=prep)
+    def _create_ctrl(self):
+        self._cast_controller = get_controller(self._cast, get_app_info("default"))
+
+    @property
+    def cst(self):
+        if not self._cast:
+            self._create_cast()
+        return self._cast
+
+    @property
+    def ctrl(self):
+        if not self._cast:
+            self._create_cast()
+        elif not self._cast_controller:
+            self._create_ctrl()
+        return self._cast_controller
 
     def play_url(self, url, resolve=False):
-        self._create_controller(prep="app")
         if resolve:
             stream = get_stream(url)
             url = stream.video_url
-        self._cast_controller.play_media_url(url)
+        self.ctrl.prep_app()
+        self.ctrl.play_media_url(url)
 
     def stop(self):
-        self._create_controller()
-        self._cast.quit_app()
+        self.cst.quit_app()
