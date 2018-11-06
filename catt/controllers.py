@@ -50,19 +50,33 @@ def get_chromecast(device_name):
         return devices[0]
 
 
-def get_cast(device_name):
-    cache = Cache()
-    cached_ip, cached_port = cache.get_data(device_name)
+def get_cast(device_name, use_cache=True):
+    cc_ip = None
+    cc_port = DEFAULT_PORT
+    if use_cache:
+        cache = Cache()
+        cc_ip, cc_port = cache.get_data(device_name)
 
     try:
-        if not cached_ip:
+        if not cc_ip:
             raise ValueError
         # tries = 1 is necessary in order to stop pychromecast engaging
         # in a retry behaviour when ip is correct, but port is wrong.
-        cast = pychromecast.Chromecast(cached_ip, port=cached_port, tries=1)
+        cast = pychromecast.Chromecast(cc_ip, port=cc_port, tries=1)
     except (pychromecast.error.ChromecastConnectionError, ValueError):
         cast = get_chromecast(device_name)
-        cache.set_data(cast.name, cast.host, cast.port)
+        if use_cache:
+            cache.set_data(cast.name, cast.host, cast.port)
+
+    cast.wait()
+    return cast
+
+
+def get_cast_with_ip(cc_ip):
+    try:
+        cast = pychromecast.Chromecast(cc_ip)
+    except pychromecast.error.ChromecastConnectionError:
+        return None
 
     cast.wait()
     return cast
@@ -103,6 +117,8 @@ def get_app_info(id_or_name, cast_type=None, strict=False, show_warning=False):
     return app_info
 
 
+# I'm not sure it serves any purpose to have get_app_info and get_controller
+# as two separate functions. I'll probably merge them at some point.
 def get_controller(cast, app_info, action=None, prep=None):
     app_name = app_info["app_name"]
     controller = {"youtube": YoutubeCastController, "dashcast": DashCastController}.get(app_name, DefaultCastController)
@@ -125,31 +141,14 @@ def setup_cast(device_name, video_url=None, controller=None, ytdl_options=None, 
             if stream.is_local_file:
                 app_info = get_app_info("default")
             else:
-                app_info = get_app_info(stream.extractor, cast_type, show_warning=True if stream else False)
+                app_info = get_app_info(stream.extractor, cast_type, show_warning=True)
         else:
             app_info = get_app_info("default")
     else:
         app_info = get_app_info(cast.app_id, cast_type)
 
-    controller = get_controller(cast, app_info, action=action, prep=prep)
-    return (controller, stream) if stream else controller
-
-
-def catch_namespace_error(func):
-    """
-    Use this decorator for methods in CastController subclasses where the intended
-    action is dependent on the chromecast being in a particular state (such as not
-    buffering). If the cc app is then interrupted while catt is waiting for this state,
-    we fail in a nice way.
-    """
-
-    def wrapper(*args, **kwargs):
-        try:
-            func(*args, **kwargs)
-        except pychromecast.error.UnsupportedNamespace:
-            raise CattCastError("Chromecast app operation was interrupted.")
-
-    return wrapper
+    cast_controller = get_controller(cast, app_info, action=action, prep=prep)
+    return (cast_controller, stream) if stream else cast_controller
 
 
 class CattCastError(ClickException):
@@ -346,20 +345,20 @@ class CastController:
             self._controller = self._cast.media_controller
 
         if prep == "app":
-            self._prep_app()
+            self.prep_app()
         elif prep == "control":
-            self._prep_control()
+            self.prep_control()
         elif prep == "info":
-            self._prep_info()
+            self.prep_info()
 
-    def _prep_app(self):
+    def prep_app(self):
         """Make sure desired chromecast app is running."""
 
         if not self._cast_listener.app_ready.is_set():
             self._cast.start_app(self._cast_listener.app_id)
             self._cast_listener.app_ready.wait()
 
-    def _prep_control(self):
+    def prep_control(self):
         """Make sure chromecast is not inactive or idle."""
 
         self._check_inactive()
@@ -367,7 +366,7 @@ class CastController:
         if self._is_idle:
             raise CattCastError("Nothing is currently playing.")
 
-    def _prep_info(self):
+    def prep_info(self):
         """Make sure chromecast is not inactive."""
 
         self._check_inactive()
@@ -505,18 +504,17 @@ class PlaybackBaseMixin:
     def play_playlist(self, playlist_id):
         raise NotImplementedError
 
-    @catch_namespace_error
     def wait_for(self, states, invert=False, fail=False):
         states = [states] if isinstance(states, str) else states
         media_listener = MediaStatusListener(
             self._cast.media_controller.status.player_state, states, invert=invert, fail=fail
         )
         self._cast.media_controller.register_status_listener(media_listener)
-        media_listener.wait_for_states()
 
-    def wait_for_playback_end(self):
-        self.wait_for("PLAYING")
-        self.wait_for(["BUFFERING", "PLAYING"], invert=True)
+        try:
+            media_listener.wait_for_states()
+        except pychromecast.error.UnsupportedNamespace:
+            raise CattCastError("Chromecast app operation was interrupted.")
 
     def restore(self, data):
         raise NotImplementedError
@@ -556,7 +554,7 @@ class DashCastController(CastController):
     def load_url(self, url, **kwargs):
         self._controller.load_url(url, force=True)
 
-    def _prep_app(self):
+    def prep_app(self):
         """Make sure desired chromecast app is running."""
 
         # We must force the launch of the DashCast app because it, by design,
