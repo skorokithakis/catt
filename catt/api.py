@@ -34,12 +34,44 @@ class CattDevice:
             self._create_ctrl()
         return self._cast_controller
 
-    def play_url(self, url, resolve=False):
+    def play_url(self, url, resolve=False, block=False):
         if resolve:
             stream = get_stream(url)
             url = stream.video_url
         self.ctrl.prep_app()
         self.ctrl.play_media_url(url)
+        if block:
+            self.ctrl.wait_for("PLAYING")
+            self.ctrl.wait_for(["BUFFERING", "PLAYING"], invert=True)
 
     def stop(self):
         self.ctrl.kill()
+
+    def play(self):
+        self.ctrl.prep_control()
+        self.ctrl.play()
+
+    def pause(self):
+        self.ctrl.prep_control()
+        self.ctrl.pause()
+
+    def seek(self, seconds):
+        self.ctrl.prep_control()
+        self.ctrl.seek(seconds)
+
+    def rewind(self, seconds):
+        self.ctrl.prep_control()
+        self.ctrl.rewind(seconds)
+
+    def ffwd(self, seconds):
+        self.ctrl.prep_control()
+        self.ctrl.ffwd(seconds)
+
+    def volume(self, level):
+        self.ctrl.volume(level)
+
+    def volumeup(self, delta):
+        self.ctrl.volumeup(delta)
+
+    def volumedown(self, delta):
+        self.ctrl.volumedown(delta)
