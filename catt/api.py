@@ -2,7 +2,7 @@ from .controllers import get_app_info, get_cast, get_cast_with_ip, get_chromecas
 
 
 def discover():
-    return [CattDevice(d.name, d.host) for d in get_chromecasts(fail=False)]
+    return [CattDevice(ipaddr=d.host) for d in get_chromecasts(fail=False)]
 
 
 class CattAPIError(Exception):
