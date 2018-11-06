@@ -5,8 +5,14 @@ def discover():
     return [CattDevice(d.name, d.host) for d in get_chromecasts(fail=False)]
 
 
+class CattAPIError(Exception):
+    pass
+
+
 class CattDevice:
     def __init__(self, name=None, ipaddr=None, lazy=False):
+        if not name and not ipaddr:
+            raise CattAPIError("neither name nor ip were supplied")
         self.name = name
         self.ipaddr = ipaddr
 
