@@ -28,55 +28,49 @@ DEFAULT_PORT = 8009
 VALID_STATE_EVENTS = ["UNKNOWN", "IDLE", "BUFFERING", "PLAYING", "PAUSED"]
 
 
-def get_chromecasts(fail=True):
+def get_chromecasts():
     devices = pychromecast.get_chromecasts()
-
-    if fail and not devices:
-        raise CattCastError("No devices found.")
-
     devices.sort(key=lambda cc: cc.name)
     return devices
 
 
-def get_chromecast(device_name, fail=True):
-    devices = get_chromecasts(fail=fail)
+def get_chromecast(device_name):
+    devices = get_chromecasts()
+    if not devices:
+        return None
 
     if device_name:
         try:
             return next(cc for cc in devices if cc.name == device_name)
         except StopIteration:
-            if fail:
-                raise CattCastError('Specified device "%s" not found.' % device_name)
-            else:
-                return None
+            return None
     else:
         return devices[0]
 
 
-def get_cast(device_name):
-    cache = Cache()
-    cc_ip, cc_port = cache.get_data(device_name)
-
+def get_chromecast_with_ip(device_ip, port=DEFAULT_PORT):
     try:
-        if not cc_ip:
-            raise ValueError
         # tries = 1 is necessary in order to stop pychromecast engaging
         # in a retry behaviour when ip is correct, but port is wrong.
-        cast = pychromecast.Chromecast(cc_ip, port=cc_port, tries=1)
-    except (pychromecast.error.ChromecastConnectionError, ValueError):
-        cast = get_chromecast(device_name)
-        cache.set_data(cast.name, cast.host, cast.port)
-
-    cast.wait()
-    return cast
-
-
-def get_cast_with_ip(cc_ip):
-    try:
-        cast = pychromecast.Chromecast(cc_ip)
+        return pychromecast.Chromecast(device_ip, port=port, tries=1)
     except pychromecast.error.ChromecastConnectionError:
         return None
 
+
+def get_cast(device_name=None):
+    cast = None
+    cache = Cache()
+    cc_ip, cc_port = cache.get_data(device_name)
+
+    if cc_ip:
+        cast = get_chromecast_with_ip(cc_ip, cc_port)
+    if not cast:
+        cast = get_chromecast(device_name)
+        if not cast:
+            msg = 'Specified device "%s" not found.' % device_name if device_name else "No devices found."
+            raise CattCastError(msg)
+
+    cache.set_data(cast.name, cast.host, cast.port)
     cast.wait()
     return cast
 
@@ -206,7 +200,7 @@ class Cache(CattStore):
         self._create_store_dir()
 
         if not self.store_path.is_file():
-            devices = get_chromecasts(fail=False)
+            devices = get_chromecasts()
             cache_data = {d.name: self._create_device_entry(d.host, d.port) for d in devices}
             self._write_store(cache_data)
 
