@@ -27,12 +27,6 @@ class CattDevice:
         self._cast_controller = get_controller(self._cast, get_app_info("default"))
 
     @property
-    def cst(self):
-        if not self._cast:
-            self._create_cast()
-        return self._cast
-
-    @property
     def ctrl(self):
         if not self._cast:
             self._create_cast()
@@ -48,4 +42,4 @@ class CattDevice:
         self.ctrl.play_media_url(url)
 
     def stop(self):
-        self.cst.quit_app()
+        self.ctrl.kill()
