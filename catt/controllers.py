@@ -53,12 +53,9 @@ def get_chromecast(device_name, fail=True):
         return devices[0]
 
 
-def get_cast(device_name, use_cache=True):
-    cc_ip = None
-    cc_port = DEFAULT_PORT
-    if use_cache:
-        cache = Cache()
-        cc_ip, cc_port = cache.get_data(device_name)
+def get_cast(device_name):
+    cache = Cache()
+    cc_ip, cc_port = cache.get_data(device_name)
 
     try:
         if not cc_ip:
@@ -68,8 +65,7 @@ def get_cast(device_name, use_cache=True):
         cast = pychromecast.Chromecast(cc_ip, port=cc_port, tries=1)
     except (pychromecast.error.ChromecastConnectionError, ValueError):
         cast = get_chromecast(device_name)
-        if use_cache:
-            cache.set_data(cast.name, cast.host, cast.port)
+        cache.set_data(cast.name, cast.host, cast.port)
 
     cast.wait()
     return cast
