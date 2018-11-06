@@ -38,14 +38,17 @@ def get_chromecasts(fail=True):
     return devices
 
 
-def get_chromecast(device_name):
-    devices = get_chromecasts()
+def get_chromecast(device_name, fail=True):
+    devices = get_chromecasts(fail=fail)
 
     if device_name:
         try:
             return next(cc for cc in devices if cc.name == device_name)
         except StopIteration:
-            raise CattCastError('Specified device "%s" not found.' % device_name)
+            if fail:
+                raise CattCastError('Specified device "%s" not found.' % device_name)
+            else:
+                return None
     else:
         return devices[0]
 
