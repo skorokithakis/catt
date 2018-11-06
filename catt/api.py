@@ -9,7 +9,7 @@ from .controllers import (
 
 
 def discover():
-    return [CattDevice(ipaddr=d.host) for d in get_chromecasts(fail=False)]
+    return [CattDevice(ipaddr=d.host) for d in get_chromecasts()]
 
 
 class CattAPIError(Exception):
