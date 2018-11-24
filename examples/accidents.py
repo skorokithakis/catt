@@ -1,24 +1,18 @@
 import sys
 
-from catt.controllers import get_stream, setup_cast
+from catt.api import CattDevice
 
 VIDEOS = [
-    "https://www.liveleak.com/view?t=kUPSD_1540225257",
-    "https://www.liveleak.com/view?t=aLIc5_1540063261",
-    "https://www.liveleak.com/view?t=aeI4T_1539973765",
+    "https://www.youtube.com/watch?v=mt084vYqbnY",
+    "https://www.youtube.com/watch?v=INxcj8_Zlo8",
+    "https://www.youtube.com/watch?v=KDrpPqsXfVU",
 ]
 
 
 def ouch(device):
-    player = setup_cast(device, prep="app")
-    stream_urls = list()
+    cast = CattDevice(name=device)
     for video in VIDEOS:
-        stream = get_stream(video)
-        stream.set_playlist_entry(0)
-        stream_urls.append(stream.video_url)
-    for url in stream_urls:
-        player.play_media_url(url)
-        player.wait_for_playback_end()
+        cast.play_url(video, resolve=True, block=True)
         print("OOOOUUUUUUUUUUUUCCHHH!!!!!")
 
 

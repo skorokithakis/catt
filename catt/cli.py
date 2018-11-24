@@ -367,7 +367,10 @@ def info(settings):
 @cli.command(short_help="Scan the local network and show all Chromecasts and their IPs.")
 def scan():
     click.echo("Scanning Chromecasts...")
-    for device in get_chromecasts():
+    devices = get_chromecasts()
+    if not devices:
+        raise CattCliError("No devices found.")
+    for device in devices:
         click.echo("{0.host} - {0.device.friendly_name} - {0.device.manufacturer} {0.device.model_name}".format(device))
 
 
