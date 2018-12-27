@@ -5,7 +5,7 @@ import tempfile
 import threading
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional  # noqa
 
 import pychromecast
 from click import ClickException, echo
@@ -463,8 +463,8 @@ class CastController:
 
 
 class MediaControllerMixin:
-    _is_seekable: Any
-    _cast: pychromecast.Chromecast
+    _is_seekable = None  # type: Any
+    _cast = None  # type: pychromecast.Chromecast
 
     def play(self):
         self._cast.media_controller.play()
@@ -494,7 +494,7 @@ class MediaControllerMixin:
 
 
 class PlaybackBaseMixin:
-    _cast: pychromecast.Chromecast
+    _cast = None  # type: pychromecast.Chromecast
 
     def play_media_url(self, video_url: str, **kwargs) -> None:
         raise NotImplementedError
