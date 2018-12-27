@@ -15,7 +15,7 @@ def copy_byte_range(infile, outfile, start=None, stop=None, bufsize=16 * 1024):
     """
     if start is not None:
         infile.seek(start)
-    while 1:
+    while True:
         to_read = min(bufsize, stop + 1 - infile.tell() if stop else bufsize)
         buf = infile.read(to_read)
         if not buf:
@@ -31,11 +31,11 @@ def parse_byte_range(byte_range):
     if byte_range.strip() == "":
         return None, None
 
-    m = BYTE_RANGE_RE.match(byte_range)
-    if not m:
+    match = BYTE_RANGE_RE.match(byte_range)
+    if not match:
         raise ValueError("Invalid byte range %s" % byte_range)
 
-    first, last = [x and int(x) for x in m.groups()]
+    first, last = [x and int(x) for x in match.groups()]
     if last and last < first:
         raise ValueError("Invalid byte range %s" % byte_range)
     return first, last
