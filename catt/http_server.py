@@ -1,8 +1,44 @@
+import re
 import socketserver
 import time
 import traceback
 from http.server import BaseHTTPRequestHandler
 from pathlib import Path
+
+BYTE_RANGE_RE = re.compile(r"bytes=(\d+)-(\d+)?$")
+
+
+def copy_byte_range(infile, outfile, start=None, stop=None, bufsize=16 * 1024):
+    """Like shutil.copyfileobj, but only copy a range of the streams.
+
+    Both start and stop are inclusive.
+    """
+    if start is not None:
+        infile.seek(start)
+    while 1:
+        to_read = min(bufsize, stop + 1 - infile.tell() if stop else bufsize)
+        buf = infile.read(to_read)
+        if not buf:
+            break
+        outfile.write(buf)
+
+
+def parse_byte_range(byte_range):
+    """Returns the two numbers in 'bytes=123-456' or throws ValueError.
+
+    The last number or both numbers may be None.
+    """
+    if byte_range.strip() == "":
+        return None, None
+
+    m = BYTE_RANGE_RE.match(byte_range)
+    if not m:
+        raise ValueError("Invalid byte range %s" % byte_range)
+
+    first, last = [x and int(x) for x in m.groups()]
+    if last and last < first:
+        raise ValueError("Invalid byte range %s" % byte_range)
+    return first, last
 
 
 def serve_file(filename, address="", port=45114, content_type=None):
@@ -15,28 +51,45 @@ def serve_file(filename, address="", port=45114, content_type=None):
             return size * 1024, size_unity
 
         def log_message(self, format, *args, **kwargs):
-            size, size_unity = self.format_size(length)
+            size, size_unity = self.format_size(stats.st_size)
             format += " {} - {:0.2f} {}".format(content_type, size, size_unity)
             return super(FileHandler, self).log_message(format, *args, **kwargs)
 
         def do_GET(self):  # noqa
-            try:
-                mtime = mediapath.stat().st_mtime
-                mediafile = open(str(mediapath), "rb")
+            if "Range" not in self.headers:
+                first, last = 0, stats.st_size
+            else:
+                try:
+                    first, last = parse_byte_range(self.headers["Range"])
+                except ValueError as e:
+                    self.send_error(400, "Invalid byte range")
+                    return None
 
-                self.send_response(200)
+            if last is None or last >= stats.st_size:
+                last = stats.st_size - 1
+            response_length = last - first + 1
+
+            try:
+                if "Range" not in self.headers:
+                    self.send_response(200)
+                else:
+                    self.send_response(206)
+                    self.send_header("Content-Range", "bytes %s-%s/%s" % (first, last, stats.st_size))
+
+                self.send_header("Accept-Ranges", "bytes")
                 self.send_header("Content-type", content_type)
-                self.send_header("Content-Length", length)
+                self.send_header("Content-Length", str(response_length))
                 self.send_header("Access-Control-Allow-Origin", "*")
-                self.send_header("Last-Modified", time.strftime("%a %d %b %Y %H:%M:%S GMT", time.localtime(mtime)))
+                self.send_header(
+                    "Last-Modified", time.strftime("%a %d %b %Y %H:%M:%S GMT", time.localtime(stats.st_mtime))
+                )
                 self.end_headers()
 
-                while True:
-                    data = mediafile.read(100 * 1024)
-
-                    if not data:
-                        break
-                    self.wfile.write(data)
+                mediafile = open(str(mediapath), "rb")
+                copy_byte_range(mediafile, self.wfile, first, last)
+            except ConnectionResetError:
+                # This is supposed to happen when the Chromecast seeks or stops.
+                pass
             except:  # noqa
                 traceback.print_exc()
 
@@ -46,7 +99,7 @@ def serve_file(filename, address="", port=45114, content_type=None):
         content_type = "video/mp4"
 
     mediapath = Path(filename)
-    length = mediapath.stat().st_size
+    stats = mediapath.stat()
 
     httpd = socketserver.TCPServer((address, port), FileHandler)
     httpd.serve_forever()
