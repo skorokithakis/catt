@@ -57,7 +57,7 @@ class CattDevice:
         self.ctrl.prep_app()
         self.ctrl.play_media_url(url)
 
-        if self.ctrl.wait_for("PLAYING", timeout=10):
+        if self.ctrl.wait_for(["PLAYING"], timeout=10):
             if block:
                 self.ctrl.wait_for(["BUFFERING", "PLAYING"], invert=True)
         else:
