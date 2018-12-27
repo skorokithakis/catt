@@ -303,11 +303,14 @@ class MediaStatusListener:
             self._states_waited_for = [s for s in VALID_STATE_EVENTS if s not in states]
         else:
             self._states_waited_for = states
-        if fail and current_state in self._states_waited_for:
-            raise ListenerError("condition is already met (fail is set)")
 
         self._state_event = threading.Event()
         self._current_state = current_state
+        if self._current_state in self._states_waited_for:
+            if fail:
+                raise ListenerError("condition is already met (fail is set)")
+            else:
+                self._state_event.set()
 
     def new_media_status(self, status):
         self._current_state = status.player_state
@@ -316,9 +319,8 @@ class MediaStatusListener:
         else:
             self._state_event.clear()
 
-    def wait_for_states(self):
-        if self._current_state not in self._states_waited_for:
-            self._state_event.wait()
+    def wait_for_states(self, timeout=None):
+        return self._state_event.wait(timeout=timeout)
 
 
 class CastController:
@@ -497,7 +499,7 @@ class PlaybackBaseMixin:
     def play_playlist(self, playlist_id):
         raise NotImplementedError
 
-    def wait_for(self, states, invert=False, fail=False):
+    def wait_for(self, states, invert=False, fail=False, timeout=None):
         states = [states] if isinstance(states, str) else states
         media_listener = MediaStatusListener(
             self._cast.media_controller.status.player_state, states, invert=invert, fail=fail
@@ -505,7 +507,7 @@ class PlaybackBaseMixin:
         self._cast.media_controller.register_status_listener(media_listener)
 
         try:
-            media_listener.wait_for_states()
+            return media_listener.wait_for_states(timeout=timeout)
         except pychromecast.error.UnsupportedNamespace:
             raise CattCastError("Chromecast app operation was interrupted.")
 
