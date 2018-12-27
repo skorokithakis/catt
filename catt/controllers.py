@@ -5,6 +5,7 @@ import tempfile
 import threading
 from enum import Enum
 from pathlib import Path
+from typing import Any, Optional  # noqa
 
 import pychromecast
 from click import ClickException, echo
@@ -303,11 +304,14 @@ class MediaStatusListener:
             self._states_waited_for = [s for s in VALID_STATE_EVENTS if s not in states]
         else:
             self._states_waited_for = states
-        if fail and current_state in self._states_waited_for:
-            raise ListenerError("condition is already met (fail is set)")
 
         self._state_event = threading.Event()
         self._current_state = current_state
+        if self._current_state in self._states_waited_for:
+            if fail:
+                raise ListenerError("condition is already met (fail is set)")
+            else:
+                self._state_event.set()
 
     def new_media_status(self, status):
         self._current_state = status.player_state
@@ -316,9 +320,8 @@ class MediaStatusListener:
         else:
             self._state_event.clear()
 
-    def wait_for_states(self):
-        if self._current_state not in self._states_waited_for:
-            self._state_event.wait()
+    def wait_for_states(self, timeout=None):
+        return self._state_event.wait(timeout=timeout)
 
 
 class CastController:
@@ -434,13 +437,13 @@ class CastController:
         # so we maintain a list of those apps.
         return status.player_state in ["UNKNOWN", "IDLE"] and self._cast.app_id not in NO_PLAYER_STATE_IDS
 
-    def volume(self, level):
+    def volume(self, level: float) -> None:
         self._cast.set_volume(level)
 
-    def volumeup(self, delta):
+    def volumeup(self, delta: float) -> None:
         self._cast.volume_up(delta)
 
-    def volumedown(self, delta):
+    def volumedown(self, delta: float) -> None:
         self._cast.volume_down(delta)
 
     def kill(self, idle_only=False):
@@ -460,23 +463,26 @@ class CastController:
 
 
 class MediaControllerMixin:
+    _is_seekable = None  # type: Any
+    _cast = None  # type: pychromecast.Chromecast
+
     def play(self):
         self._cast.media_controller.play()
 
     def pause(self):
         self._cast.media_controller.pause()
 
-    def seek(self, seconds):
+    def seek(self, seconds: int) -> None:
         if self._is_seekable:
             self._cast.media_controller.seek(seconds)
         else:
             raise CattCastError("Stream is not seekable.")
 
-    def rewind(self, seconds):
+    def rewind(self, seconds: int) -> None:
         pos = self._cast.media_controller.status.current_time
         self.seek(pos - seconds)
 
-    def ffwd(self, seconds):
+    def ffwd(self, seconds: int) -> None:
         pos = self._cast.media_controller.status.current_time
         self.seek(pos + seconds)
 
@@ -488,24 +494,25 @@ class MediaControllerMixin:
 
 
 class PlaybackBaseMixin:
-    def play_media_url(self, video_url, **kwargs):
+    _cast = None  # type: pychromecast.Chromecast
+
+    def play_media_url(self, video_url: str, **kwargs) -> None:
         raise NotImplementedError
 
-    def play_media_id(self, video_id):
+    def play_media_id(self, video_id: str) -> None:
         raise NotImplementedError
 
-    def play_playlist(self, playlist_id):
+    def play_playlist(self, playlist_id: str) -> None:
         raise NotImplementedError
 
-    def wait_for(self, states, invert=False, fail=False):
-        states = [states] if isinstance(states, str) else states
+    def wait_for(self, states: list, invert: bool = False, fail: bool = False, timeout: Optional[int] = None) -> bool:
         media_listener = MediaStatusListener(
             self._cast.media_controller.status.player_state, states, invert=invert, fail=fail
         )
         self._cast.media_controller.register_status_listener(media_listener)
 
         try:
-            media_listener.wait_for_states()
+            return media_listener.wait_for_states(timeout=timeout)
         except pychromecast.error.UnsupportedNamespace:
             raise CattCastError("Chromecast app operation was interrupted.")
 
@@ -583,10 +590,10 @@ class YoutubeCastController(CastController, MediaControllerMixin, PlaybackBaseMi
         echo('Adding video id "%s" to the queue.' % video_id)
         self._prep_yt(video_id)
         # You can't add videos to the queue while the app is buffering.
-        self.wait_for("BUFFERING", invert=True)
+        self.wait_for(["BUFFERING"], invert=True)
         self._controller.add_to_queue(video_id)
 
     def restore(self, data):
         self.play_media_id(data["content_id"])
-        self.wait_for("PLAYING")
+        self.wait_for(["PLAYING"])
         self.seek(data["current_time"])

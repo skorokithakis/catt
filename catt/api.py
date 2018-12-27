@@ -56,9 +56,12 @@ class CattDevice:
             url = stream.video_url
         self.ctrl.prep_app()
         self.ctrl.play_media_url(url)
-        if block:
-            self.ctrl.wait_for("PLAYING")
-            self.ctrl.wait_for(["BUFFERING", "PLAYING"], invert=True)
+
+        if self.ctrl.wait_for(["PLAYING"], timeout=10):
+            if block:
+                self.ctrl.wait_for(["BUFFERING", "PLAYING"], invert=True)
+        else:
+            raise CattAPIError("playback failed")
 
     def stop(self):
         self.ctrl.kill()
