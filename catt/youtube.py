@@ -48,7 +48,7 @@ REQUEST_DATA_CLEAR_PLAYLIST = "count=1&ofs=%d&req0__sc=clearPlaylist"
 REQUEST_URL_LOUNGE_TOKEN = YOUTUBE_BASE_URL + "api/lounge/pairing/get_lounge_token_batch"
 REQUEST_DATA_LOUNGE_TOKEN = "screen_ids={screenId}&session_token={XSRFToken}"
 
-YOUTUBE_SESSION_TOKEN_REGEX = 'XSRF_TOKEN\W*(.*)="'
+YOUTUBE_SESSION_TOKEN_REGEX = r'XSRF_TOKEN\W*(.*)="'
 SID_REGEX = '"c","(.*?)","'
 PLAYLIST_ID_REGEX = 'listId":"(.*?)"'
 FIRST_VIDEO_ID_REGEX = 'firstVideoId":"(.*?)"'

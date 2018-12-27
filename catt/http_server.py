@@ -61,7 +61,7 @@ def serve_file(filename, address="", port=45114, content_type=None):
             else:
                 try:
                     first, last = parse_byte_range(self.headers["Range"])
-                except ValueError as e:
+                except ValueError:
                     self.send_error(400, "Invalid byte range")
                     return None
 
