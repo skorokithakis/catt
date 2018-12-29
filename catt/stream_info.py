@@ -53,9 +53,9 @@ class StreamInfo:
                 # We pop the "format" item, as it will make get_stream_info fail,
                 # if it holds an invalid value.
                 self._best_format = self._ydl.params.pop("format")
-            elif device_type in AUDIO_DEVICE_TYPES:
+            elif device_type and device_type in AUDIO_DEVICE_TYPES:
                 self._best_format = AUDIO_FORMAT
-            elif model in ULTRA_MODELS:
+            elif model and model in ULTRA_MODELS:
                 self._best_format = ULTRA_FORMAT
             else:
                 self._best_format = STANDARD_FORMAT

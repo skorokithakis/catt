@@ -13,7 +13,14 @@ except ImportError:
 with open("README.rst") as readme_file:
     readme = readme_file.read()
 
-requirements = ["youtube-dl>=2018.10.5", "PyChromecast>=2.3.0", "Click>=5.0", "ifaddr>=0.1.4", "requests>=2.18.4"]
+requirements = [
+    "youtube-dl>=2018.10.5",
+    "PyChromecast>=2.3.0",
+    "Click>=5.0",
+    "ifaddr>=0.1.4",
+    "requests>=2.18.4",
+    'typing;python_version<"3.5"',
+]
 
 test_requirements = []  # type: ignore
 
