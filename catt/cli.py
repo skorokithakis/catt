@@ -178,7 +178,7 @@ def process_subtitle(ctx, param, value):
 
 @cli.command(short_help="Send a video to a Chromecast for playing.")
 @click.argument("video_url", callback=process_url)
-@click.option("-s", "--subtitle", callback=process_subtitle, help="Specify a Subtitle.")
+@click.option("-s", "--subtitle", callback=process_subtitle, metavar="SUB", help="Specify a subtitle.")
 @click.option(
     "-f",
     "--force-default",
@@ -264,7 +264,7 @@ def cast_site(settings, url):
 @click.pass_obj
 def add(settings, video_url):
     cst, stream = setup_cast(settings["device"], video_url=video_url, action="add", prep="control")
-    if cst.playlist_capability and (cst.name != stream.extractor or not stream.is_remote_file):
+    if cst.name != stream.extractor or not stream.is_remote_file:
         raise CattCliError("This url cannot be added to the queue.")
     cst.add(stream.video_id)
 
@@ -314,7 +314,7 @@ def seek(settings, timedesc):
     cst.seek(timedesc)
 
 
-@cli.command(short_help="Skip to next video in queue (if any).")
+@cli.command(short_help="Skip to end of content.")
 @click.pass_obj
 def skip(settings):
     cst = setup_cast(settings["device"], action="skip", prep="control")
