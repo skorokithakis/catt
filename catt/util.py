@@ -1,6 +1,12 @@
+import re
+import tempfile
 from pathlib import Path
 
 import click
+
+
+class CattUtilError(click.ClickException):
+    pass
 
 
 def warning(msg):
@@ -25,3 +31,37 @@ def guess_mime(path):
         ".webp": "image/web",
     }
     return extensions.get(extension, "video/mp4")
+
+
+def hunt_subtitle(video):
+    """Searches for subtitles in the current folder"""
+
+    video_path = Path(video)
+    video_path_stem_lower = video_path.stem.lower()
+    for entry_path in video_path.parent.iterdir():
+        if entry_path.is_dir():
+            continue
+        if entry_path.stem.lower().startswith(video_path_stem_lower) and entry_path.suffix.lower() in [".vtt", ".srt"]:
+            return str(entry_path.resolve())
+    return None
+
+
+def convert_srt_to_webvtt_helper(content):
+    content = re.sub(r"^(.*? \-\-\> .*?)$", lambda m: m.group(1).replace(",", "."), content, flags=re.MULTILINE)
+
+    with tempfile.NamedTemporaryFile(mode="w+b", suffix=".vtt", delete=False) as vttfile:
+        target_filename = vttfile.name
+        vttfile.write("WEBVTT\n\n".encode())
+        vttfile.write(content.encode())
+        return target_filename
+
+
+def convert_srt_to_webvtt(filename):
+    for possible_encoding in ["utf-8", "iso-8859-15"]:
+        try:
+            with open(filename, "r", encoding=possible_encoding) as srtfile:
+                content = srtfile.read()
+                return convert_srt_to_webvtt_helper(content)
+        except UnicodeDecodeError:
+            pass
+    raise CattUtilError("Could not find the proper encoding of {}. Please convert it to utf-8.".format(filename))
