@@ -314,7 +314,7 @@ def seek(settings, timedesc):
     cst.seek(timedesc)
 
 
-@cli.command(short_help="Skip to next video in queue (if any).")
+@cli.command(short_help="Skip to end of content.")
 @click.pass_obj
 def skip(settings):
     cst = setup_cast(settings["device"], action="skip", prep="control")
