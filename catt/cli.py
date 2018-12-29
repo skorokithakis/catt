@@ -2,8 +2,6 @@
 
 import configparser
 import random
-import re
-import tempfile
 import time
 from pathlib import Path
 from threading import Thread
@@ -13,7 +11,7 @@ import requests
 
 from .controllers import Cache, CastState, StateFileError, StateMode, get_chromecast, get_chromecasts, setup_cast
 from .http_server import serve_file
-from .util import warning
+from .util import convert_srt_to_webvtt, convert_srt_to_webvtt_helper, hunt_subtitle, warning
 
 CONFIG_DIR = Path(click.get_app_dir("catt"))
 CONFIG_PATH = Path(CONFIG_DIR, "catt.cfg")
@@ -106,40 +104,6 @@ def write_config(settings):
         writeconfig(settings)
     else:
         raise CattCliError("No device specified.")
-
-
-def hunt_subtitle(video):
-    """Searches for subtitles in the current folder"""
-
-    video_path = Path(video)
-    video_path_stem_lower = video_path.stem.lower()
-    for entry_path in video_path.parent.iterdir():
-        if entry_path.is_dir():
-            continue
-        if entry_path.stem.lower().startswith(video_path_stem_lower) and entry_path.suffix.lower() in [".vtt", ".srt"]:
-            return str(entry_path.resolve())
-    return None
-
-
-def convert_srt_to_webvtt_helper(content):
-    content = re.sub(r"^(.*? \-\-\> .*?)$", lambda m: m.group(1).replace(",", "."), content, flags=re.MULTILINE)
-
-    with tempfile.NamedTemporaryFile(mode="w+b", suffix=".vtt", delete=False) as vttfile:
-        target_filename = vttfile.name
-        vttfile.write("WEBVTT\n\n".encode())
-        vttfile.write(content.encode())
-        return target_filename
-
-
-def convert_srt_to_webvtt(filename):
-    for possible_encoding in ["utf-8", "iso-8859-15"]:
-        try:
-            with open(filename, "r", encoding=possible_encoding) as srtfile:
-                content = srtfile.read()
-                return convert_srt_to_webvtt_helper(content)
-        except UnicodeDecodeError:
-            pass
-    raise CattCliError("Could not find the proper encoding of {}. Please convert it to utf-8.".format(filename))
 
 
 def load_subtitle_if_exists(subtitle, video, local_ip, port):
