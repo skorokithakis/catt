@@ -264,7 +264,7 @@ def cast_site(settings, url):
 @click.pass_obj
 def add(settings, video_url):
     cst, stream = setup_cast(settings["device"], video_url=video_url, action="add", prep="control")
-    if cst.playlist_capability and (cst.name != stream.extractor or not stream.is_remote_file):
+    if cst.name != stream.extractor or not stream.is_remote_file:
         raise CattCliError("This url cannot be added to the queue.")
     cst.add(stream.video_id)
 
