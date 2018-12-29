@@ -207,18 +207,15 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs, ytd
     )
 
     if stream.is_local_file:
-        click.echo("Casting local file %s..." % video_url)
         if subtitle or not no_subs:
             subtitle_url = load_subtitle_if_exists(subtitle, video_url, stream.local_ip, stream.port + 1)
         thr = Thread(target=serve_file, args=(video_url, stream.local_ip, stream.port, stream.guessed_content_type))
         thr.setDaemon(True)
         thr.start()
-
     elif stream.is_playlist:
         if stream.playlist_length == 0:
             cst.kill(idle_only=True)
             raise CattCliError("Playlist is empty.")
-        click.echo("Casting remote playlist %s..." % video_url)
         if not random_play and cst.playlist_capability and stream.playlist_all_ids:
             playlist_playback = True
         else:
@@ -229,13 +226,12 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs, ytd
                 entry = 0
             stream.set_playlist_entry(entry)
 
-    else:
-        click.echo("Casting remote file %s..." % video_url)
-
     if playlist_playback:
+        click.echo("Casting remote playlist %s..." % video_url)
         cst.play_playlist(stream.playlist_all_ids)
     else:
-        click.echo('Playing %s on "%s"...' % (stream.video_title, cst.cc_name))
+        click.echo("Casting %s file %s..." % ("local" if stream.is_local_file else "remote", video_url))
+        click.echo('Playing "%s" on "%s"...' % (stream.video_title, cst.cc_name))
         if cst.info_type == "url":
             cst.play_media_url(
                 stream.video_url,
