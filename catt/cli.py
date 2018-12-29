@@ -178,7 +178,7 @@ def process_subtitle(ctx, param, value):
 
 @cli.command(short_help="Send a video to a Chromecast for playing.")
 @click.argument("video_url", callback=process_url)
-@click.option("-s", "--subtitle", callback=process_subtitle, help="Specify a Subtitle.")
+@click.option("-s", "--subtitle", callback=process_subtitle, metavar="SUB", help="Specify a subtitle.")
 @click.option(
     "-f",
     "--force-default",
