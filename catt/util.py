@@ -37,9 +37,9 @@ def hunt_subtitle(video):
     """Searches for subtitles in the current folder"""
 
     video_dir_path = Path(video).parent
-    for ext in ["*.vtt", "*.VTT", "*.srt", "*.SRT"]:
+    for ext in ["vtt", "VTT", "srt", "SRT"]:
         try:
-            sub = next(video_dir_path.glob(ext))
+            sub = next(video_dir_path.glob("*." + ext))
         except StopIteration:
             continue
         return str(sub.resolve())
