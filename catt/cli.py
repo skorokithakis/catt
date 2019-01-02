@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import configparser
+import json
 import random
 import time
 from pathlib import Path
@@ -317,11 +318,15 @@ def status(settings):
 
 
 @cli.command(short_help="Show complete information about the currently-playing video.")
+@click.option("-j", "--json-output", is_flag=True, help="Output info as json.")
 @click.pass_obj
-def info(settings):
+def info(settings, json_output):
     cst = setup_cast(settings["device"], prep="info")
-    for (key, value) in cst.info.items():
-        click.echo("%s: %s" % (key, value))
+    if json_output:
+        click.echo(json.dumps(cst.info, indent=4, default=str))
+    else:
+        for (key, value) in cst.info.items():
+            click.echo("%s: %s" % (key, value))
 
 
 @cli.command(short_help="Scan the local network and show all Chromecasts and their IPs.")
