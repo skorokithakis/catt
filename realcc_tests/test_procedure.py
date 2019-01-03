@@ -8,6 +8,7 @@ import click
 
 CMD_BASE = ["catt", "-d"]
 VALIDATE_ARGS = ["info", "-j"]
+STOP_ARGS = ["stop"]
 
 
 class CattTestError(click.ClickException):
@@ -58,15 +59,17 @@ class CattTest:
         return (True, None)
 
 
-SOME_TESTS = [
+DEFAULT_CTRL_TESTS = [
     CattTest(
         "h264 1280x720 / aac - default controller",
         ["cast", "https://clips.twitch.tv/CloudyEnticingChickpeaCeilingCat"],
         check_data=("content_id", "https://clips-media-assets2.twitch.tv/AT-cm%7C304482431.mp4"),
-    )
+    ),
+    CattTest("set volume to 50", ["volume", "50"], sleep=3, check_data=("volume_level", 0.5)),
+    CattTest("set volume to 100", ["volume", "100"], sleep=3, check_data=("volume_level", 1.0)),
 ]
 
-STANDARD_TESTS = SOME_TESTS
+STANDARD_TESTS = DEFAULT_CTRL_TESTS
 AUDIO_TESTS = []  # type: list
 ULTRA_TESTS = []  # type: list
 
@@ -86,8 +89,9 @@ def run_tests(standard=None, audio=None, ultra=None):
     for device_name in suites.keys():
         click.secho('Running some tests on "{}".'.format(device_name), fg="magenta")
         click.secho("------------------------------------------", fg="magenta")
+        cbase = CMD_BASE + [device_name]
         for test in suites[device_name]:
-            test.set_cmd_base(CMD_BASE + [device_name])
+            test.set_cmd_base(cbase)
             click.echo(test.desc + "  ->  ", nl=False)
             success, dump = test.run()
             if success:
@@ -96,6 +100,7 @@ def run_tests(standard=None, audio=None, ultra=None):
                 click.secho("failure!", fg="red")
                 click.echo("\n" + dump + "\n")
                 complete_success = False
+        subprocess.run(cbase + STOP_ARGS)
     return complete_success
 
 
