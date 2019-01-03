@@ -48,8 +48,11 @@ class CattTest:
         failed = output.returncode != 0
         if self.should_fail != failed:
             return (False, output.stderr if failed else output.stdout)
-        if self.should_fail and output.stderr != "Error: " + self.check_err:
-            return (False, output.stderr)
+        if self.should_fail:
+            if output.stderr.splitlines()[-1] != "Error: " + self.check_err:
+                return (False, output.stderr)
+            else:
+                return (True, None)
 
         time.sleep(self.sleep)
         catt_val = self._get_val(self.check_key)
