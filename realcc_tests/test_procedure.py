@@ -20,46 +20,60 @@ class CattTest:
         if (should_fail and not check_err) or (not should_fail and not check_data):
             raise CattTestError("Expected outcome mismatch.")
         self.desc = desc
-        self.arguments = arguments
-        self.cmd = None
-        self.validate_cmd = None
-        self.sleep = sleep
-        self.should_fail = should_fail
-        self.check_key, self.check_val = check_data if check_data else (None, None)
-        self.check_err = check_err
+        self._arguments = arguments
+        self._cmd = None
+        self._validate_cmd = None
+        self._sleep = sleep
+        self._should_fail = should_fail
+        self._check_key, self._check_val = check_data if check_data else (None, None)
+        self._check_err = check_err
+        self._output = None
+        self._failed = None
+        self._dump = str()
 
     def set_cmd_base(self, base):
-        self.cmd = base + self.arguments
-        self.validate_cmd = base + VALIDATE_ARGS
+        self._cmd = base + self._arguments
+        self._validate_cmd = base + VALIDATE_ARGS
 
     def _subp_run(self, cmd):
         return subprocess.run(cmd, capture_output=True, universal_newlines=True)
 
     def _get_val(self, key):
-        output = self._subp_run(self.validate_cmd)
+        output = self._subp_run(self._validate_cmd)
         if output.returncode != 0:
             raise CattTestError("Failed to retrieve check value.")
         catt_json = json.loads(output.stdout)
         return catt_json[key]
 
-    def run(self):
-        output = self._subp_run(self.cmd)
-
-        failed = output.returncode != 0
-        if self.should_fail != failed:
-            return (False, output.stderr if failed else output.stdout)
-        if self.should_fail:
-            if output.stderr.splitlines()[-1] != "Error: " + self.check_err:
-                return (False, output.stderr)
+    def _should_fail_test(self):
+        if self._should_fail == self._failed:
+            if not self._should_fail:
+                return True
             else:
-                return (True, None)
+                if self._output.stderr.splitlines()[-1] == "Error: " + self._check_err:
+                    return True
+                else:
+                    self._dump += self._output.stderr
+                    return False
+        else:
+            self._dump += self._output.stderr if self._failed else self._output.stdout
+            return False
 
-        time.sleep(self.sleep)
-        catt_val = self._get_val(self.check_key)
-        if catt_val != self.check_val:
-            dump = 'Expected data from "{}" key:\n{}\nActual data:\n{}'.format(self.check_key, self.check_val, catt_val)
-            return (False, dump)
-        return (True, None)
+    def _regular_test(self):
+        catt_val = self._get_val(self._check_key)
+        if catt_val == self._check_val:
+            return True
+        else:
+            self._dump += 'Expected data from "{}" key:\n{}\nActual data:\n{}'.format(
+                self._check_key, self._check_val, catt_val
+            )
+            return False
+
+    def run(self):
+        self._output = self._subp_run(self._cmd)
+        self._failed = self._output.returncode != 0
+        time.sleep(self._sleep)
+        return (self._should_fail_test() and self._regular_test(), self._dump)
 
 
 DEFAULT_CTRL_TESTS = [
@@ -78,7 +92,7 @@ ULTRA_TESTS = []  # type: list
 
 
 def run_tests(standard=None, audio=None, ultra=None):
-    complete_success = True
+    test_outcomes = list()
     suites = dict()
     if standard:
         suites.update({standard: STANDARD_TESTS})
@@ -93,18 +107,25 @@ def run_tests(standard=None, audio=None, ultra=None):
         click.secho('Running some tests on "{}".'.format(device_name), fg="magenta")
         click.secho("------------------------------------------", fg="magenta")
         cbase = CMD_BASE + [device_name]
+
         for test in suites[device_name]:
             test.set_cmd_base(cbase)
             click.echo(test.desc + "  ->  ", nl=False)
             success, dump = test.run()
             if success:
                 click.secho("success!", fg="green")
+                test_outcomes.append(True)
             else:
                 click.secho("failure!", fg="red")
                 click.echo("\n" + dump + "\n")
-                complete_success = False
+                test_outcomes.append(False)
+
         subprocess.run(cbase + STOP_ARGS)
-    return complete_success
+
+    if test_outcomes:
+        return all(t for t in test_outcomes)
+    else:
+        return False
 
 
 @click.command()
@@ -112,7 +133,9 @@ def run_tests(standard=None, audio=None, ultra=None):
 @click.option("-a", "--audio", help="Name of audio chromecast device.")
 @click.option("-u", "--ultra", help="Name of ultra chromecast device.")
 def cli(standard, audio, ultra):
-    if not run_tests(standard=standard, audio=audio, ultra=ultra):
+    if run_tests(standard=standard, audio=audio, ultra=ultra):
+        click.echo("All tests were successfully completed.")
+    else:
         raise CattTestError("Some tests were not successful.")
 
 
