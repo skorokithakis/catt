@@ -11,16 +11,23 @@ VALIDATE_ARGS = ["info", "-j"]
 STOP_ARGS = ["stop"]
 
 
+def subp_run(cmd):
+    output = subprocess.run(cmd, capture_output=True, universal_newlines=True)
+    if output.returncode != 0:
+        raise CattTestError('The command "{}" failed.'.format(" ".join(cmd)))
+    return output
+
+
 class CattTestError(click.ClickException):
     pass
 
 
 class CattTest:
-    def __init__(self, desc, arguments, sleep=10, should_fail=False, check_data=None, check_err=None):
+    def __init__(self, desc, cmd_args, sleep=10, should_fail=False, check_data=None, check_err=None):
         if (should_fail and not check_err) or (not should_fail and not check_data):
             raise CattTestError("Expected outcome mismatch.")
         self.desc = desc
-        self._arguments = arguments
+        self._cmd_args = cmd_args
         self._cmd = None
         self._validate_cmd = None
         self._sleep = sleep
@@ -32,16 +39,11 @@ class CattTest:
         self.dump = str()
 
     def set_cmd_base(self, base):
-        self._cmd = base + self._arguments
+        self._cmd = base + self._cmd_args
         self._validate_cmd = base + VALIDATE_ARGS
 
-    def _subp_run(self, cmd):
-        return subprocess.run(cmd, capture_output=True, universal_newlines=True)
-
     def _get_val(self, key):
-        output = self._subp_run(self._validate_cmd)
-        if output.returncode != 0:
-            raise CattTestError("Failed to retrieve check value.")
+        output = subp_run(self._validate_cmd)
         catt_json = json.loads(output.stdout)
         return catt_json[key]
 
@@ -72,7 +74,7 @@ class CattTest:
             return False
 
     def run(self):
-        self._output = self._subp_run(self._cmd)
+        self._output = subp_run(self._cmd)
         self._failed = self._output.returncode != 0
         time.sleep(self._sleep)
         return self._should_fail_test() and self._regular_test()
@@ -122,9 +124,7 @@ def run_tests(standard=None, audio=None, ultra=None):
             if test.dump:
                 click.echo("\n" + test.dump + "\n")
 
-        suite_term = subprocess.run(cbase + STOP_ARGS)
-        if suite_term.returncode != 0:
-            raise CattTestError("Failed to properly terminate test suite.")
+        subp_run(cbase + STOP_ARGS)
     return all(t for t in test_outcomes) if test_outcomes else False
 
 
