@@ -29,7 +29,7 @@ class CattTest:
         self._check_err = check_err
         self._output = None
         self._failed = None
-        self._dump = str()
+        self.dump = str()
 
     def set_cmd_base(self, base):
         self._cmd = base + self._arguments
@@ -47,16 +47,18 @@ class CattTest:
 
     def _should_fail_test(self):
         if self._should_fail == self._failed:
-            if not self._should_fail:
+            if not self._failed:
                 return True
             else:
-                if self._output.stderr.splitlines()[-1] == "Error: " + self._check_err:
+                output_errmsg = self._output.stderr.splitlines()[-1]
+                if output_errmsg == "Error: " + self._check_err:
+                    self.dump += output_errmsg + "\n - The expected error message."
                     return True
                 else:
-                    self._dump += self._output.stderr
+                    self.dump += self._output.stderr
                     return False
         else:
-            self._dump += self._output.stderr if self._failed else self._output.stdout
+            self.dump += self._output.stderr if self._failed else self._output.stdout
             return False
 
     def _regular_test(self):
@@ -64,7 +66,7 @@ class CattTest:
         if catt_val == self._check_val:
             return True
         else:
-            self._dump += 'Expected data from "{}" key:\n{}\nActual data:\n{}'.format(
+            self.dump += 'Expected data from "{}" key:\n{}\nActual data:\n{}'.format(
                 self._check_key, self._check_val, catt_val
             )
             return False
@@ -73,7 +75,7 @@ class CattTest:
         self._output = self._subp_run(self._cmd)
         self._failed = self._output.returncode != 0
         time.sleep(self._sleep)
-        return (self._should_fail_test() and self._regular_test(), self._dump)
+        return self._should_fail_test() and self._regular_test()
 
 
 DEFAULT_CTRL_TESTS = [
@@ -111,21 +113,19 @@ def run_tests(standard=None, audio=None, ultra=None):
         for test in suites[device_name]:
             test.set_cmd_base(cbase)
             click.echo(test.desc + "  ->  ", nl=False)
-            success, dump = test.run()
-            if success:
+            if test.run():
                 click.secho("success!", fg="green")
                 test_outcomes.append(True)
             else:
                 click.secho("failure!", fg="red")
-                click.echo("\n" + dump + "\n")
                 test_outcomes.append(False)
+            if test.dump:
+                click.echo("\n" + test.dump + "\n")
 
-        subprocess.run(cbase + STOP_ARGS)
-
-    if test_outcomes:
-        return all(t for t in test_outcomes)
-    else:
-        return False
+        suite_term = subprocess.run(cbase + STOP_ARGS)
+        if suite_term.returncode != 0:
+            raise CattTestError("Failed to properly terminate test suite.")
+    return all(t for t in test_outcomes) if test_outcomes else False
 
 
 @click.command()
