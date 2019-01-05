@@ -11,9 +11,9 @@ VALIDATE_ARGS = ["info", "-j"]
 STOP_ARGS = ["stop"]
 
 
-def subp_run(cmd):
+def subp_run(cmd, ignore_failure=False):
     output = subprocess.run(cmd, capture_output=True, universal_newlines=True)
-    if output.returncode != 0:
+    if not ignore_failure and output.returncode != 0:
         raise CattTestError('The command "{}" failed.'.format(" ".join(cmd)))
     return output
 
@@ -74,7 +74,7 @@ class CattTest:
             return False
 
     def run(self):
-        self._output = subp_run(self._cmd)
+        self._output = subp_run(self._cmd, ignore_failure=True)
         self._failed = self._output.returncode != 0
         time.sleep(self._sleep)
         return self._should_fail_test() and self._regular_test()
@@ -82,12 +82,24 @@ class CattTest:
 
 DEFAULT_CTRL_TESTS = [
     CattTest(
-        "h264 1280x720 / aac - default controller",
+        "play h264 1280x720 / aac content from twitch.tv",
         ["cast", "https://clips.twitch.tv/CloudyEnticingChickpeaCeilingCat"],
         check_data=("content_id", "https://clips-media-assets2.twitch.tv/AT-cm%7C304482431.mp4"),
     ),
     CattTest("set volume to 50", ["volume", "50"], sleep=3, check_data=("volume_level", 0.5)),
     CattTest("set volume to 100", ["volume", "100"], sleep=3, check_data=("volume_level", 1.0)),
+    CattTest("lower volume by 50 ", ["volumedown", "50"], sleep=3, check_data=("volume_level", 0.5)),
+    CattTest("raise volume by 50", ["volumeup", "50"], sleep=3, check_data=("volume_level", 1.0)),
+    CattTest(
+        "play h264 640x360 / aac content from twitch.tv",
+        ["cast", "-y", "format=360", "https://clips.twitch.tv/CloudyEnticingChickpeaCeilingCat"],
+        check_data=("content_id", "https://clips-media-assets2.twitch.tv/AT-cm%7C304482431-360.mp4"),
+    ),
+    CattTest(
+        "play h264 640x360 / aac content directly from google commondatastorage",
+        ["cast", "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"],
+        check_data=("content_id", "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"),
+    ),
 ]
 
 STANDARD_TESTS = DEFAULT_CTRL_TESTS
@@ -107,12 +119,12 @@ def run_tests(standard=None, audio=None, ultra=None):
     if not suites:
         raise CattTestError("There were no tests to run.")
 
-    for device_name in suites.keys():
+    for device_name, suite in suites.items():
         click.secho('Running some tests on "{}".'.format(device_name), fg="magenta")
         click.secho("------------------------------------------", fg="magenta")
         cbase = CMD_BASE + [device_name]
 
-        for test in suites[device_name]:
+        for test in suite:
             test.set_cmd_base(cbase)
             click.echo(test.desc + "  ->  ", nl=False)
             if test.run():
@@ -134,7 +146,7 @@ def run_tests(standard=None, audio=None, ultra=None):
 @click.option("-u", "--ultra", help="Name of ultra chromecast device.")
 def cli(standard, audio, ultra):
     if run_tests(standard=standard, audio=audio, ultra=ultra):
-        click.echo("All tests were successfully completed.")
+        click.echo("\nAll tests were successfully completed.")
     else:
         raise CattTestError("Some tests were not successful.")
 
