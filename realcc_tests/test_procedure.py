@@ -11,9 +11,9 @@ VALIDATE_ARGS = ["info", "-j"]
 STOP_ARGS = ["stop"]
 
 
-def subp_run(cmd, ignore_failure=False):
+def subp_run(cmd, allow_failure=False):
     output = subprocess.run(cmd, capture_output=True, universal_newlines=True)
-    if not ignore_failure and output.returncode != 0:
+    if not allow_failure and output.returncode != 0:
         raise CattTestError('The command "{}" failed.'.format(" ".join(cmd)))
     return output
 
@@ -23,7 +23,7 @@ class CattTestError(click.ClickException):
 
 
 class CattTest:
-    def __init__(self, desc, cmd_args, sleep=10, should_fail=False, check_data=None, check_err=None):
+    def __init__(self, desc, cmd_args, sleep=10, should_fail=False, substring=False, check_data=None, check_err=None):
         if (should_fail and not check_err) or (not should_fail and not check_data):
             raise CattTestError("Expected outcome mismatch.")
         self.desc = desc
@@ -32,6 +32,7 @@ class CattTest:
         self._validate_cmd = None
         self._sleep = sleep
         self._should_fail = should_fail
+        self._substring = substring
         self._check_key, self._check_val = check_data if check_data else (None, None)
         self._check_err = check_err
         self._output = None
@@ -65,7 +66,7 @@ class CattTest:
 
     def _regular_test(self):
         catt_val = self._get_val(self._check_key)
-        if catt_val == self._check_val:
+        if catt_val == self._check_val or (self._substring and self._check_val in catt_val):
             return True
         else:
             self.dump += 'Expected data from "{}" key:\n{}\nActual data:\n{}'.format(
@@ -74,7 +75,7 @@ class CattTest:
             return False
 
     def run(self):
-        self._output = subp_run(self._cmd, ignore_failure=True)
+        self._output = subp_run(self._cmd, allow_failure=True)
         self._failed = self._output.returncode != 0
         time.sleep(self._sleep)
         return self._should_fail_test() and self._regular_test()
@@ -96,14 +97,25 @@ DEFAULT_CTRL_TESTS = [
         check_data=("content_id", "https://clips-media-assets2.twitch.tv/AT-cm%7C304482431-360.mp4"),
     ),
     CattTest(
-        "play h264 640x360 / aac content directly from google commondatastorage",
+        "play h264 1280x720 / aac content directly from google commondatastorage",
         ["cast", "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"],
         check_data=("content_id", "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"),
     ),
 ]
 
+# Some of the audio tests will fail on non-audio devices,
+# as they are fed the regular video+audio streams.
+AUDIO_ONLY_TESTS = [
+    CattTest(
+        "play audio-only DASH aac content from facebook",
+        ["cast", "https://www.facebook.com/PixarCars/videos/10158549620120183/"],
+        substring=True,
+        check_data=("content_id", "18106055_10158549666610183_8333687643300691968_n.mp4"),
+    )
+]
+
 STANDARD_TESTS = DEFAULT_CTRL_TESTS
-AUDIO_TESTS = []  # type: list
+AUDIO_TESTS = AUDIO_ONLY_TESTS
 ULTRA_TESTS = []  # type: list
 
 
