@@ -3,6 +3,7 @@
 import json
 import subprocess
 import time
+from typing import Any, Tuple
 
 import click
 
@@ -11,8 +12,8 @@ VALIDATE_ARGS = ["info", "-j"]
 STOP_ARGS = ["stop"]
 
 
-def subp_run(cmd, allow_failure=False):
-    output = subprocess.run(cmd, capture_output=True, universal_newlines=True)
+def subp_run(cmd, allow_failure: bool = False) -> subprocess.CompletedProcess:
+    output = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
     if not allow_failure and output.returncode != 0:
         raise CattTestError('The command "{}" failed.'.format(" ".join(cmd)))
     return output
@@ -23,32 +24,41 @@ class CattTestError(click.ClickException):
 
 
 class CattTest:
-    def __init__(self, desc, cmd_args, sleep=10, should_fail=False, substring=False, check_data=None, check_err=None):
+    def __init__(
+        self,
+        desc: str,
+        cmd_args: list,
+        sleep: int = 10,
+        should_fail: bool = False,
+        substring: bool = False,
+        check_data: Tuple[str, Any] = ("", ""),
+        check_err: str = "",
+    ) -> None:
         if (should_fail and not check_err) or (not should_fail and not check_data):
             raise CattTestError("Expected outcome mismatch.")
         self.desc = desc
         self._cmd_args = cmd_args
-        self._cmd = None
-        self._validate_cmd = None
+        self._cmd = []  # type: list
+        self._validate_cmd = []  # type: list
         self._sleep = sleep
         self._should_fail = should_fail
         self._substring = substring
-        self._check_key, self._check_val = check_data if check_data else (None, None)
+        self._check_key, self._check_val = check_data if check_data else ("", "")
         self._check_err = check_err
-        self._output = None
-        self._failed = None
+        self._output = None  # type: Any
+        self._failed = False  # type: bool
         self.dump = str()
 
-    def set_cmd_base(self, base):
+    def set_cmd_base(self, base: list) -> None:
         self._cmd = base + self._cmd_args
         self._validate_cmd = base + VALIDATE_ARGS
 
-    def _get_val(self, key):
+    def _get_val(self, key: str) -> str:
         output = subp_run(self._validate_cmd)
         catt_json = json.loads(output.stdout)
         return catt_json[key]
 
-    def _should_fail_test(self):
+    def _should_fail_test(self) -> bool:
         if self._should_fail == self._failed:
             if not self._failed:
                 return True
@@ -64,17 +74,17 @@ class CattTest:
             self.dump += self._output.stderr if self._failed else self._output.stdout
             return False
 
-    def _regular_test(self):
+    def _regular_test(self) -> bool:
         catt_val = self._get_val(self._check_key)
         if catt_val == self._check_val or (self._substring and self._check_val in catt_val):
             return True
         else:
-            self.dump += 'Expected data from "{}" key:\n{}\nActual data:\n{}'.format(
-                self._check_key, self._check_val, catt_val
+            self.dump += 'Expected data from "{}" key:\n{} {}\nActual data:\n{}'.format(
+                self._check_key, self._check_val, "(substring)" if self._substring else "", catt_val
             )
             return False
 
-    def run(self):
+    def run(self) -> bool:
         self._output = subp_run(self._cmd, allow_failure=True)
         self._failed = self._output.returncode != 0
         time.sleep(self._sleep)
@@ -119,7 +129,7 @@ AUDIO_TESTS = AUDIO_ONLY_TESTS
 ULTRA_TESTS = []  # type: list
 
 
-def run_tests(standard=None, audio=None, ultra=None):
+def run_tests(standard: str = "", audio: str = "", ultra: str = ""):
     test_outcomes = list()
     suites = dict()
     if standard:
