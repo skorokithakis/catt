@@ -61,18 +61,18 @@ class CattTest:
 
     def _should_fail_test(self) -> bool:
         if self._should_fail == self._failed:
-            if not self._failed:
-                return True
-            else:
-                output_errmsg = self._output.stderr.splitlines()[-1]
-                if output_errmsg == "Error: " + self._check_err:
-                    self.dump += output_errmsg + "\n - The expected error message."
-                    return True
-                else:
-                    self.dump += self._output.stderr
-                    return False
+            return True
         else:
             self.dump += self._output.stderr if self._failed else self._output.stdout
+            return False
+
+    def _failure_test(self) -> bool:
+        output_errmsg = self._output.stderr.splitlines()[-1]
+        if output_errmsg == "Error: " + self._check_err:
+            self.dump += output_errmsg + "\n - The expected error message."
+            return True
+        else:
+            self.dump += self._output.stderr
             return False
 
     def _regular_test(self) -> bool:
@@ -91,7 +91,7 @@ class CattTest:
         time.sleep(self._sleep)
         if self._should_fail_test():
             if self._failed:
-                return True
+                return self._failure_test()
             else:
                 return self._regular_test()
         else:
