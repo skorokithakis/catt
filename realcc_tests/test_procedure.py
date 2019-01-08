@@ -3,7 +3,7 @@
 import json
 import subprocess
 import time
-from typing import Any, Tuple
+from typing import Any
 
 import click
 
@@ -12,6 +12,7 @@ VALIDATE_ARGS = ["info", "-j"]
 STOP_ARGS = ["stop"]
 
 
+# Uses subprocess.run(), so py3.5+ is required.
 def subp_run(cmd, allow_failure: bool = False) -> subprocess.CompletedProcess:
     output = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
     if not allow_failure and output.returncode != 0:
@@ -31,7 +32,7 @@ class CattTest:
         sleep: int = 10,
         should_fail: bool = False,
         substring: bool = False,
-        check_data: Tuple[str, Any] = ("", ""),
+        check_data: Any = None,
         check_err: str = "",
     ) -> None:
         if (should_fail and not check_err) or (not should_fail and not check_data):
@@ -43,17 +44,17 @@ class CattTest:
         self._sleep = sleep
         self._should_fail = should_fail
         self._substring = substring
-        self._check_key, self._check_val = check_data if check_data else ("", "")
+        self._check_key, self._check_val = check_data if check_data else (None, None)
         self._check_err = check_err
         self._output = None  # type: Any
         self._failed = False  # type: bool
-        self.dump = str()
+        self.dump = ""  # type: str
 
     def set_cmd_base(self, base: list) -> None:
         self._cmd = base + self._cmd_args
         self._validate_cmd = base + VALIDATE_ARGS
 
-    def _get_val(self, key: str) -> str:
+    def _get_val(self, key: str) -> Any:
         output = subp_run(self._validate_cmd)
         catt_json = json.loads(output.stdout)
         return catt_json[key]
@@ -130,8 +131,8 @@ ULTRA_TESTS = []  # type: list
 
 
 def run_tests(standard: str = "", audio: str = "", ultra: str = ""):
-    test_outcomes = list()
-    suites = dict()
+    test_outcomes = []  # type: list
+    suites = {}  # type: dict
     if standard:
         suites.update({standard: STANDARD_TESTS})
     if audio:
