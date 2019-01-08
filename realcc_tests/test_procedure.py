@@ -89,12 +89,18 @@ class CattTest:
         self._output = subp_run(self._cmd, allow_failure=True)
         self._failed = self._output.returncode != 0
         time.sleep(self._sleep)
-        return self._should_fail_test() and self._regular_test()
+        if self._should_fail_test():
+            if self._failed:
+                return True
+            else:
+                return self._regular_test()
+        else:
+            return False
 
 
 DEFAULT_CTRL_TESTS = [
     CattTest(
-        "play h264 1280x720 / aac content from twitch.tv",
+        "cast h264 1280x720 / aac content from twitch.tv",
         ["cast", "https://clips.twitch.tv/CloudyEnticingChickpeaCeilingCat"],
         check_data=("content_id", "https://clips-media-assets2.twitch.tv/AT-cm%7C304482431.mp4"),
     ),
@@ -103,14 +109,30 @@ DEFAULT_CTRL_TESTS = [
     CattTest("lower volume by 50 ", ["volumedown", "50"], sleep=3, check_data=("volume_level", 0.5)),
     CattTest("raise volume by 50", ["volumeup", "50"], sleep=3, check_data=("volume_level", 1.0)),
     CattTest(
-        "play h264 640x360 / aac content from twitch.tv",
+        "cast h264 640x360 / aac content from twitch.tv",
         ["cast", "-y", "format=360", "https://clips.twitch.tv/CloudyEnticingChickpeaCeilingCat"],
         check_data=("content_id", "https://clips-media-assets2.twitch.tv/AT-cm%7C304482431-360.mp4"),
     ),
     CattTest(
-        "play h264 1280x720 / aac content directly from google commondatastorage",
+        "cast h264 1280x720 / aac content directly from google commondatastorage",
         ["cast", "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"],
         check_data=("content_id", "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"),
+    ),
+]
+
+YOUTUBE_CTRL_TESTS = [
+    CattTest(
+        "cast playlist from youtube",
+        ["cast", "https://www.youtube.com/watch?list=PLQNHYNv9IpSzzaQMuH7ji2bEy6o8T8Wwn"],
+        check_data=("content_id", "CIvzV5ZdYis"),
+    ),
+    CattTest("skip to next entry in playlist", ["skip"], sleep=15, check_data=("content_id", "Ff_FvEkuG8w")),
+    CattTest(
+        "try to add invalid video-url to playlist (should fail)",
+        ["add", "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"],
+        sleep=3,
+        should_fail=True,
+        check_err="This url cannot be added to the queue.",
     ),
 ]
 
@@ -118,14 +140,14 @@ DEFAULT_CTRL_TESTS = [
 # as they are fed the regular video+audio streams.
 AUDIO_ONLY_TESTS = [
     CattTest(
-        "play audio-only DASH aac content from facebook",
+        "cast audio-only DASH aac content from facebook",
         ["cast", "https://www.facebook.com/PixarCars/videos/10158549620120183/"],
         substring=True,
         check_data=("content_id", "18106055_10158549666610183_8333687643300691968_n.mp4"),
     )
 ]
 
-STANDARD_TESTS = DEFAULT_CTRL_TESTS
+STANDARD_TESTS = DEFAULT_CTRL_TESTS + YOUTUBE_CTRL_TESTS
 AUDIO_TESTS = AUDIO_ONLY_TESTS
 ULTRA_TESTS = []  # type: list
 
