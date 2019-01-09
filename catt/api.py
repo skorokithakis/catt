@@ -8,7 +8,7 @@ from .controllers import (
 )
 
 
-def discover():
+def discover() -> list:
     return [CattDevice(ipaddr=d.host) for d in get_chromecasts()]
 
 
@@ -17,7 +17,7 @@ class CattAPIError(Exception):
 
 
 class CattDevice:
-    def __init__(self, name=None, ipaddr=None, lazy=False):
+    def __init__(self, name: str = "", ipaddr: str = "", lazy: bool = False) -> None:
         if not name and not ipaddr:
             raise CattAPIError("neither name nor ip were supplied")
         self.name = name
@@ -28,10 +28,10 @@ class CattDevice:
         if not lazy:
             self._create_cast()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<CattDevice: %s>" % (self.name or self.ipaddr)
 
-    def _create_cast(self):
+    def _create_cast(self) -> None:
         self._cast = get_chromecast_with_ip(self.ipaddr) if self.ipaddr else get_chromecast(self.name)
         if not self._cast:
             raise CattAPIError("device could not be found")
@@ -39,7 +39,7 @@ class CattDevice:
         self.name = self._cast.name
         self.ipaddr = self._cast.host
 
-    def _create_ctrl(self):
+    def _create_ctrl(self) -> None:
         self._cast_controller = get_controller(self._cast, get_app_info("default"))
 
     @property
@@ -50,7 +50,7 @@ class CattDevice:
             self._create_ctrl()
         return self._cast_controller
 
-    def play_url(self, url, resolve=False, block=False):
+    def play_url(self, url: str, resolve: bool = False, block: bool = False) -> None:
         if resolve:
             stream = get_stream(url)
             url = stream.video_url
@@ -63,34 +63,34 @@ class CattDevice:
         else:
             raise CattAPIError("playback failed")
 
-    def stop(self):
+    def stop(self) -> None:
         self.ctrl.kill()
 
-    def play(self):
+    def play(self) -> None:
         self.ctrl.prep_control()
         self.ctrl.play()
 
-    def pause(self):
+    def pause(self) -> None:
         self.ctrl.prep_control()
         self.ctrl.pause()
 
-    def seek(self, seconds):
+    def seek(self, seconds: int) -> None:
         self.ctrl.prep_control()
         self.ctrl.seek(seconds)
 
-    def rewind(self, seconds):
+    def rewind(self, seconds: int) -> None:
         self.ctrl.prep_control()
         self.ctrl.rewind(seconds)
 
-    def ffwd(self, seconds):
+    def ffwd(self, seconds: int) -> None:
         self.ctrl.prep_control()
         self.ctrl.ffwd(seconds)
 
-    def volume(self, level):
+    def volume(self, level: float) -> None:
         self.ctrl.volume(level)
 
-    def volumeup(self, delta):
+    def volumeup(self, delta: float) -> None:
         self.ctrl.volumeup(delta)
 
-    def volumedown(self, delta):
+    def volumedown(self, delta: float) -> None:
         self.ctrl.volumedown(delta)
