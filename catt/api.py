@@ -59,7 +59,7 @@ class CattDevice:
 
         if self.ctrl.wait_for(["PLAYING"], timeout=10):
             if block:
-                self.ctrl.wait_for(["BUFFERING", "PLAYING"], invert=True)
+                self.ctrl.wait_for(["UNKNOWN", "IDLE"])
         else:
             raise CattAPIError("playback failed")
 
