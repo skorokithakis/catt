@@ -160,11 +160,12 @@ def process_subtitle(ctx, param, value):
     type=YTDL_OPT,
     multiple=True,
     metavar="OPT",
-    help="YouTube-DL option. Should be passed as `-y option=value`, and can be specified multiple times.",
+    help="YouTube-DL option. "
+    "Should be passed as `-y option=value`, and can be specified multiple times (implies --force-default).",
 )
 @click.pass_obj
 def cast(settings, video_url, subtitle, force_default, random_play, no_subs, ytdl_option):
-    controller = "default" if force_default else None
+    controller = "default" if force_default or ytdl_option else None
     subtitle_url = None
     playlist_playback = False
     cst, stream = setup_cast(
