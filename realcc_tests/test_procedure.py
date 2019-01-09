@@ -173,10 +173,10 @@ def run_tests(standard: str = "", audio: str = "", ultra: str = ""):
             test.set_cmd_base(cbase)
             click.echo(test.desc + "  ->  ", nl=False)
             if test.run():
-                click.secho("success!", fg="green")
+                click.secho("test success!", fg="green")
                 test_outcomes.append(True)
             else:
-                click.secho("failure!", fg="red")
+                click.secho("test failure!", fg="red")
                 test_outcomes.append(False)
             if test.dump:
                 click.echo("\n" + test.dump + "\n")
