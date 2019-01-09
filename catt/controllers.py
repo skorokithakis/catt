@@ -139,7 +139,11 @@ def setup_cast(device_name, video_url=None, controller=None, ytdl_options=None, 
         else:
             app_info = get_app_info("default")
     else:
-        app_info = get_app_info(cast.app_id, cast_type)
+        # cast.app_id can be None, in the case of an inactive audio device.
+        if cast.app_id:
+            app_info = get_app_info(cast.app_id, cast_type)
+        else:
+            app_info = get_app_info("default")
 
     cast_controller = get_controller(cast, app_info, action=action, prep=prep)
     return (cast_controller, stream) if stream else cast_controller
