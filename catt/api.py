@@ -9,6 +9,8 @@ from .controllers import (
 
 
 def discover() -> list:
+    """Perform discovery of devices present on local network, and return result."""
+
     return [CattDevice(ipaddr=d.host) for d in get_chromecasts()]
 
 
@@ -18,6 +20,17 @@ class CattAPIError(Exception):
 
 class CattDevice:
     def __init__(self, name: str = "", ipaddr: str = "", lazy: bool = False) -> None:
+        """
+        Class to easily interface with a ChromeCast.
+
+        :param name: Name of ChromeCast device to interface with.
+                     Either name of ip-address must be supplied.
+        :param ipaddr: Ip-address of device to interface with.
+                       Either name of ip-address must be supplied.
+        :param lazy: Postpone first connection attempt to device
+                     until first playback action is attempted.
+        """
+
         if not name and not ipaddr:
             raise CattAPIError("neither name nor ip were supplied")
         self.name = name
@@ -51,6 +64,16 @@ class CattDevice:
         return self._cast_controller
 
     def play_url(self, url: str, resolve: bool = False, block: bool = False) -> None:
+        """
+        Initiate playback of content.
+
+        :param url: Network location of content.
+        :param resolve: Try to resolve location of content stream with Youtube-dl.
+                        If this is not set, it is assumed that the url points directly to the stream.
+        :param block: Block until playback has stopped,
+                      either by end of content being reached, or by interruption.
+        """
+
         if resolve:
             stream = get_stream(url)
             url = stream.video_url
@@ -64,33 +87,73 @@ class CattDevice:
             raise CattAPIError("playback failed")
 
     def stop(self) -> None:
+        """Stop playback."""
+
         self.ctrl.kill()
 
     def play(self) -> None:
+        """Resume playback of paused content."""
+
         self.ctrl.prep_control()
         self.ctrl.play()
 
     def pause(self) -> None:
+        """Pause playback of content."""
+
         self.ctrl.prep_control()
         self.ctrl.pause()
 
     def seek(self, seconds: int) -> None:
+        """
+        Seek to arbitrary position in content.
+
+        :param seconds: Position in seconds.
+        """
+
         self.ctrl.prep_control()
         self.ctrl.seek(seconds)
 
     def rewind(self, seconds: int) -> None:
+        """
+        Seek backwards in content by arbitrary amount of seconds.
+
+        :param seconds: Seek amount in seconds.
+        """
+
         self.ctrl.prep_control()
         self.ctrl.rewind(seconds)
 
     def ffwd(self, seconds: int) -> None:
+        """
+        Seek forward in content by arbitrary amount of seconds.
+
+        :param seconds: Seek amount in seconds.
+        """
+
         self.ctrl.prep_control()
         self.ctrl.ffwd(seconds)
 
     def volume(self, level: float) -> None:
+        """
+        Set volume to arbitrary level.
+
+        :param level: Volume level (valid range: 0.0-1.0).
+        """
         self.ctrl.volume(level)
 
     def volumeup(self, delta: float) -> None:
+        """
+        Raise volume by arbitrary delta.
+
+        :param delta: Volume delta (valid range: 0.0-1.0).
+        """
         self.ctrl.volumeup(delta)
 
     def volumedown(self, delta: float) -> None:
+        """
+        Lower volume by arbitrary delta.
+
+        :param delta: Volume delta (valid range: 0.0-1.0).
+        """
+
         self.ctrl.volumedown(delta)
