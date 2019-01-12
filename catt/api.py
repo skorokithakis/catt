@@ -11,7 +11,7 @@ from .controllers import (
 def discover() -> list:
     """Perform discovery of devices present on local network, and return result."""
 
-    return [CattDevice(ipaddr=d.host) for d in get_chromecasts()]
+    return [CattDevice(ip_addr=d.host) for d in get_chromecasts()]
 
 
 class CattAPIError(Exception):
@@ -19,22 +19,24 @@ class CattAPIError(Exception):
 
 
 class CattDevice:
-    def __init__(self, name: str = "", ipaddr: str = "", lazy: bool = False) -> None:
+    def __init__(self, name: str = "", ip_addr: str = "", lazy: bool = False) -> None:
         """
         Class to easily interface with a ChromeCast.
 
         :param name: Name of ChromeCast device to interface with.
                      Either name of ip-address must be supplied.
-        :param ipaddr: Ip-address of device to interface with.
+        :param ip_addr: Ip-address of device to interface with.
                        Either name of ip-address must be supplied.
         :param lazy: Postpone first connection attempt to device
                      until first playback action is attempted.
         """
 
-        if not name and not ipaddr:
+        if not name and not ip_addr:
             raise CattAPIError("neither name nor ip were supplied")
+
         self.name = name
-        self.ipaddr = ipaddr
+        self.ip_addr = ip_addr
+        self.uuid = None
 
         self._cast = None
         self._cast_controller = None
@@ -42,25 +44,27 @@ class CattDevice:
             self._create_cast()
 
     def __repr__(self) -> str:
-        return "<CattDevice: %s>" % (self.name or self.ipaddr)
+        return "<CattDevice: %s>" % (self.name or self.ip_addr)
 
     def _create_cast(self) -> None:
-        self._cast = get_chromecast_with_ip(self.ipaddr) if self.ipaddr else get_chromecast(self.name)
+        self._cast = get_chromecast_with_ip(self.ip_addr) if self.ip_addr else get_chromecast(self.name)
         if not self._cast:
             raise CattAPIError("device could not be found")
         self._cast.wait()
-        self.name = self._cast.name
-        self.ipaddr = self._cast.host
 
-    def _create_ctrl(self) -> None:
+        self.name = self._cast.name
+        self.ip_addr = self._cast.host
+        self.uuid = self._cast.uuid
+
+    def _create_controller(self) -> None:
         self._cast_controller = get_controller(self._cast, get_app_info("default"))
 
     @property
-    def ctrl(self):
+    def controller(self):
         if not self._cast:
             self._create_cast()
         if not self._cast_controller:
-            self._create_ctrl()
+            self._create_controller()
         return self._cast_controller
 
     def play_url(self, url: str, resolve: bool = False, block: bool = False) -> None:
@@ -77,31 +81,31 @@ class CattDevice:
         if resolve:
             stream = get_stream(url)
             url = stream.video_url
-        self.ctrl.prep_app()
-        self.ctrl.play_media_url(url)
+        self.controller.prep_app()
+        self.controller.play_media_url(url)
 
-        if self.ctrl.wait_for(["PLAYING"], timeout=10):
+        if self.controller.wait_for(["PLAYING"], timeout=10):
             if block:
-                self.ctrl.wait_for(["UNKNOWN", "IDLE"])
+                self.controller.wait_for(["UNKNOWN", "IDLE"])
         else:
             raise CattAPIError("playback failed")
 
     def stop(self) -> None:
         """Stop playback."""
 
-        self.ctrl.kill()
+        self.controller.kill()
 
     def play(self) -> None:
         """Resume playback of paused content."""
 
-        self.ctrl.prep_control()
-        self.ctrl.play()
+        self.controller.prep_control()
+        self.controller.play()
 
     def pause(self) -> None:
         """Pause playback of content."""
 
-        self.ctrl.prep_control()
-        self.ctrl.pause()
+        self.controller.prep_control()
+        self.controller.pause()
 
     def seek(self, seconds: int) -> None:
         """
@@ -110,8 +114,8 @@ class CattDevice:
         :param seconds: Position in seconds.
         """
 
-        self.ctrl.prep_control()
-        self.ctrl.seek(seconds)
+        self.controller.prep_control()
+        self.controller.seek(seconds)
 
     def rewind(self, seconds: int) -> None:
         """
@@ -120,8 +124,8 @@ class CattDevice:
         :param seconds: Seek amount in seconds.
         """
 
-        self.ctrl.prep_control()
-        self.ctrl.rewind(seconds)
+        self.controller.prep_control()
+        self.controller.rewind(seconds)
 
     def ffwd(self, seconds: int) -> None:
         """
@@ -130,8 +134,8 @@ class CattDevice:
         :param seconds: Seek amount in seconds.
         """
 
-        self.ctrl.prep_control()
-        self.ctrl.ffwd(seconds)
+        self.controller.prep_control()
+        self.controller.ffwd(seconds)
 
     def volume(self, level: float) -> None:
         """
@@ -139,7 +143,7 @@ class CattDevice:
 
         :param level: Volume level (valid range: 0.0-1.0).
         """
-        self.ctrl.volume(level)
+        self.controller.volume(level)
 
     def volumeup(self, delta: float) -> None:
         """
@@ -147,7 +151,7 @@ class CattDevice:
 
         :param delta: Volume delta (valid range: 0.0-1.0).
         """
-        self.ctrl.volumeup(delta)
+        self.controller.volumeup(delta)
 
     def volumedown(self, delta: float) -> None:
         """
@@ -156,4 +160,4 @@ class CattDevice:
         :param delta: Volume delta (valid range: 0.0-1.0).
         """
 
-        self.ctrl.volumedown(delta)
+        self.controller.volumedown(delta)
