@@ -118,6 +118,13 @@ DEFAULT_CTRL_TESTS = [
         ["cast", "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"],
         check_data=("content_id", "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"),
     ),
+    CattTest(
+        "try to use add cmd with default controller (should fail)",
+        ["add", "https://www.youtube.com/watch?v=QcJoW9Lwzs0"],
+        sleep=3,
+        should_fail=True,
+        check_err="This action is not supported by the default controller.",
+    ),
 ]
 
 YOUTUBE_CTRL_TESTS = [
