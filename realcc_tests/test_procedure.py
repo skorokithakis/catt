@@ -32,11 +32,15 @@ class CattTest:
         sleep: int = 10,
         should_fail: bool = False,
         substring: bool = False,
+        time_test: bool = False,
         check_data: Any = None,
         check_err: str = "",
     ) -> None:
         if (should_fail and not check_err) or (not should_fail and not check_data):
             raise CattTestError("Expected outcome mismatch.")
+        if substring and time_test:
+            raise CattTestError("Test type mismatch.")
+
         self.desc = desc
         self._cmd_args = cmd_args
         self._cmd = []  # type: list
@@ -44,6 +48,7 @@ class CattTest:
         self._sleep = sleep
         self._should_fail = should_fail
         self._substring = substring
+        self._time_test = time_test
         self._check_key, self._check_val = check_data if check_data else (None, None)
         self._check_err = check_err
         self._output = None  # type: Any
@@ -75,15 +80,23 @@ class CattTest:
             self.dump += self._output.stderr
             return False
 
-    def _regular_test(self) -> bool:
+    def _regular_test(self, time_margin: int = 5) -> bool:
         catt_val = self._get_val(self._check_key)
-        if catt_val == self._check_val or (self._substring and self._check_val in catt_val):
-            return True
+        if self._time_test:
+            passed = int(catt_val) - int(self._check_val) <= time_margin
+            extra_info = "(time margin is {} seconds)".format(time_margin)
+        elif self._substring:
+            passed = self._check_val in catt_val
+            extra_info = "(substring)"
         else:
+            passed = catt_val == self._check_val
+            extra_info = ""
+
+        if not passed:
             self.dump += 'Expected data from "{}" key:\n{} {}\nActual data:\n{}'.format(
-                self._check_key, self._check_val, "(substring)" if self._substring else "", catt_val
+                self._check_key, self._check_val, extra_info, catt_val
             )
-            return False
+        return passed
 
     def run(self) -> bool:
         self._output = subp_run(self._cmd, allow_failure=True)
@@ -104,10 +117,10 @@ DEFAULT_CTRL_TESTS = [
         ["cast", "https://clips.twitch.tv/CloudyEnticingChickpeaCeilingCat"],
         check_data=("content_id", "https://clips-media-assets2.twitch.tv/AT-cm%7C304482431.mp4"),
     ),
-    CattTest("set volume to 50", ["volume", "50"], sleep=3, check_data=("volume_level", 0.5)),
-    CattTest("set volume to 100", ["volume", "100"], sleep=3, check_data=("volume_level", 1.0)),
-    CattTest("lower volume by 50 ", ["volumedown", "50"], sleep=3, check_data=("volume_level", 0.5)),
-    CattTest("raise volume by 50", ["volumeup", "50"], sleep=3, check_data=("volume_level", 1.0)),
+    CattTest("set volume to 50", ["volume", "50"], sleep=2, check_data=("volume_level", 0.5)),
+    CattTest("set volume to 100", ["volume", "100"], sleep=2, check_data=("volume_level", 1.0)),
+    CattTest("lower volume by 50 ", ["volumedown", "50"], sleep=2, check_data=("volume_level", 0.5)),
+    CattTest("raise volume by 50", ["volumeup", "50"], sleep=2, check_data=("volume_level", 1.0)),
     CattTest(
         "cast h264 640x360 / aac content from twitch.tv",
         ["cast", "-y", "format=360", "https://clips.twitch.tv/CloudyEnticingChickpeaCeilingCat"],
@@ -117,6 +130,15 @@ DEFAULT_CTRL_TESTS = [
         "cast h264 1280x720 / aac content directly from google commondatastorage",
         ["cast", "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"],
         check_data=("content_id", "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"),
+    ),
+    CattTest("seek to 6:33", ["seek", "6:33"], sleep=2, time_test=True, check_data=("current_time", "393")),
+    CattTest("rewind by 30 seconds", ["rewind", "30"], sleep=2, time_test=True, check_data=("current_time", "363")),
+    CattTest(
+        "try to use add cmd with default controller (should fail)",
+        ["add", "https://www.youtube.com/watch?v=QcJoW9Lwzs0"],
+        sleep=3,
+        should_fail=True,
+        check_err="This action is not supported by the default controller.",
     ),
 ]
 
