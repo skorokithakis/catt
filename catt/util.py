@@ -1,8 +1,11 @@
+import ipaddress
 import re
 import tempfile
+import time
 from pathlib import Path
 
 import click
+import ifaddr
 
 
 class CattUtilError(click.ClickException):
@@ -65,3 +68,24 @@ def convert_srt_to_webvtt(filename):
         except UnicodeDecodeError:
             pass
     raise CattUtilError("Could not find the proper encoding of {}. Please convert it to utf-8.".format(filename))
+
+
+def human_time(seconds: int):
+    return time.strftime("%H:%M:%S", time.gmtime(seconds))
+
+
+def get_local_ip(host):
+    for adapter in ifaddr.get_adapters():
+        for adapter_ip in adapter.ips:
+            aip = adapter_ip.ip[0] if isinstance(adapter_ip.ip, tuple) else adapter_ip.ip
+            try:
+                if not isinstance(ipaddress.ip_address(host), type(ipaddress.ip_address(aip))):
+                    raise ValueError
+            except ValueError:
+                continue
+            ipt = [(ip, adapter_ip.network_prefix) for ip in (aip, host)]
+            catt_net, cc_net = [ipaddress.ip_network("%s/%s" % ip, strict=False) for ip in ipt]
+            if catt_net == cc_net:
+                return aip
+            else:
+                continue

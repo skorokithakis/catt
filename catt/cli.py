@@ -12,7 +12,7 @@ import requests
 
 from .controllers import Cache, CastState, StateFileError, StateMode, get_chromecast, get_chromecasts, setup_cast
 from .http_server import serve_file
-from .util import convert_srt_to_webvtt, convert_srt_to_webvtt_helper, hunt_subtitle, warning
+from .util import convert_srt_to_webvtt, convert_srt_to_webvtt_helper, human_time, hunt_subtitle, warning
 
 CONFIG_DIR = Path(click.get_app_dir("catt"))
 CONFIG_PATH = Path(CONFIG_DIR, "catt.cfg")
@@ -51,10 +51,6 @@ class YtdlOptParamType(click.ParamType):
 
 
 YTDL_OPT = YtdlOptParamType()
-
-
-def human_time(seconds: int):
-    return time.strftime("%H:%M:%S", time.gmtime(seconds))
 
 
 def process_url(ctx, param, value):
