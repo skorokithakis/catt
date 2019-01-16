@@ -39,13 +39,13 @@ def guess_mime(path):
 def hunt_subtitle(video):
     """Searches for subtitles in the current folder"""
 
-    video_dir_path = Path(video).parent
-    for ext in ["vtt", "VTT", "srt", "SRT"]:
-        try:
-            sub = next(video_dir_path.glob("*." + ext))
-        except StopIteration:
+    video_path = Path(video)
+    video_path_stem_lower = video_path.stem.lower()
+    for entry_path in video_path.parent.iterdir():
+        if entry_path.is_dir():
             continue
-        return str(sub.resolve())
+        if entry_path.stem.lower().startswith(video_path_stem_lower) and entry_path.suffix.lower() in [".vtt", ".srt"]:
+            return str(entry_path.resolve())
     return None
 
 
