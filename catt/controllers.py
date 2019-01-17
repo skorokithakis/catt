@@ -582,17 +582,21 @@ class YoutubeCastController(CastController, MediaControllerMixin, PlaybackBaseMi
         self._controller.clear_playlist()
         self._controller.play_video(video_id, playlist_id)
 
-    def add(self, video_id, play_next=False):
+    def add(self, video_id):
         # You can't add videos to the queue while the app is buffering.
         self.wait_for(["BUFFERING"], invert=True)
-        if play_next:
-            self._controller.play_next(video_id)
-        else:
-            self._controller.add_to_queue(video_id)
+        self._controller.add_to_queue(video_id)
+
+    def add_next(self, video_id):
+        self.wait_for(["BUFFERING"], invert=True)
+        self._controller.play_next(video_id)
 
     def remove(self, video_id):
         self.wait_for(["BUFFERING"], invert=True)
         self._controller.remove_video(video_id)
+
+    def clear(self):
+        self._controller.clear_playlist()
 
     def restore(self, data):
         self.play_media_id(data["content_id"])
