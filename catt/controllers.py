@@ -593,6 +593,11 @@ class YoutubeCastController(CastController, MediaControllerMixin, PlaybackBaseMi
         else:
             self._controller.add_to_queue(video_id)
 
+    def remove(self, video_id):
+        echo('Removing video id "%s" from the queue.' % video_id)
+        self.wait_for(["BUFFERING"], invert=True)
+        self._controller.remove_video(video_id)
+
     def restore(self, data):
         self.play_media_id(data["content_id"])
         self.wait_for(["PLAYING"])
