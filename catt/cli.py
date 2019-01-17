@@ -223,12 +223,13 @@ def cast_site(settings, url):
 
 @cli.command(short_help="Add a video to the queue.")
 @click.argument("video_url", callback=process_url)
+@click.option("-n", "--play-next", is_flag=True, help="Add video immediately after currently playing video.")
 @click.pass_obj
-def add(settings, video_url):
+def add(settings, video_url, play_next):
     cst, stream = setup_cast(settings["device"], video_url=video_url, action="add", prep="control")
     if cst.name != stream.extractor or not stream.is_remote_file:
         raise CattCliError("This url cannot be added to the queue.")
-    cst.add(stream.video_id)
+    cst.add(stream.video_id, play_next=play_next)
 
 
 @cli.command(short_help="Pause a video.")
