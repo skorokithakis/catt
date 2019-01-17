@@ -506,7 +506,7 @@ class PlaybackBaseMixin:
     def play_media_id(self, video_id: str) -> None:
         raise NotImplementedError
 
-    def play_playlist(self, playlist_id: str) -> None:
+    def play_playlist(self, *args) -> None:
         raise NotImplementedError
 
     def wait_for(self, states: list, invert: bool = False, fail: bool = False, timeout: Optional[int] = None) -> bool:
@@ -579,7 +579,7 @@ class YoutubeCastController(CastController, MediaControllerMixin, PlaybackBaseMi
         self._controller.play_video(video_id)
 
     def play_playlist(self, video_id, playlist_id):
-        self._controller.clear_playlist()
+        self.clear()
         self._controller.play_video(video_id, playlist_id)
 
     def add(self, video_id):
