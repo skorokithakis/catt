@@ -578,11 +578,9 @@ class YoutubeCastController(CastController, MediaControllerMixin, PlaybackBaseMi
     def play_media_id(self, video_id):
         self._controller.play_video(video_id)
 
-    def play_playlist(self, playlist):
-        self.play_media_id(playlist[0])
-        if len(playlist) > 1:
-            for video_id in playlist[1:]:
-                self.add(video_id)
+    def play_playlist(self, video_id, playlist_id):
+        self._controller.clear_playlist()
+        self._controller.play_video(video_id, playlist_id)
 
     def add(self, video_id, play_next=False):
         echo('Adding video id "%s" to the queue.' % video_id)

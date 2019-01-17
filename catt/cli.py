@@ -190,7 +190,7 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs, ytd
 
     if playlist_playback:
         click.echo("Casting remote playlist %s..." % video_url)
-        cst.play_playlist(stream.playlist_all_ids)
+        cst.play_playlist(stream.playlist_all_ids[0], stream.playlist_id)
     else:
         click.echo("Casting %s file %s..." % ("local" if stream.is_local_file else "remote", video_url))
         click.echo('Playing "%s" on "%s"...' % (stream.video_title, cst.cc_name))
