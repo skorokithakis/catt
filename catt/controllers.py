@@ -7,8 +7,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Optional  # noqa
 
+import click
 import pychromecast
-from click import ClickException, echo
 from pychromecast.controllers.dashcast import APP_DASHCAST as DASHCAST_APP_ID
 from pychromecast.controllers.dashcast import DashCastController as PyChromecastDashCastController
 from pychromecast.controllers.youtube import YouTubeController
@@ -149,7 +149,7 @@ def setup_cast(device_name, video_url=None, controller=None, ytdl_options=None, 
     return (cast_controller, stream) if stream else cast_controller
 
 
-class CattCastError(ClickException):
+class CattCastError(click.ClickException):
     pass
 
 
@@ -583,7 +583,6 @@ class YoutubeCastController(CastController, MediaControllerMixin, PlaybackBaseMi
         self._controller.play_video(video_id, playlist_id)
 
     def add(self, video_id, play_next=False):
-        echo('Adding video id "%s" to the queue.' % video_id)
         # You can't add videos to the queue while the app is buffering.
         self.wait_for(["BUFFERING"], invert=True)
         if play_next:
@@ -592,7 +591,6 @@ class YoutubeCastController(CastController, MediaControllerMixin, PlaybackBaseMi
             self._controller.add_to_queue(video_id)
 
     def remove(self, video_id):
-        echo('Removing video id "%s" from the queue.' % video_id)
         self.wait_for(["BUFFERING"], invert=True)
         self._controller.remove_video(video_id)
 

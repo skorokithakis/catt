@@ -229,6 +229,7 @@ def add(settings, video_url, play_next):
     cst, stream = setup_cast(settings["device"], video_url=video_url, action="add", prep="control")
     if cst.name != stream.extractor or not stream.is_remote_file:
         raise CattCliError("This url cannot be added to the queue.")
+    click.echo('Adding video id "%s" to the queue.' % stream.video_id)
     cst.add(stream.video_id, play_next=play_next)
 
 
@@ -239,6 +240,7 @@ def remove(settings, video_url):
     cst, stream = setup_cast(settings["device"], video_url=video_url, prep="control")
     if cst.name != stream.extractor or not stream.is_remote_file:
         raise CattCliError("This url cannot be removed from the queue.")
+    click.echo('Removing video id "%s" from the queue.' % stream.video_id)
     cst.remove(stream.video_id)
 
 
