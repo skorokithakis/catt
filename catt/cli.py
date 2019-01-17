@@ -150,6 +150,7 @@ def process_subtitle(ctx, param, value):
 @click.option(
     "--no-subs", is_flag=True, default=False, help="Don't try to load subtitles automatically from the local folder."
 )
+@click.option("-n", "--no-playlist", is_flag=True, help="Play only video, if url contains both video and playlist ids.")
 @click.option(
     "-y",
     "--ytdl-option",
@@ -160,7 +161,7 @@ def process_subtitle(ctx, param, value):
     "Should be passed as `-y option=value`, and can be specified multiple times (implies --force-default).",
 )
 @click.pass_obj
-def cast(settings, video_url, subtitle, force_default, random_play, no_subs, ytdl_option):
+def cast(settings, video_url, subtitle, force_default, random_play, no_subs, no_playlist, ytdl_option):
     controller = "default" if force_default or ytdl_option else None
     subtitle_url = None
     playlist_playback = False
@@ -174,7 +175,7 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs, ytd
         thr = Thread(target=serve_file, args=(video_url, stream.local_ip, stream.port, stream.guessed_content_type))
         thr.setDaemon(True)
         thr.start()
-    elif stream.is_playlist:
+    elif stream.is_playlist and not (no_playlist and stream.video_id):
         if stream.playlist_length == 0:
             cst.kill(idle_only=True)
             raise CattCliError("Playlist is empty.")
@@ -190,7 +191,8 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs, ytd
 
     if playlist_playback:
         click.echo("Casting remote playlist %s..." % video_url)
-        cst.play_playlist(stream.playlist_all_ids)
+        video_id = stream.video_id or stream.playlist_all_ids[0]
+        cst.play_playlist(stream.playlist_id, video_id=video_id)
     else:
         click.echo("Casting %s file %s..." % ("local" if stream.is_local_file else "remote", video_url))
         click.echo('Playing "%s" on "%s"...' % (stream.video_title, cst.cc_name))
@@ -223,12 +225,35 @@ def cast_site(settings, url):
 
 @cli.command(short_help="Add a video to the queue.")
 @click.argument("video_url", callback=process_url)
+@click.option("-n", "--play-next", is_flag=True, help="Add video immediately after currently playing video.")
 @click.pass_obj
-def add(settings, video_url):
+def add(settings, video_url, play_next):
     cst, stream = setup_cast(settings["device"], video_url=video_url, action="add", prep="control")
     if cst.name != stream.extractor or not stream.is_remote_file:
         raise CattCliError("This url cannot be added to the queue.")
-    cst.add(stream.video_id)
+    click.echo('Adding video id "%s" to the queue.' % stream.video_id)
+    if play_next:
+        cst.add_next(stream.video_id)
+    else:
+        cst.add(stream.video_id)
+
+
+@cli.command(short_help="Remove a video from the queue.")
+@click.argument("video_url", callback=process_url)
+@click.pass_obj
+def remove(settings, video_url):
+    cst, stream = setup_cast(settings["device"], video_url=video_url, prep="control")
+    if cst.name != stream.extractor or not stream.is_remote_file:
+        raise CattCliError("This url cannot be removed from the queue.")
+    click.echo('Removing video id "%s" from the queue.' % stream.video_id)
+    cst.remove(stream.video_id)
+
+
+@cli.command(short_help="Clear the queue.")
+@click.pass_obj
+def clear(settings):
+    cst = setup_cast(settings["device"])
+    cst.clear()
 
 
 @cli.command(short_help="Pause a video.")

@@ -7,15 +7,15 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Optional  # noqa
 
+import click
 import pychromecast
-from click import ClickException, echo
 from pychromecast.controllers.dashcast import APP_DASHCAST as DASHCAST_APP_ID
 from pychromecast.controllers.dashcast import DashCastController as PyChromecastDashCastController
+from pychromecast.controllers.youtube import YouTubeController
 
 from .__init__ import __version__ as CATT_VERSION
 from .stream_info import StreamInfo
 from .util import warning
-from .youtube import YouTubeController
 
 APP_INFO = [
     {"app_name": "youtube", "app_id": "233637DE", "supported_device_types": ["cast"]},
@@ -149,7 +149,7 @@ def setup_cast(device_name, video_url=None, controller=None, ytdl_options=None, 
     return (cast_controller, stream) if stream else cast_controller
 
 
-class CattCastError(ClickException):
+class CattCastError(click.ClickException):
     pass
 
 
@@ -506,7 +506,7 @@ class PlaybackBaseMixin:
     def play_media_id(self, video_id: str) -> None:
         raise NotImplementedError
 
-    def play_playlist(self, playlist_id: str) -> None:
+    def play_playlist(self, playlist_id: str, video_id: str) -> None:
         raise NotImplementedError
 
     def wait_for(self, states: list, invert: bool = False, fail: bool = False, timeout: Optional[int] = None) -> bool:
@@ -575,27 +575,28 @@ class YoutubeCastController(CastController, MediaControllerMixin, PlaybackBaseMi
         self.save_capability = "partial"
         self.playlist_capability = "complete"
 
-    # The controller's start_new_session method needs a video id.
-    def _prep_yt(self, video_id):
-        if not self._controller.in_session:
-            self._controller.start_new_session(video_id)
-
     def play_media_id(self, video_id):
-        self._prep_yt(video_id)
         self._controller.play_video(video_id)
 
-    def play_playlist(self, playlist):
-        self.play_media_id(playlist[0])
-        if len(playlist) > 1:
-            for video_id in playlist[1:]:
-                self.add(video_id)
+    def play_playlist(self, playlist_id, video_id):
+        self.clear()
+        self._controller.play_video(video_id, playlist_id)
 
     def add(self, video_id):
-        echo('Adding video id "%s" to the queue.' % video_id)
-        self._prep_yt(video_id)
         # You can't add videos to the queue while the app is buffering.
         self.wait_for(["BUFFERING"], invert=True)
         self._controller.add_to_queue(video_id)
+
+    def add_next(self, video_id):
+        self.wait_for(["BUFFERING"], invert=True)
+        self._controller.play_next(video_id)
+
+    def remove(self, video_id):
+        self.wait_for(["BUFFERING"], invert=True)
+        self._controller.remove_video(video_id)
+
+    def clear(self):
+        self._controller.clear_playlist()
 
     def restore(self, data):
         self.play_media_id(data["content_id"])

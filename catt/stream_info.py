@@ -60,7 +60,12 @@ class StreamInfo:
 
             if self.is_playlist:
                 self._entries = list(self._preinfo["entries"])
-                self._info = None
+                # There appears to be no way to extract both a YouTube video id,
+                # and ditto playlist id in one go (in the case of an url containing both),
+                # so we set the "noplaylist" option and then fetch preinfo again.
+                self._ydl.params.update({"noplaylist": True})
+                vpreinfo = self._get_stream_preinfo(video_url)
+                self._info = self._get_stream_info(vpreinfo) if "entries" not in vpreinfo else None
             else:
                 self._info = self._get_stream_info(self._preinfo)
 
