@@ -229,7 +229,7 @@ def cast_site(settings, url):
 @click.pass_obj
 def add(settings, video_url, play_next):
     cst, stream = setup_cast(settings["device"], video_url=video_url, action="add", prep="control")
-    if cst.name != stream.extractor or not stream.is_remote_file:
+    if cst.name != stream.extractor or not (stream.is_remote_file or stream.is_playlist_with_active_entry):
         raise CattCliError("This url cannot be added to the queue.")
     click.echo('Adding video id "%s" to the queue.' % stream.video_id)
     if play_next:

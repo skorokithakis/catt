@@ -82,7 +82,7 @@ class StreamInfo:
         return not self.is_local_file and "entries" in self._preinfo
 
     @property
-    def _is_playlist_with_active_entry(self):
+    def is_playlist_with_active_entry(self):
         return self.is_playlist and self._info
 
     @property
@@ -95,7 +95,7 @@ class StreamInfo:
             return Path(self._local_file).name
         elif self._is_direct_link:
             return self._preinfo["webpage_url_basename"].split(".")[0]
-        elif self.is_remote_file or self._is_playlist_with_active_entry:
+        elif self.is_remote_file or self.is_playlist_with_active_entry:
             return self._info["title"]
         else:
             return None
@@ -104,18 +104,18 @@ class StreamInfo:
     def video_url(self):
         if self.is_local_file:
             return "http://%s:%s/?loaded_from_catt" % (self.local_ip, self.port)
-        elif self.is_remote_file or self._is_playlist_with_active_entry:
+        elif self.is_remote_file or self.is_playlist_with_active_entry:
             return self._get_stream_url(self._info)
         else:
             return None
 
     @property
     def video_id(self):
-        return self._info["id"] if self.is_remote_file or self._is_playlist_with_active_entry else None
+        return self._info["id"] if self.is_remote_file or self.is_playlist_with_active_entry else None
 
     @property
     def video_thumbnail(self):
-        return self._info.get("thumbnail") if self.is_remote_file or self._is_playlist_with_active_entry else None
+        return self._info.get("thumbnail") if self.is_remote_file or self.is_playlist_with_active_entry else None
 
     @property
     def guessed_content_type(self):
