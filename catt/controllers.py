@@ -1,3 +1,4 @@
+import collections
 import hashlib
 import json
 import re
@@ -17,11 +18,12 @@ from .__init__ import __version__ as CATT_VERSION
 from .stream_info import StreamInfo
 from .util import warning
 
-APP_INFO = [
-    {"app_name": "youtube", "app_id": "233637DE", "supported_device_types": ["cast"]},
-    {"app_name": "dashcast", "app_id": DASHCAST_APP_ID, "supported_device_types": ["cast", "audio"]},
+APP = collections.namedtuple("APP", ["name", "id", "supported_device_types"])
+APP_INFO_LIST = [
+    APP(name="youtube", id="233637DE", supported_device_types=["cast"]),
+    APP(name="dashcast", id=DASHCAST_APP_ID, supported_device_types=["cast", "audio"]),
 ]
-DEFAULT_APP = {"app_name": "default", "app_id": "CC1AD845"}
+DEFAULT_APP = APP(name="default", id="CC1AD845", supported_device_types=["cast", "audio", "group"])
 BACKDROP_APP_ID = "E8C28D3C"
 NO_PLAYER_STATE_IDS = ["84912283"]
 DEVICES_WITH_TWO_MODEL_NAMES = {"Eureka Dongle": "Chromecast"}
@@ -89,36 +91,37 @@ def get_app_info(id_or_name, cast_type=None, strict=False, show_warning=False):
     if id_or_name == "default":
         return DEFAULT_APP
 
-    field = "app_id" if re.match("[0-9A-F]{8}$", id_or_name) else "app_name"
     try:
-        app_info = next(a for a in APP_INFO if a[field] == id_or_name)
+        if re.match("[0-9A-F]{8}$", id_or_name):
+            app_info = next(a for a in APP_INFO_LIST if a.id == id_or_name)
+        else:
+            app_info = next(a for a in APP_INFO_LIST if a.name == id_or_name)
     except StopIteration:
         if strict:
             raise AppSelectionError("app not found (strict is set)")
         else:
-            app_info = DEFAULT_APP
+            return DEFAULT_APP
 
-    if app_info["app_name"] != "default":
-        if not cast_type:
-            raise AppSelectionError("cast_type is needed for app selection")
-        elif cast_type not in app_info["supported_device_types"]:
-            msg = "The %s app is not available for this device." % app_info["app_name"].capitalize()
-            if strict:
-                raise CattCastError(msg)
-            elif show_warning:
-                warning(msg)
-            app_info = DEFAULT_APP
+    if not cast_type:
+        raise AppSelectionError("cast_type is needed for app selection")
+    elif cast_type not in app_info.supported_device_types:
+        msg = "The %s app is not available for this device." % app_info.name.capitalize()
+        if strict:
+            raise CattCastError(msg)
+        elif show_warning:
+            warning(msg)
+        return DEFAULT_APP
     return app_info
 
 
 # I'm not sure it serves any purpose to have get_app_info and get_controller
 # as two separate functions. I'll probably merge them at some point.
 def get_controller(cast, app_info, action=None, prep=None):
-    app_name = app_info["app_name"]
+    app_name = app_info.name
     controller = {"youtube": YoutubeCastController, "dashcast": DashCastController}.get(app_name, DefaultCastController)
     if action and action not in dir(controller):
         raise CattCastError("This action is not supported by the %s controller." % app_name)
-    return controller(cast, app_name, app_info["app_id"], prep=prep)
+    return controller(cast, app_name, app_info.id, prep=prep)
 
 
 def setup_cast(device_name, video_url=None, controller=None, ytdl_options=None, action=None, prep=None):
@@ -528,9 +531,7 @@ class DefaultCastController(CastController, MediaControllerMixin, PlaybackBaseMi
     def __init__(self, cast, name, app_id, prep=None):
         super(DefaultCastController, self).__init__(cast, name, app_id, prep=prep)
         self.info_type = "url"
-        self.save_capability = (
-            "complete" if (self._is_seekable and self._cast.app_id == DEFAULT_APP["app_id"]) else None
-        )
+        self.save_capability = "complete" if (self._is_seekable and self._cast.app_id == DEFAULT_APP.id) else None
 
     def play_media_url(self, video_url, **kwargs):
         content_type = kwargs.get("content_type") or "video/mp4"
