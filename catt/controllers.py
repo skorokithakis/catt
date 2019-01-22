@@ -1,4 +1,3 @@
-import collections
 import hashlib
 import json
 import re
@@ -18,17 +17,25 @@ from .__init__ import __version__ as CATT_VERSION
 from .stream_info import StreamInfo
 from .util import warning
 
-APP = collections.namedtuple("APP", ["name", "id", "supported_device_types"])
-APP_INFO_LIST = [
-    APP(name="youtube", id="233637DE", supported_device_types=["cast"]),
-    APP(name="dashcast", id=DASHCAST_APP_ID, supported_device_types=["cast", "audio"]),
-]
-DEFAULT_APP = APP(name="default", id="CC1AD845", supported_device_types=["cast", "audio", "group"])
 BACKDROP_APP_ID = "E8C28D3C"
 NO_PLAYER_STATE_IDS = ["84912283"]
 DEVICES_WITH_TWO_MODEL_NAMES = {"Eureka Dongle": "Chromecast"}
 DEFAULT_PORT = 8009
 VALID_STATE_EVENTS = ["UNKNOWN", "IDLE", "BUFFERING", "PLAYING", "PAUSED"]
+
+
+class App:
+    def __init__(self, app_name, app_id, supported_device_types):
+        self.name = app_name
+        self.id = app_id
+        self.supported_device_types = supported_device_types
+
+
+APP_INFO_LIST = [
+    App(app_name="youtube", app_id="233637DE", supported_device_types=["cast"]),
+    App(app_name="dashcast", app_id=DASHCAST_APP_ID, supported_device_types=["cast", "audio"]),
+]
+DEFAULT_APP = App(app_name="default", app_id="CC1AD845", supported_device_types=["cast", "audio", "group"])
 
 
 def get_chromecasts():
