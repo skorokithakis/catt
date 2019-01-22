@@ -336,7 +336,7 @@ class MediaStatusListener:
 
 
 class CastController:
-    def __init__(self, cast, app, prep=None):
+    def __init__(self, cast: pychromecast.Chromecast, app: App, prep: Optional[str] = None) -> None:
         self._cast = cast
         self.name = app.name
         self.info_type = None
@@ -347,7 +347,7 @@ class CastController:
         self._cast.register_status_listener(self._cast_listener)
 
         try:
-            self._cast.register_handler(self._controller)
+            self._cast.register_handler(self._controller)  # type: ignore
         except AttributeError:
             self._controller = self._cast.media_controller
 
