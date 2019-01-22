@@ -91,11 +91,9 @@ def get_app_info(id_or_name, cast_type=None, strict=False, show_warning=False):
     if id_or_name == "default":
         return DEFAULT_APP
 
+    arg_is_id = True if re.match("[0-9A-F]{8}$", id_or_name) else False
     try:
-        if re.match("[0-9A-F]{8}$", id_or_name):
-            app_info = next(a for a in APP_INFO_LIST if a.id == id_or_name)
-        else:
-            app_info = next(a for a in APP_INFO_LIST if a.name == id_or_name)
+        app_info = next(a for a in APP_INFO_LIST if (a.id if arg_is_id else a.name) == id_or_name)
     except StopIteration:
         if strict:
             raise AppSelectionError("app not found (strict is set)")
