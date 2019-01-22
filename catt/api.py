@@ -1,11 +1,4 @@
-from .controllers import (
-    get_app_info,
-    get_chromecast,
-    get_chromecast_with_ip,
-    get_chromecasts,
-    get_controller,
-    get_stream,
-)
+from .controllers import get_app, get_chromecast, get_chromecast_with_ip, get_chromecasts, get_controller, get_stream
 
 
 def discover() -> list:
@@ -57,7 +50,7 @@ class CattDevice:
         self.uuid = self._cast.uuid
 
     def _create_controller(self) -> None:
-        self._cast_controller = get_controller(self._cast, get_app_info("default"))
+        self._cast_controller = get_controller(self._cast, get_app("default"))
 
     @property
     def controller(self):

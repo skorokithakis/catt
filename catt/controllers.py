@@ -31,7 +31,7 @@ class App:
         self.supported_device_types = supported_device_types
 
 
-APP_INFO_LIST = [
+APPS = [
     App(app_name="youtube", app_id="233637DE", supported_device_types=["cast"]),
     App(app_name="dashcast", app_id=DASHCAST_APP_ID, supported_device_types=["cast", "audio"]),
 ]
@@ -94,13 +94,13 @@ def get_stream(url, device_info=None, host=None, ytdl_options=None):
     return StreamInfo(url, host=host, model=cc_info, device_type=cast_type, ytdl_options=ytdl_options)
 
 
-def get_app_info(id_or_name, cast_type=None, strict=False, show_warning=False):
+def get_app(id_or_name, cast_type=None, strict=False, show_warning=False):
     if id_or_name == "default":
         return DEFAULT_APP
 
     arg_is_id = True if re.match("[0-9A-F]{8}$", id_or_name) else False
     try:
-        app_info = next(a for a in APP_INFO_LIST if (a.id if arg_is_id else a.name) == id_or_name)
+        app = next(a for a in APPS if (a.id if arg_is_id else a.name) == id_or_name)
     except StopIteration:
         if strict:
             raise AppSelectionError("app not found (strict is set)")
@@ -109,24 +109,23 @@ def get_app_info(id_or_name, cast_type=None, strict=False, show_warning=False):
 
     if not cast_type:
         raise AppSelectionError("cast_type is needed for app selection")
-    elif cast_type not in app_info.supported_device_types:
-        msg = "The %s app is not available for this device." % app_info.name.capitalize()
+    elif cast_type not in app.supported_device_types:
+        msg = "The %s app is not available for this device." % app.name.capitalize()
         if strict:
             raise CattCastError(msg)
         elif show_warning:
             warning(msg)
         return DEFAULT_APP
-    return app_info
+    return app
 
 
-# I'm not sure it serves any purpose to have get_app_info and get_controller
+# I'm not sure it serves any purpose to have get_app and get_controller
 # as two separate functions. I'll probably merge them at some point.
-def get_controller(cast, app_info, action=None, prep=None):
-    app_name = app_info.name
-    controller = {"youtube": YoutubeCastController, "dashcast": DashCastController}.get(app_name, DefaultCastController)
+def get_controller(cast, app, action=None, prep=None):
+    controller = {"youtube": YoutubeCastController, "dashcast": DashCastController}.get(app.name, DefaultCastController)
     if action and action not in dir(controller):
-        raise CattCastError("This action is not supported by the %s controller." % app_name)
-    return controller(cast, app_name, app_info.id, prep=prep)
+        raise CattCastError("This action is not supported by the %s controller." % app.name)
+    return controller(cast, app, prep=prep)
 
 
 def setup_cast(device_name, video_url=None, controller=None, ytdl_options=None, action=None, prep=None):
@@ -137,23 +136,23 @@ def setup_cast(device_name, video_url=None, controller=None, ytdl_options=None, 
     )
 
     if controller:
-        app_info = get_app_info(controller, cast_type, strict=True)
+        app = get_app(controller, cast_type, strict=True)
     elif prep == "app":
         if stream:
             if stream.is_local_file:
-                app_info = get_app_info("default")
+                app = get_app("default")
             else:
-                app_info = get_app_info(stream.extractor, cast_type, show_warning=True)
+                app = get_app(stream.extractor, cast_type, show_warning=True)
         else:
-            app_info = get_app_info("default")
+            app = get_app("default")
     else:
         # cast.app_id can be None, in the case of an inactive audio device.
         if cast.app_id:
-            app_info = get_app_info(cast.app_id, cast_type)
+            app = get_app(cast.app_id, cast_type)
         else:
-            app_info = get_app_info("default")
+            app = get_app("default")
 
-    cast_controller = get_controller(cast, app_info, action=action, prep=prep)
+    cast_controller = get_controller(cast, app, action=action, prep=prep)
     return (cast_controller, stream) if stream else cast_controller
 
 
@@ -337,14 +336,14 @@ class MediaStatusListener:
 
 
 class CastController:
-    def __init__(self, cast, name, app_id, prep=None):
+    def __init__(self, cast, app, prep=None):
         self._cast = cast
-        self.name = name
+        self.name = app.name
         self.info_type = None
         self.save_capability = None
         self.playlist_capability = None
 
-        self._cast_listener = CastStatusListener(app_id, self._cast.app_id)
+        self._cast_listener = CastStatusListener(app.id, self._cast.app_id)
         self._cast.register_status_listener(self._cast_listener)
 
         try:
@@ -533,8 +532,8 @@ class PlaybackBaseMixin:
 
 
 class DefaultCastController(CastController, MediaControllerMixin, PlaybackBaseMixin):
-    def __init__(self, cast, name, app_id, prep=None):
-        super(DefaultCastController, self).__init__(cast, name, app_id, prep=prep)
+    def __init__(self, cast, app, prep=None):
+        super(DefaultCastController, self).__init__(cast, app, prep=prep)
         self.info_type = "url"
         self.save_capability = "complete" if (self._is_seekable and self._cast.app_id == DEFAULT_APP.id) else None
 
@@ -557,9 +556,9 @@ class DefaultCastController(CastController, MediaControllerMixin, PlaybackBaseMi
 
 
 class DashCastController(CastController):
-    def __init__(self, cast, name, app_id, prep=None):
+    def __init__(self, cast, app, prep=None):
         self._controller = PyChromecastDashCastController()
-        super(DashCastController, self).__init__(cast, name, app_id, prep=prep)
+        super(DashCastController, self).__init__(cast, app, prep=prep)
 
     def load_url(self, url, **kwargs):
         self._controller.load_url(url, force=True)
@@ -574,9 +573,9 @@ class DashCastController(CastController):
 
 
 class YoutubeCastController(CastController, MediaControllerMixin, PlaybackBaseMixin):
-    def __init__(self, cast, name, app_id, prep=None):
+    def __init__(self, cast, app, prep=None):
         self._controller = YouTubeController()
-        super(YoutubeCastController, self).__init__(cast, name, app_id, prep=prep)
+        super(YoutubeCastController, self).__init__(cast, app, prep=prep)
         self.info_type = "id"
         self.save_capability = "partial"
         self.playlist_capability = "complete"
