@@ -1,6 +1,5 @@
 import hashlib
 import json
-import re
 import tempfile
 import threading
 from enum import Enum
@@ -95,11 +94,10 @@ def get_stream(url, device_info=None, host=None, ytdl_options=None):
 
 
 def get_app(id_or_name, cast_type=None, strict=False, show_warning=False):
-    arg_is_id = True if re.match("[0-9A-F]{8}$", id_or_name) else False
     try:
-        app = next(a for a in APPS if (a.id if arg_is_id else a.name) == id_or_name)
+        app = next(a for a in APPS if id_or_name in [a.id, a.name])
     except StopIteration:
-        if strict:
+        if strict and id_or_name != "default":
             raise AppSelectionError("app not found (strict is set)")
         else:
             return DEFAULT_APP
