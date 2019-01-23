@@ -30,11 +30,12 @@ class App:
         self.supported_device_types = supported_device_types
 
 
+DEFAULT_APP = App(app_name="default", app_id="CC1AD845", supported_device_types=["cast", "audio", "group"])
 APPS = [
+    DEFAULT_APP,
     App(app_name="youtube", app_id="233637DE", supported_device_types=["cast"]),
     App(app_name="dashcast", app_id=DASHCAST_APP_ID, supported_device_types=["cast", "audio"]),
 ]
-DEFAULT_APP = App(app_name="default", app_id="CC1AD845", supported_device_types=["cast", "audio", "group"])
 
 
 def get_chromecasts():
@@ -97,7 +98,7 @@ def get_app(id_or_name, cast_type=None, strict=False, show_warning=False):
     try:
         app = next(a for a in APPS if id_or_name in [a.id, a.name])
     except StopIteration:
-        if strict and id_or_name != "default":
+        if strict:
             raise AppSelectionError("app not found (strict is set)")
         else:
             return DEFAULT_APP
