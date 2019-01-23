@@ -1,6 +1,5 @@
 import hashlib
 import json
-import re
 import tempfile
 import threading
 from enum import Enum
@@ -31,11 +30,12 @@ class App:
         self.supported_device_types = supported_device_types
 
 
+DEFAULT_APP = App(app_name="default", app_id="CC1AD845", supported_device_types=["cast", "audio", "group"])
 APPS = [
+    DEFAULT_APP,
     App(app_name="youtube", app_id="233637DE", supported_device_types=["cast"]),
     App(app_name="dashcast", app_id=DASHCAST_APP_ID, supported_device_types=["cast", "audio"]),
 ]
-DEFAULT_APP = App(app_name="default", app_id="CC1AD845", supported_device_types=["cast", "audio", "group"])
 
 
 def get_chromecasts():
@@ -95,9 +95,8 @@ def get_stream(url, device_info=None, host=None, ytdl_options=None):
 
 
 def get_app(id_or_name, cast_type=None, strict=False, show_warning=False):
-    arg_is_id = True if re.match("[0-9A-F]{8}$", id_or_name) else False
     try:
-        app = next(a for a in APPS if (a.id if arg_is_id else a.name) == id_or_name)
+        app = next(a for a in APPS if id_or_name in [a.id, a.name])
     except StopIteration:
         if strict:
             raise AppSelectionError("app not found (strict is set)")
