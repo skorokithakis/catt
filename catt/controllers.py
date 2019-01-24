@@ -103,15 +103,16 @@ def get_app(id_or_name, cast_type=None, strict=False, show_warning=False):
         else:
             return DEFAULT_APP
 
-    if not cast_type:
-        raise AppSelectionError("cast_type is needed for app selection")
-    elif cast_type not in app.supported_device_types:
-        msg = "The %s app is not available for this device." % app.name.capitalize()
-        if strict:
-            raise CattCastError(msg)
-        elif show_warning:
-            warning(msg)
-        return DEFAULT_APP
+    if app.name != "default":
+        if not cast_type:
+            raise AppSelectionError("cast_type is needed for app selection")
+        elif cast_type not in app.supported_device_types:
+            msg = "The %s app is not available for this device." % app.name.capitalize()
+            if strict:
+                raise CattCastError(msg)
+            elif show_warning:
+                warning(msg)
+            return DEFAULT_APP
     return app
 
 
