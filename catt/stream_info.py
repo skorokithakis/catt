@@ -1,9 +1,9 @@
 import random
 from pathlib import Path
 
-import click
 import youtube_dl
 
+from .error import InfoUserError, StreamInfoError
 from .util import get_local_ip, guess_mime
 
 AUDIO_DEVICE_TYPES = ["audio", "group"]
@@ -20,14 +20,6 @@ AUDIO_FORMAT = BEST_ONLY_AUDIO + MIXCLOUD_NO_DASH + BEST_FALLBACK
 ULTRA_FORMAT = BEST_MAX_4K
 STANDARD_FORMAT = BEST_MAX_2K + MAX_50FPS + TWITCH_NO_60FPS
 DEFAULT_YTDL_OPTS = {"quiet": True, "no_warnings": True}
-
-
-class CattInfoError(click.ClickException):
-    pass
-
-
-class StreamInfoError(Exception):
-    pass
 
 
 class StreamInfo:
@@ -154,30 +146,30 @@ class StreamInfo:
                 entry = self._entries[number]
             self._info = self._get_stream_info(entry)
         else:
-            raise StreamInfoError("called on non-playlist")
+            raise StreamInfoError("Called on non-playlist")
 
     def _get_stream_preinfo(self, video_url):
         try:
             return self._ydl.extract_info(video_url, process=False)
         except youtube_dl.utils.DownloadError:
-            raise CattInfoError("Remote resource not found.")
+            raise InfoUserError("Remote resource not found")
 
     def _get_stream_info(self, preinfo):
         try:
             return self._ydl.process_ie_result(preinfo, download=False)
         except (youtube_dl.utils.ExtractorError, youtube_dl.utils.DownloadError):
-            raise CattInfoError("Youtube-dl extractor failed.")
+            raise InfoUserError("Youtube-dl extractor failed")
 
     def _get_stream_url(self, info):
         try:
             format_selector = self._ydl.build_format_selector(self._best_format)
         except ValueError:
-            raise CattInfoError("The specified format filter is invalid.")
+            raise InfoUserError("The specified format filter is invalid")
 
         try:
             best_format = next(format_selector(info))
         except StopIteration:
-            raise CattInfoError("No suitable format was found.")
+            raise InfoUserError("No suitable format was found")
         # This is thrown when url points directly to media file.
         except KeyError:
             best_format = info

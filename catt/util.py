@@ -7,14 +7,12 @@ from pathlib import Path
 import click
 import ifaddr
 
-
-class CattUtilError(click.ClickException):
-    pass
+from .error import SubtitleError
 
 
 def warning(msg):
     click.secho("Warning: ", fg="red", nl=False, err=True)
-    click.echo(msg, err=True)
+    click.echo("{}.".format(msg), err=True)
 
 
 def guess_mime(path):
@@ -67,7 +65,7 @@ def convert_srt_to_webvtt(filename):
                 return convert_srt_to_webvtt_helper(content)
         except UnicodeDecodeError:
             pass
-    raise CattUtilError("Could not find the proper encoding of {}. Please convert it to utf-8.".format(filename))
+    raise SubtitleError("Could not find the proper encoding of {}. Please convert it to utf-8.".format(filename))
 
 
 def human_time(seconds: int):

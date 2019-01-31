@@ -3,6 +3,7 @@
 import configparser
 import json
 import random
+import sys
 import time
 from pathlib import Path
 from threading import Thread
@@ -11,16 +12,13 @@ import click
 import requests
 
 from .controllers import Cache, CastState, StateFileError, StateMode, get_chromecast, get_chromecasts, setup_cast
+from .error import CattUserError, CliUserError
 from .http_server import serve_file
 from .util import convert_srt_to_webvtt, convert_srt_to_webvtt_helper, human_time, hunt_subtitle, warning
 
 CONFIG_DIR = Path(click.get_app_dir("catt"))
 CONFIG_PATH = Path(CONFIG_DIR, "catt.cfg")
 STATE_PATH = Path(CONFIG_DIR, "state.json")
-
-
-class CattCliError(click.ClickException):
-    pass
 
 
 class CattTimeParamType(click.ParamType):
@@ -59,19 +57,19 @@ def process_url(ctx, param, value):
         if not stdin_text.isatty():
             value = stdin_text.read().strip()
         else:
-            raise CattCliError("No input received from stdin.")
+            raise CliUserError("No input received from stdin")
     if "://" not in value:
         if ctx.info_name != "cast":
-            raise CattCliError("Local file not allowed as argument to this command.")
+            raise CliUserError("Local file not allowed as argument to this command")
         if not Path(value).is_file():
-            raise CattCliError("The chosen file does not exist.")
+            raise CliUserError("The chosen file does not exist")
     return value
 
 
 def process_path(ctx, param, value):
     path = Path(value) if value else None
     if path and (path.is_dir() or not path.parent.exists()):
-        raise CattCliError("The specified path is invalid.")
+        raise CliUserError("The specified path is invalid")
     return path
 
 
@@ -100,7 +98,7 @@ def write_config(settings):
         get_chromecast(settings["device"])
         writeconfig(settings)
     else:
-        raise CattCliError("No device specified.")
+        raise CliUserError("No device specified")
 
 
 def load_subtitle_if_exists(subtitle, video, local_ip, port):
@@ -133,7 +131,7 @@ def process_subtitle(ctx, param, value):
     if "://" in value:
         return value
     if not Path(value).is_file():
-        raise CattCliError("Subtitle file [{}] does not exist.".format(value))
+        raise CliUserError("Subtitle file [{}] does not exist".format(value))
     return value
 
 
@@ -178,14 +176,14 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs, no_
     elif stream.is_playlist and not (no_playlist and stream.video_id):
         if stream.playlist_length == 0:
             cst.kill(idle_only=True)
-            raise CattCliError("Playlist is empty.")
+            raise CliUserError("Playlist is empty")
         if not random_play and cst.playlist_capability and stream.playlist_all_ids:
             playlist_playback = True
         else:
             if random_play:
                 entry = random.randrange(0, stream.playlist_length)
             else:
-                warning("Playlist playback not possible, playing first video.")
+                warning("Playlist playback not possible, playing first video")
                 entry = 0
             stream.set_playlist_entry(entry)
 
@@ -207,7 +205,7 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs, no_
         elif cst.info_type == "id":
             cst.play_media_id(stream.video_id)
         else:
-            raise ValueError("invalid or undefined info type")
+            raise ValueError("Invalid or undefined info type")
         if stream.is_local_file:
             click.echo("Serving local file, press Ctrl+C when done.")
             while thr.is_alive():
@@ -230,7 +228,7 @@ def cast_site(settings, url):
 def add(settings, video_url, play_next):
     cst, stream = setup_cast(settings["device"], video_url=video_url, action="add", prep="control")
     if cst.name != stream.extractor or not (stream.is_remote_file or stream.is_playlist_with_active_entry):
-        raise CattCliError("This url cannot be added to the queue.")
+        raise CliUserError("This url cannot be added to the queue")
     click.echo('Adding video id "%s" to the queue.' % stream.video_id)
     if play_next:
         cst.add_next(stream.video_id)
@@ -244,7 +242,7 @@ def add(settings, video_url, play_next):
 def remove(settings, video_url):
     cst, stream = setup_cast(settings["device"], video_url=video_url, prep="control")
     if cst.name != stream.extractor or not stream.is_remote_file:
-        raise CattCliError("This url cannot be removed from the queue.")
+        raise CliUserError("This url cannot be removed from the queue")
     click.echo('Removing video id "%s" from the queue.' % stream.video_id)
     cst.remove(stream.video_id)
 
@@ -356,7 +354,7 @@ def scan():
     click.echo("Scanning Chromecasts...")
     devices = get_chromecasts()
     if not devices:
-        raise CattCliError("No devices found.")
+        raise CliUserError("No devices found")
     for device in devices:
         click.echo("{0.host} - {0.device.friendly_name} - {0.device.manufacturer} {0.device.model_name}".format(device))
 
@@ -367,9 +365,9 @@ def scan():
 def save(settings, path):
     cst = setup_cast(settings["device"], prep="control")
     if not cst.save_capability or cst.is_streaming_local_file:
-        raise CattCliError("Saving state of this kind of content is not supported.")
+        raise CliUserError("Saving state of this kind of content is not supported")
     elif cst.save_capability == "partial":
-        warning("Please be advised that playlist data will not be saved.")
+        warning("Please be advised that playlist data will not be saved")
 
     print_status(cst.media_info)
     if path and path.is_file():
@@ -389,15 +387,15 @@ def save(settings, path):
 @click.pass_obj
 def restore(settings, path):
     if not path and not STATE_PATH.is_file():
-        raise CattCliError("Save file in config dir has not been created.")
+        raise CliUserError("Save file in config dir has not been created")
     cst = setup_cast(settings["device"])
     state = CastState(path or STATE_PATH, StateMode.READ)
     try:
         data = state.get_data(cst.cc_name if not path else None)
     except StateFileError:
-        raise CattCliError("The chosen file is not a valid save file.")
+        raise CliUserError("The chosen file is not a valid save file")
     if not data:
-        raise CattCliError("No save data found for this device.")
+        raise CliUserError("No save data found for this device")
 
     print_status(data["data"])
     click.echo("Restoring...")
@@ -469,7 +467,10 @@ def readconfig():
 
 
 def main():
-    return cli(obj={}, default_map=readconfig())
+    try:
+        return cli(obj={}, default_map=readconfig())
+    except CattUserError as e:
+        sys.exit("Error: {}.".format(str(e)))
 
 
 if __name__ == "__main__":
