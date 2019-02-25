@@ -22,7 +22,7 @@ class AppSelectionError(CattDevError):
     pass
 
 
-class StreamInfoError(CattDevError):
+class PlaylistError(CattDevError):
     pass
 
 
@@ -30,17 +30,25 @@ class APIError(CattDevError):
     pass
 
 
-class SubtitleError(CattUserError):
+class SubsEncodingError(CattUserError):
     pass
 
 
-class CliUserError(CattUserError):
+class CliError(CattUserError):
     pass
 
 
-class CastUserError(CattUserError):
+class CastError(CattUserError):
     pass
 
 
-class InfoUserError(CattUserError):
+class ControllerError(CattUserError):
+    pass
+
+
+class ExtractionError(CattUserError):
+    pass
+
+
+class FormatError(CattUserError):
     pass

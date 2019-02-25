@@ -12,9 +12,9 @@ import click
 import requests
 
 from .controllers import Cache, CastState, StateFileError, StateMode, get_chromecast, get_chromecasts, setup_cast
-from .error import CattUserError, CliUserError
+from .error import CattUserError, CliError, SubsEncodingError
 from .http_server import serve_file
-from .util import convert_srt_to_webvtt, convert_srt_to_webvtt_helper, human_time, hunt_subtitle, warning
+from .util import convert_srt_to_webvtt, human_time, hunt_subtitle, read_srt_subs, warning
 
 CONFIG_DIR = Path(click.get_app_dir("catt"))
 CONFIG_PATH = Path(CONFIG_DIR, "catt.cfg")
@@ -57,19 +57,19 @@ def process_url(ctx, param, value):
         if not stdin_text.isatty():
             value = stdin_text.read().strip()
         else:
-            raise CliUserError("No input received from stdin")
+            raise CliError("No input received from stdin")
     if "://" not in value:
         if ctx.info_name != "cast":
-            raise CliUserError("Local file not allowed as argument to this command")
+            raise CliError("Local file not allowed as argument to this command")
         if not Path(value).is_file():
-            raise CliUserError("The chosen file does not exist")
+            raise CliError("The chosen file does not exist")
     return value
 
 
 def process_path(ctx, param, value):
     path = Path(value) if value else None
     if path and (path.is_dir() or not path.parent.exists()):
-        raise CliUserError("The specified path is invalid")
+        raise CliError("The specified path is invalid")
     return path
 
 
@@ -98,25 +98,30 @@ def write_config(settings):
         get_chromecast(settings["device"])
         writeconfig(settings)
     else:
-        raise CliUserError("No device specified")
+        raise CliError("No device specified")
 
 
-def load_subtitle_if_exists(subtitle, video, local_ip, port):
-    subtitle = subtitle if subtitle else hunt_subtitle(video)
-    if subtitle is None:
+def load_subtitle_if_exists(subtitle_location, video, local_ip, port):
+    subtitle_location = subtitle_location or hunt_subtitle(video)
+    if not subtitle_location:
         return None
-    click.echo("Using subtitle {}".format(subtitle))
+    click.echo("Using subtitle {}".format(subtitle_location))
 
-    if "://" in subtitle:
+    if "://" in subtitle_location:
         # it's an URL
-        if subtitle.lower().endswith(".srt"):
-            content = requests.get(subtitle).text
-            subtitle = convert_srt_to_webvtt_helper(content)
+        if subtitle_location.lower().endswith(".srt"):
+            content = requests.get(subtitle_location).text
+            subtitle = convert_srt_to_webvtt(content)
         else:
-            return subtitle
+            return subtitle_location
 
-    if subtitle.lower().endswith(".srt"):
-        subtitle = convert_srt_to_webvtt(subtitle)
+    elif subtitle_location.lower().endswith(".srt"):
+        try:
+            subtitle = convert_srt_to_webvtt(read_srt_subs(subtitle_location))
+        except SubsEncodingError:
+            raise CliError(
+                "Could not find the proper encoding of {}. Please convert it to utf-8.".format(subtitle_location)
+            )
 
     thr = Thread(target=serve_file, args=(subtitle, local_ip, port, "text/vtt;charset=utf-8"))
     thr.setDaemon(True)
@@ -131,7 +136,7 @@ def process_subtitle(ctx, param, value):
     if "://" in value:
         return value
     if not Path(value).is_file():
-        raise CliUserError("Subtitle file [{}] does not exist".format(value))
+        raise CliError("Subtitle file [{}] does not exist".format(value))
     return value
 
 
@@ -176,7 +181,7 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs, no_
     elif stream.is_playlist and not (no_playlist and stream.video_id):
         if stream.playlist_length == 0:
             cst.kill(idle_only=True)
-            raise CliUserError("Playlist is empty")
+            raise CliError("Playlist is empty")
         if not random_play and cst.playlist_capability and stream.playlist_all_ids:
             playlist_playback = True
         else:
@@ -228,7 +233,7 @@ def cast_site(settings, url):
 def add(settings, video_url, play_next):
     cst, stream = setup_cast(settings["device"], video_url=video_url, action="add", prep="control")
     if cst.name != stream.extractor or not (stream.is_remote_file or stream.is_playlist_with_active_entry):
-        raise CliUserError("This url cannot be added to the queue")
+        raise CliError("This url cannot be added to the queue")
     click.echo('Adding video id "%s" to the queue.' % stream.video_id)
     if play_next:
         cst.add_next(stream.video_id)
@@ -242,7 +247,7 @@ def add(settings, video_url, play_next):
 def remove(settings, video_url):
     cst, stream = setup_cast(settings["device"], video_url=video_url, prep="control")
     if cst.name != stream.extractor or not stream.is_remote_file:
-        raise CliUserError("This url cannot be removed from the queue")
+        raise CliError("This url cannot be removed from the queue")
     click.echo('Removing video id "%s" from the queue.' % stream.video_id)
     cst.remove(stream.video_id)
 
@@ -354,7 +359,7 @@ def scan():
     click.echo("Scanning Chromecasts...")
     devices = get_chromecasts()
     if not devices:
-        raise CliUserError("No devices found")
+        raise CliError("No devices found")
     for device in devices:
         click.echo("{0.host} - {0.device.friendly_name} - {0.device.manufacturer} {0.device.model_name}".format(device))
 
@@ -365,7 +370,7 @@ def scan():
 def save(settings, path):
     cst = setup_cast(settings["device"], prep="control")
     if not cst.save_capability or cst.is_streaming_local_file:
-        raise CliUserError("Saving state of this kind of content is not supported")
+        raise CliError("Saving state of this kind of content is not supported")
     elif cst.save_capability == "partial":
         warning("Please be advised that playlist data will not be saved")
 
@@ -387,15 +392,15 @@ def save(settings, path):
 @click.pass_obj
 def restore(settings, path):
     if not path and not STATE_PATH.is_file():
-        raise CliUserError("Save file in config dir has not been created")
+        raise CliError("Save file in config dir has not been created")
     cst = setup_cast(settings["device"])
     state = CastState(path or STATE_PATH, StateMode.READ)
     try:
         data = state.get_data(cst.cc_name if not path else None)
     except StateFileError:
-        raise CliUserError("The chosen file is not a valid save file")
+        raise CliError("The chosen file is not a valid save file")
     if not data:
-        raise CliUserError("No save data found for this device")
+        raise CliError("No save data found for this device")
 
     print_status(data["data"])
     click.echo("Restoring...")
@@ -469,8 +474,8 @@ def readconfig():
 def main():
     try:
         return cli(obj={}, default_map=readconfig())
-    except CattUserError as e:
-        sys.exit("Error: {}.".format(str(e)))
+    except CattUserError as err:
+        sys.exit("Error: {}.".format(str(err)))
 
 
 if __name__ == "__main__":

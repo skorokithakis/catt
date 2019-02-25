@@ -12,7 +12,7 @@ from pychromecast.controllers.dashcast import DashCastController as PyChromecast
 from pychromecast.controllers.youtube import YouTubeController
 
 from .__init__ import __version__ as CATT_VERSION
-from .error import AppSelectionError, CastUserError, ListenerError, StateFileError
+from .error import AppSelectionError, CastError, ControllerError, ListenerError, StateFileError
 from .stream_info import StreamInfo
 from .util import warning
 
@@ -78,7 +78,7 @@ def get_cast(device_name=None):
         cast = get_chromecast(device_name)
         if not cast:
             msg = 'Specified device "%s" not found' % device_name if device_name else "No devices found"
-            raise CastUserError(msg)
+            raise CastError(msg)
 
     cache.set_data(cast.name, cast.host, cast.port)
     cast.wait()
@@ -111,7 +111,7 @@ def get_app(id_or_name, cast_type=None, strict=False, show_warning=False):
     elif cast_type not in app.supported_device_types:
         msg = "The %s app is not available for this device" % app.name.capitalize()
         if strict:
-            raise CastUserError(msg)
+            raise AppSelectionError("{} (strict is set)".format(msg))
         elif show_warning:
             warning(msg)
         return DEFAULT_APP
@@ -124,7 +124,7 @@ def get_app(id_or_name, cast_type=None, strict=False, show_warning=False):
 def get_controller(cast, app, action=None, prep=None):
     controller = {"youtube": YoutubeCastController, "dashcast": DashCastController}.get(app.name, DefaultCastController)
     if action and action not in dir(controller):
-        raise CastUserError("This action is not supported by the %s controller" % app.name)
+        raise ControllerError("This action is not supported by the %s controller" % app.name)
     return controller(cast, app, prep=prep)
 
 
@@ -355,7 +355,7 @@ class CastController:
         self._check_inactive()
         self._cast.media_controller.block_until_active(1.0)
         if self._is_idle:
-            raise CastUserError("Nothing is currently playing")
+            raise CastError("Nothing is currently playing")
 
     def prep_info(self):
         """Make sure chromecast is not inactive."""
@@ -365,7 +365,7 @@ class CastController:
 
     def _check_inactive(self):
         if self._cast.app_id == BACKDROP_APP_ID or not self._cast.app_id:
-            raise CastUserError("Chromecast is inactive")
+            raise CastError("Chromecast is inactive")
 
     @property
     def cc_name(self):
@@ -471,7 +471,7 @@ class MediaControllerMixin:
         if self._is_seekable:
             self._cast.media_controller.seek(seconds)
         else:
-            raise CastUserError("Stream is not seekable")
+            raise CastError("Stream is not seekable")
 
     def rewind(self, seconds: int) -> None:
         pos = self._cast.media_controller.status.current_time
@@ -485,7 +485,7 @@ class MediaControllerMixin:
         if self._is_seekable:
             self._cast.media_controller.skip()
         else:
-            raise CastUserError("Stream is not skippable")
+            raise CastError("Stream is not skippable")
 
 
 class PlaybackBaseMixin:
@@ -509,7 +509,7 @@ class PlaybackBaseMixin:
         try:
             return media_listener.wait_for_states(timeout=timeout)
         except pychromecast.error.UnsupportedNamespace:
-            raise CastUserError("Chromecast app operation was interrupted")
+            raise CastError("Chromecast app operation was interrupted")
 
     def restore(self, data):
         raise NotImplementedError
