@@ -101,27 +101,25 @@ def write_config(settings):
         raise CliError("No device specified")
 
 
-def load_subtitle_if_exists(subtitle_location, video, local_ip, port):
-    subtitle_location = subtitle_location or hunt_subtitle(video)
-    if not subtitle_location:
+def load_subtitle_if_exists(subtitle, video, local_ip, port):
+    subtitle = subtitle if subtitle else hunt_subtitle(video)
+    if subtitle is None:
         return None
-    click.echo("Using subtitle {}".format(subtitle_location))
+    click.echo("Using subtitle {}".format(subtitle))
 
-    if "://" in subtitle_location:
-        # it's an URL
-        if subtitle_location.lower().endswith(".srt"):
-            content = requests.get(subtitle_location).text
+    if "://" in subtitle:
+        if subtitle.lower().endswith(".srt"):
+            content = requests.get(subtitle).text
             subtitle = convert_srt_to_webvtt(content)
         else:
-            return subtitle_location
+            return subtitle
 
-    elif subtitle_location.lower().endswith(".srt"):
+    if subtitle.lower().endswith(".srt"):
         try:
-            subtitle = convert_srt_to_webvtt(read_srt_subs(subtitle_location))
+            content = read_srt_subs(subtitle)
         except SubsEncodingError:
-            raise CliError(
-                "Could not find the proper encoding of {}. Please convert it to utf-8.".format(subtitle_location)
-            )
+            raise CliError("Could not find the proper encoding of {}. Please convert it to utf-8.".format(subtitle))
+        subtitle = convert_srt_to_webvtt(content)
 
     thr = Thread(target=serve_file, args=(subtitle, local_ip, port, "text/vtt;charset=utf-8"))
     thr.setDaemon(True)
