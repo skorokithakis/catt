@@ -30,7 +30,7 @@ class APIError(CattDevError):
     pass
 
 
-class SubsEncodingError(CattUserError):
+class SubsEncodingError(CattDevError):
     pass
 
 
