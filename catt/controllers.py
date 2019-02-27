@@ -6,13 +6,13 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Optional  # noqa
 
-import click
 import pychromecast
 from pychromecast.controllers.dashcast import APP_DASHCAST as DASHCAST_APP_ID
 from pychromecast.controllers.dashcast import DashCastController as PyChromecastDashCastController
 from pychromecast.controllers.youtube import YouTubeController
 
 from .__init__ import __version__ as CATT_VERSION
+from .error import AppSelectionError, CastError, ControllerError, ListenerError, StateFileError
 from .stream_info import StreamInfo
 from .util import warning
 
@@ -77,8 +77,8 @@ def get_cast(device_name=None):
     if not cast:
         cast = get_chromecast(device_name)
         if not cast:
-            msg = 'Specified device "%s" not found.' % device_name if device_name else "No devices found."
-            raise CattCastError(msg)
+            msg = 'Specified device "%s" not found' % device_name if device_name else "No devices found"
+            raise CastError(msg)
 
     cache.set_data(cast.name, cast.host, cast.port)
     cast.wait()
@@ -99,7 +99,7 @@ def get_app(id_or_name, cast_type=None, strict=False, show_warning=False):
         app = next(a for a in APPS if id_or_name in [a.id, a.name])
     except StopIteration:
         if strict:
-            raise AppSelectionError("app not found (strict is set)")
+            raise AppSelectionError("App not found (strict is set)")
         else:
             return DEFAULT_APP
 
@@ -107,11 +107,11 @@ def get_app(id_or_name, cast_type=None, strict=False, show_warning=False):
         return app
 
     if not cast_type:
-        raise AppSelectionError("cast_type is needed for app selection")
+        raise AppSelectionError("Cast type is needed for app selection")
     elif cast_type not in app.supported_device_types:
-        msg = "The %s app is not available for this device." % app.name.capitalize()
+        msg = "The %s app is not available for this device" % app.name.capitalize()
         if strict:
-            raise CattCastError(msg)
+            raise AppSelectionError("{} (strict is set)".format(msg))
         elif show_warning:
             warning(msg)
         return DEFAULT_APP
@@ -124,7 +124,7 @@ def get_app(id_or_name, cast_type=None, strict=False, show_warning=False):
 def get_controller(cast, app, action=None, prep=None):
     controller = {"youtube": YoutubeCastController, "dashcast": DashCastController}.get(app.name, DefaultCastController)
     if action and action not in dir(controller):
-        raise CattCastError("This action is not supported by the %s controller." % app.name)
+        raise ControllerError("This action is not supported by the %s controller" % app.name)
     return controller(cast, app, prep=prep)
 
 
@@ -154,22 +154,6 @@ def setup_cast(device_name, video_url=None, controller=None, ytdl_options=None, 
 
     cast_controller = get_controller(cast, app, action=action, prep=prep)
     return (cast_controller, stream) if stream else cast_controller
-
-
-class CattCastError(click.ClickException):
-    pass
-
-
-class StateFileError(Exception):
-    pass
-
-
-class ListenerError(Exception):
-    pass
-
-
-class AppSelectionError(Exception):
-    pass
 
 
 class CattStore:
@@ -310,7 +294,7 @@ class CastStatusListener:
 class MediaStatusListener:
     def __init__(self, current_state, states, invert=False, fail=False):
         if any(s not in VALID_STATE_EVENTS for s in states):
-            raise ListenerError("invalid state(s)")
+            raise ListenerError("Invalid state(s)")
         if invert:
             self._states_waited_for = [s for s in VALID_STATE_EVENTS if s not in states]
         else:
@@ -320,7 +304,7 @@ class MediaStatusListener:
         self._current_state = current_state
         if self._current_state in self._states_waited_for:
             if fail:
-                raise ListenerError("condition is already met (fail is set)")
+                raise ListenerError("Condition is already met (fail is set)")
             else:
                 self._state_event.set()
 
@@ -371,7 +355,7 @@ class CastController:
         self._check_inactive()
         self._cast.media_controller.block_until_active(1.0)
         if self._is_idle:
-            raise CattCastError("Nothing is currently playing.")
+            raise CastError("Nothing is currently playing")
 
     def prep_info(self):
         """Make sure chromecast is not inactive."""
@@ -381,7 +365,7 @@ class CastController:
 
     def _check_inactive(self):
         if self._cast.app_id == BACKDROP_APP_ID or not self._cast.app_id:
-            raise CattCastError("Chromecast is inactive.")
+            raise CastError("Chromecast is inactive")
 
     @property
     def cc_name(self):
@@ -487,7 +471,7 @@ class MediaControllerMixin:
         if self._is_seekable:
             self._cast.media_controller.seek(seconds)
         else:
-            raise CattCastError("Stream is not seekable.")
+            raise CastError("Stream is not seekable")
 
     def rewind(self, seconds: int) -> None:
         pos = self._cast.media_controller.status.current_time
@@ -501,7 +485,7 @@ class MediaControllerMixin:
         if self._is_seekable:
             self._cast.media_controller.skip()
         else:
-            raise CattCastError("Stream is not skippable.")
+            raise CastError("Stream is not skippable")
 
 
 class PlaybackBaseMixin:
@@ -525,7 +509,7 @@ class PlaybackBaseMixin:
         try:
             return media_listener.wait_for_states(timeout=timeout)
         except pychromecast.error.UnsupportedNamespace:
-            raise CattCastError("Chromecast app operation was interrupted.")
+            raise CastError("Chromecast app operation was interrupted")
 
     def restore(self, data):
         raise NotImplementedError

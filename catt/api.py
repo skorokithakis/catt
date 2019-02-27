@@ -1,14 +1,11 @@
 from .controllers import get_app, get_chromecast, get_chromecast_with_ip, get_chromecasts, get_controller, get_stream
+from .error import APIError, CastError
 
 
 def discover() -> list:
     """Perform discovery of devices present on local network, and return result."""
 
     return [CattDevice(ip_addr=d.host) for d in get_chromecasts()]
-
-
-class CattAPIError(Exception):
-    pass
 
 
 class CattDevice:
@@ -25,7 +22,7 @@ class CattDevice:
         """
 
         if not name and not ip_addr:
-            raise CattAPIError("neither name nor ip were supplied")
+            raise APIError("Neither name nor ip were supplied")
 
         self.name = name
         self.ip_addr = ip_addr
@@ -42,7 +39,7 @@ class CattDevice:
     def _create_cast(self) -> None:
         self._cast = get_chromecast_with_ip(self.ip_addr) if self.ip_addr else get_chromecast(self.name)
         if not self._cast:
-            raise CattAPIError("device could not be found")
+            raise CastError("Device could not be found")
         self._cast.wait()
 
         self.name = self._cast.name
@@ -81,7 +78,7 @@ class CattDevice:
             if block:
                 self.controller.wait_for(["UNKNOWN", "IDLE"])
         else:
-            raise CattAPIError("playback failed")
+            raise APIError("Playback failed")
 
     def stop(self) -> None:
         """Stop playback."""

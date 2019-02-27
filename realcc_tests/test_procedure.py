@@ -73,8 +73,8 @@ class CattTest:
 
     def _failure_test(self) -> bool:
         output_errmsg = self._output.stderr.splitlines()[-1]
-        if output_errmsg == "Error: " + self._check_err:
-            self.dump += output_errmsg + "\n - The expected error message."
+        if output_errmsg == "Error: {}.".format(self._check_err):
+            self.dump += "{}\n - The expected error message.".format(output_errmsg)
             return True
         else:
             self.dump += self._output.stderr
@@ -138,7 +138,7 @@ DEFAULT_CTRL_TESTS = [
         ["add", "https://www.youtube.com/watch?v=QcJoW9Lwzs0"],
         sleep=3,
         should_fail=True,
-        check_err="This action is not supported by the default controller.",
+        check_err="This action is not supported by the default controller",
     ),
 ]
 
@@ -154,7 +154,7 @@ YOUTUBE_CTRL_TESTS = [
         ["add", "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"],
         sleep=3,
         should_fail=True,
-        check_err="This url cannot be added to the queue.",
+        check_err="This url cannot be added to the queue",
     ),
 ]
 

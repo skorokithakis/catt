@@ -7,14 +7,12 @@ from pathlib import Path
 import click
 import ifaddr
 
-
-class CattUtilError(click.ClickException):
-    pass
+from .error import SubsEncodingError
 
 
 def warning(msg):
     click.secho("Warning: ", fg="red", nl=False, err=True)
-    click.echo(msg, err=True)
+    click.echo("{}.".format(msg), err=True)
 
 
 def guess_mime(path):
@@ -49,7 +47,7 @@ def hunt_subtitle(video):
     return None
 
 
-def convert_srt_to_webvtt_helper(content):
+def convert_srt_to_webvtt(content):
     content = re.sub(r"^(.*? \-\-\> .*?)$", lambda m: m.group(1).replace(",", "."), content, flags=re.MULTILINE)
 
     with tempfile.NamedTemporaryFile(mode="w+b", suffix=".vtt", delete=False) as vttfile:
@@ -59,15 +57,15 @@ def convert_srt_to_webvtt_helper(content):
         return target_filename
 
 
-def convert_srt_to_webvtt(filename):
+def read_srt_subs(filename):
     for possible_encoding in ["utf-8", "iso-8859-15"]:
         try:
             with open(filename, "r", encoding=possible_encoding) as srtfile:
                 content = srtfile.read()
-                return convert_srt_to_webvtt_helper(content)
+                return content
         except UnicodeDecodeError:
             pass
-    raise CattUtilError("Could not find the proper encoding of {}. Please convert it to utf-8.".format(filename))
+    raise SubsEncodingError
 
 
 def human_time(seconds: int):
