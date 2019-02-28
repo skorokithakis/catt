@@ -10,6 +10,7 @@ import click
 CMD_BASE = ["catt", "-d"]
 VALIDATE_ARGS = ["info", "-j"]
 STOP_ARGS = ["stop"]
+SCAN_CMD = ["catt", "scan", "-j"]
 
 
 # Uses subprocess.run(), so py3.5+ is required.
@@ -175,20 +176,23 @@ ULTRA_TESTS = []  # type: list
 
 
 def run_tests(standard: str = "", audio: str = "", ultra: str = ""):
-    test_outcomes = []  # type: list
-    suites = {}  # type: dict
-    if standard:
-        suites.update({standard: STANDARD_TESTS})
-    if audio:
-        suites.update({audio: AUDIO_TESTS})
-    if ultra:
-        suites.update({ultra: ULTRA_TESTS})
-    if not suites:
-        raise CattTestError("There were no tests to run.")
+    if not standard and not audio and not ultra:
+        raise CattTestError("No test devices were specified.")
 
-    for device_name, suite in suites.items():
-        click.secho('Running some tests on "{}".'.format(device_name), fg="magenta")
-        click.secho("------------------------------------------", fg="magenta")
+    test_outcomes = []  # type: list
+    all_suites = zip([standard, audio, ultra], [STANDARD_TESTS, AUDIO_TESTS, ULTRA_TESTS])
+    suites_to_run = {}  # type: dict
+    scan_result = json.loads(subp_run(SCAN_CMD).stdout)
+    for device_name, suite in all_suites:
+        if not device_name:
+            continue
+        if device_name not in scan_result.keys():
+            raise CattTestError('Specified device "{}" not found.'.format(device_name))
+        suites_to_run.update({device_name: suite})
+
+    for device_name, suite in suites_to_run.items():
+        click.secho('Running some tests on "{}".'.format(device_name), fg="yellow")
+        click.secho("------------------------------------------", fg="yellow")
         cbase = CMD_BASE + [device_name]
 
         for test in suite:
