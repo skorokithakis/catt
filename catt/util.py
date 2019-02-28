@@ -1,4 +1,5 @@
 import ipaddress
+import json
 import re
 import tempfile
 import time
@@ -13,6 +14,10 @@ from .error import SubsEncodingError
 def warning(msg):
     click.secho("Warning: ", fg="red", nl=False, err=True)
     click.echo("{}.".format(msg), err=True)
+
+
+def echo_json(data_dict):
+    click.echo(json.dumps(data_dict, indent=4, default=str))
 
 
 def guess_mime(path):
