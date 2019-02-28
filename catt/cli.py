@@ -11,7 +11,7 @@ import click
 import requests
 
 from .controllers import Cache, CastState, StateFileError, StateMode, get_chromecast, get_chromecasts, setup_cast
-from .error import CattUserError, CliError, SubsEncodingError
+from .error import CastError, CattUserError, CliError, SubsEncodingError
 from .http_server import serve_file
 from .util import convert_srt_to_webvtt, echo_json, human_time, hunt_subtitle, read_srt_subs, warning
 
@@ -343,11 +343,20 @@ def status(settings):
 @click.option("-j", "--json-output", is_flag=True, help="Output info as json.")
 @click.pass_obj
 def info(settings, json_output):
-    cst = setup_cast(settings["device"], prep="info")
-    if json_output:
-        echo_json(cst.info)
+    try:
+        cst = setup_cast(settings["device"], prep="info")
+    except CastError:
+        if json_output:
+            info = {}
+        else:
+            raise
     else:
-        for (key, value) in cst.info.items():
+        info = cst.info
+
+    if json_output:
+        echo_json(info)
+    else:
+        for (key, value) in info.items():
             click.echo("%s: %s" % (key, value))
 
 
