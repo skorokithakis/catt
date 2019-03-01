@@ -381,7 +381,7 @@ def scan(json_output):
         echo_json(devices_dict)
     else:
         if not devices_dict:
-            raise CliError("No devices found")
+            raise CastError("No devices found")
         for device in devices_dict.keys():
             click.echo("{host} - {device} - {manufacturer} {model_name}".format(device=device, **devices_dict[device]))
 
