@@ -361,7 +361,7 @@ def info(settings, json_output):
 
 
 @cli.command(short_help="Scan the local network and show all Chromecasts and their IPs.")
-@click.option("-j", "--json-output", is_flag=True, help="Output info as json.")
+@click.option("-j", "--json-output", is_flag=True, help="Output scan result as json.")
 def scan(json_output):
     if not json_output:
         click.echo("Scanning Chromecasts...")
