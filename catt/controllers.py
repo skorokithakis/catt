@@ -7,7 +7,10 @@ from pathlib import Path
 from typing import Any, Optional  # noqa
 
 import pychromecast
-from pychromecast.controllers.dashcast import APP_DASHCAST as DASHCAST_APP_ID
+from pychromecast.config import APP_BACKDROP as BACKDROP_APP_ID
+from pychromecast.config import APP_DASHCAST as DASHCAST_APP_ID
+from pychromecast.config import APP_MEDIA_RECEIVER as MEDIA_RECEIVER_APP_ID
+from pychromecast.config import APP_YOUTUBE as YOUTUBE_APP_ID
 from pychromecast.controllers.dashcast import DashCastController as PyChromecastDashCastController
 from pychromecast.controllers.youtube import YouTubeController
 
@@ -16,8 +19,7 @@ from .error import AppSelectionError, CastError, ControllerError, ListenerError,
 from .stream_info import StreamInfo
 from .util import warning
 
-BACKDROP_APP_ID = "E8C28D3C"
-NO_PLAYER_STATE_IDS = ["84912283"]
+NO_PLAYER_STATE_IDS = [DASHCAST_APP_ID]
 DEVICES_WITH_TWO_MODEL_NAMES = {"Eureka Dongle": "Chromecast"}
 DEFAULT_PORT = 8009
 VALID_STATE_EVENTS = ["UNKNOWN", "IDLE", "BUFFERING", "PLAYING", "PAUSED"]
@@ -30,10 +32,10 @@ class App:
         self.supported_device_types = supported_device_types
 
 
-DEFAULT_APP = App(app_name="default", app_id="CC1AD845", supported_device_types=["cast", "audio", "group"])
+DEFAULT_APP = App(app_name="default", app_id=MEDIA_RECEIVER_APP_ID, supported_device_types=["cast", "audio", "group"])
 APPS = [
     DEFAULT_APP,
-    App(app_name="youtube", app_id="233637DE", supported_device_types=["cast"]),
+    App(app_name="youtube", app_id=YOUTUBE_APP_ID, supported_device_types=["cast"]),
     App(app_name="dashcast", app_id=DASHCAST_APP_ID, supported_device_types=["cast", "audio"]),
 ]
 
