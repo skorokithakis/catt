@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import configparser
-import json
 import random
 import sys
 import time
@@ -12,9 +11,9 @@ import click
 import requests
 
 from .controllers import Cache, CastState, StateFileError, StateMode, get_chromecast, get_chromecasts, setup_cast
-from .error import CattUserError, CliError, SubsEncodingError
+from .error import CastError, CattUserError, CliError, SubsEncodingError
 from .http_server import serve_file
-from .util import convert_srt_to_webvtt, human_time, hunt_subtitle, read_srt_subs, warning
+from .util import convert_srt_to_webvtt, echo_json, human_time, hunt_subtitle, read_srt_subs, warning
 
 CONFIG_DIR = Path(click.get_app_dir("catt"))
 CONFIG_PATH = Path(CONFIG_DIR, "catt.cfg")
@@ -344,22 +343,47 @@ def status(settings):
 @click.option("-j", "--json-output", is_flag=True, help="Output info as json.")
 @click.pass_obj
 def info(settings, json_output):
-    cst = setup_cast(settings["device"], prep="info")
-    if json_output:
-        click.echo(json.dumps(cst.info, indent=4, default=str))
+    try:
+        cst = setup_cast(settings["device"], prep="info")
+    except CastError:
+        if json_output:
+            info = {}
+        else:
+            raise
     else:
-        for (key, value) in cst.info.items():
+        info = cst.info
+
+    if json_output:
+        echo_json(info)
+    else:
+        for (key, value) in info.items():
             click.echo("%s: %s" % (key, value))
 
 
 @cli.command(short_help="Scan the local network and show all Chromecasts and their IPs.")
-def scan():
-    click.echo("Scanning Chromecasts...")
-    devices = get_chromecasts()
-    if not devices:
-        raise CliError("No devices found")
-    for device in devices:
-        click.echo("{0.host} - {0.device.friendly_name} - {0.device.manufacturer} {0.device.model_name}".format(device))
+@click.option("-j", "--json-output", is_flag=True, help="Output scan result as json.")
+def scan(json_output):
+    if not json_output:
+        click.echo("Scanning Chromecasts...")
+    devices_dict = {
+        d.name: {
+            "host": d.host,
+            "port": d.port,
+            "manufacturer": d.device.manufacturer,
+            "model_name": d.model_name,
+            "uuid": d.uuid,
+            "cast_type": d.cast_type,
+        }
+        for d in get_chromecasts()
+    }
+
+    if json_output:
+        echo_json(devices_dict)
+    else:
+        if not devices_dict:
+            raise CastError("No devices found")
+        for device in devices_dict.keys():
+            click.echo("{host} - {device} - {manufacturer} {model_name}".format(device=device, **devices_dict[device]))
 
 
 @cli.command(short_help="Save the current state of the Chromecast for later use.")
