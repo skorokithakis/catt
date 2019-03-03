@@ -79,7 +79,10 @@ def get_device(ctx, param, value):
         return value
 
 
-@click.group()
+CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
+
+
+@click.group(context_settings=CONTEXT_SETTINGS)
 @click.option("--delete-cache", is_flag=True, help="Empty the Chromecast discovery cache.")
 @click.option("-d", "--device", metavar="NAME", callback=get_device, help="Select Chromecast device.")
 @click.pass_context
