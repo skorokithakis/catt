@@ -247,7 +247,7 @@ def add(settings, video_url, play_next):
 @click.argument("video_url", callback=process_url)
 @click.pass_obj
 def remove(settings, video_url):
-    cst, stream = setup_cast(settings["device"], video_url=video_url, prep="control")
+    cst, stream = setup_cast(settings["device"], video_url=video_url, action="remove", prep="control")
     if cst.name != stream.extractor or not stream.is_remote_file:
         raise CliError("This url cannot be removed from the queue")
     click.echo('Removing video id "%s" from the queue.' % stream.video_id)
