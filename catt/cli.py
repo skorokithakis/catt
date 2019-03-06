@@ -228,7 +228,7 @@ def cast_site(settings, url):
     cst.load_url(url)
 
 
-@cli.command(short_help="Add a video to the queue.")
+@cli.command(short_help="Add a video to the queue (YouTube only).")
 @click.argument("video_url", callback=process_url)
 @click.option("-n", "--play-next", is_flag=True, help="Add video immediately after currently playing video.")
 @click.pass_obj
@@ -243,7 +243,7 @@ def add(settings, video_url, play_next):
         cst.add(stream.video_id)
 
 
-@cli.command(short_help="Remove a video from the queue.")
+@cli.command(short_help="Remove a video from the queue (YouTube only).")
 @click.argument("video_url", callback=process_url)
 @click.pass_obj
 def remove(settings, video_url):
@@ -254,7 +254,7 @@ def remove(settings, video_url):
     cst.remove(stream.video_id)
 
 
-@cli.command(short_help="Clear the queue.")
+@cli.command(short_help="Clear the queue (YouTube only).")
 @click.pass_obj
 def clear(settings):
     cst = setup_cast(settings["device"], action="clear", prep="control")
