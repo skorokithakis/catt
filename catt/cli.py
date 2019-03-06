@@ -257,7 +257,7 @@ def remove(settings, video_url):
 @cli.command(short_help="Clear the queue.")
 @click.pass_obj
 def clear(settings):
-    cst = setup_cast(settings["device"])
+    cst = setup_cast(settings["device"], action="clear", prep="control")
     cst.clear()
 
 
