@@ -10,11 +10,11 @@ from threading import Thread
 import click
 import requests
 
+from . import __version__
 from .controllers import Cache, CastState, StateFileError, StateMode, get_chromecast, get_chromecasts, setup_cast
 from .error import CastError, CattUserError, CliError, SubsEncodingError
 from .http_server import serve_file
 from .util import convert_srt_to_webvtt, echo_json, human_time, hunt_subtitle, read_srt_subs, warning
-from . import __version__
 
 CONFIG_DIR = Path(click.get_app_dir("catt"))
 CONFIG_PATH = Path(CONFIG_DIR, "catt.cfg")
@@ -86,7 +86,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 @click.group(context_settings=CONTEXT_SETTINGS)
 @click.option("--delete-cache", is_flag=True, help="Empty the Chromecast discovery cache.")
 @click.option("-d", "--device", metavar="NAME", callback=get_device, help="Select Chromecast device.")
-@click.version_option(version=__version__, prog_name="catt", message='%(prog)s v%(version)s, Winter Waterfall.')
+@click.version_option(version=__version__, prog_name="catt", message="%(prog)s v%(version)s, Winter Waterfall.")
 @click.pass_context
 def cli(ctx, delete_cache, device):
     if delete_cache:
