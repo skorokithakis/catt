@@ -141,9 +141,21 @@ DEFAULT_CTRL_TESTS = [
         should_fail=True,
         check_err="This action is not supported by the default controller",
     ),
+    CattTest(
+        "try to use clear cmd with default controller (should fail)",
+        ["clear"],
+        sleep=3,
+        should_fail=True,
+        check_err="This action is not supported by the default controller",
+    ),
 ]
 
 YOUTUBE_CTRL_TESTS = [
+    CattTest(
+        "cast video from youtube",
+        ["cast", "https://www.youtube.com/watch?v=Rl4GiVtnLE4"],
+        check_data=("content_id", "Rl4GiVtnLE4"),
+    ),
     CattTest(
         "cast playlist from youtube",
         ["cast", "https://www.youtube.com/watch?list=PLQNHYNv9IpSzzaQMuH7ji2bEy6o8T8Wwn"],
@@ -167,7 +179,19 @@ AUDIO_ONLY_TESTS = [
         ["cast", "https://www.facebook.com/PixarCars/videos/10158549620120183/"],
         substring=True,
         check_data=("content_id", "18106055_10158549666610183_8333687643300691968_n.mp4"),
-    )
+    ),
+    CattTest(
+        'cast "http" format audio content from mixcloud (testing format hack)',
+        ["cast", "https://www.mixcloud.com/robert-toombs/tbt-2/"],
+        substring=True,
+        check_data=("content_id", "/c/m4a/64/7/3/0/1/774c-fb1a-45e9-a913-cb9e0eae9f98.m4a?sig=LGG0WHTLkXUAuoOVsdcbcA"),
+    ),
+    CattTest(
+        'cast "wav" format audio content from bandcamp (testing format hack)',
+        ["cast", "https://physicallysick.bandcamp.com/track/freak-is-out"],
+        substring=True,
+        check_data=("content_id", "track?enc=wav"),
+    ),
 ]
 
 STANDARD_TESTS = DEFAULT_CTRL_TESTS + YOUTUBE_CTRL_TESTS
