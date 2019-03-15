@@ -120,8 +120,16 @@ Info
 Features
 --------
 
-* Casts videos to Chromecast.
-* From `many, many online sources <http://rg3.github.io/youtube-dl/supportedsites.html>`_.
+* Casts videos to Chromecast
+* From `many, many online sources <http://rg3.github.io/youtube-dl/supportedsites.html>`_
 * Casts local files (videos, photos and music)
 * Casts any website to Chromecast
 
+Thanks
+------
+
+Catt would not be possible without these great projects:
+
+* `pychromecast <https://github.com/balloob/pychromecast>`_ - Library for Python 3 to communicate with the Google Chromecast
+* `youtube-dl <https://github.com/ytdl-org/youtube-dl>`_ - Command-line program to download videos from YouTube.com and other video sites
+* `casttube <https://github.com/ur1katz/casttube>`_ - YouTube Chromecast API
