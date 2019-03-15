@@ -10,4 +10,4 @@ Development Lead
 Contributors
 ------------
 
-* theychx <boomingzooming@gmail.com>
+* theychx <theychx@fastmail.com>
