@@ -42,7 +42,6 @@ class CattTest:
         if substring and time_test:
             raise CattTestError("Test type mismatch.")
 
-        self.desc = desc
         self._cmd_args = cmd_args
         self._cmd = []  # type: list
         self._validate_cmd = []  # type: list
@@ -54,6 +53,7 @@ class CattTest:
         self._check_err = check_err
         self._output = None  # type: Any
         self._failed = False  # type: bool
+        self.desc = desc + (" (should fail)" if self._should_fail else "")
         self.dump = ""  # type: str
 
     def set_cmd_base(self, base: list) -> None:
@@ -135,14 +135,14 @@ DEFAULT_CTRL_TESTS = [
     CattTest("seek to 6:33", ["seek", "6:33"], sleep=2, time_test=True, check_data=("current_time", "393")),
     CattTest("rewind by 30 seconds", ["rewind", "30"], sleep=2, time_test=True, check_data=("current_time", "363")),
     CattTest(
-        "try to use add cmd with default controller (should fail)",
+        "try to use add cmd with default controller",
         ["add", "https://www.youtube.com/watch?v=QcJoW9Lwzs0"],
         sleep=3,
         should_fail=True,
         check_err="This action is not supported by the default controller",
     ),
     CattTest(
-        "try to use clear cmd with default controller (should fail)",
+        "try to use clear cmd with default controller",
         ["clear"],
         sleep=3,
         should_fail=True,
@@ -163,7 +163,7 @@ YOUTUBE_CTRL_TESTS = [
     ),
     CattTest("skip to next entry in playlist", ["skip"], sleep=15, check_data=("content_id", "Ff_FvEkuG8w")),
     CattTest(
-        "try to add invalid video-url to playlist (should fail)",
+        "try to add invalid video-url to playlist",
         ["add", "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"],
         sleep=3,
         should_fail=True,
