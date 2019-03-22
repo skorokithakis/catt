@@ -84,7 +84,7 @@ class CattTest:
     def _regular_test(self, time_margin: int = 5) -> bool:
         catt_val = self._get_val(self._check_key)
         if self._time_test:
-            passed = int(catt_val) - int(self._check_val) <= time_margin
+            passed = abs(int(catt_val) - int(self._check_val)) <= time_margin
             extra_info = "(time margin is {} seconds)".format(time_margin)
         elif self._substring:
             passed = self._check_val in catt_val
