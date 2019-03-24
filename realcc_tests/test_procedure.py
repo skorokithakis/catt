@@ -191,6 +191,11 @@ AUDIO_ONLY_TESTS = [
         check_data=("status_text", "Casting: Dj Money J   Old School Scratch mix")
     ),
     CattTest(
+        "cast first video from youtube playlist on default controller",
+        ["cast", "https://www.youtube.com/watch?v=J4R7M4xH_BA&list=PLhReEC3095X2aQ29-iW2bto0cYPaxch75"],
+        check_data=("status_text", "Casting: The Warrior: A 2015 Psychedelic Trance Mix"),
+    ),
+    CattTest(
         'cast "http" format audio content from mixcloud (testing format hack)',
         ["cast", "https://www.mixcloud.com/robert-toombs/tbt-2/"],
         substring=True,
