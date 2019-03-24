@@ -1,6 +1,13 @@
 # Changelog
 
 
+## Unreleased
+
+### Fixes
+
+* Show better error message if Chromecast disconnects while playing. [Stavros Korokithakis]
+
+
 ## v0.9.0 (2019-01-20)
 
 ### Features
