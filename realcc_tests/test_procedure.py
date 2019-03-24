@@ -128,6 +128,11 @@ DEFAULT_CTRL_TESTS = [
         check_data=("content_id", "https://clips-media-assets2.twitch.tv/AT-cm%7C304482431-360.mp4"),
     ),
     CattTest(
+        "cast h264 1280x720 / aac content from youtube using default controller",
+        ["cast", "-f", "https://www.youtube.com/watch?v=7fhBiXjSNQc"],
+        check_data=("status_text", "Casting: Dj Money J   Old School Scratch mix")
+    ),
+    CattTest(
         "cast h264 1280x720 / aac content directly from google commondatastorage",
         ["cast", "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"],
         check_data=("content_id", "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"),
@@ -179,6 +184,11 @@ AUDIO_ONLY_TESTS = [
         ["cast", "https://www.facebook.com/PixarCars/videos/10158549620120183/"],
         substring=True,
         check_data=("content_id", "18106055_10158549666610183_8333687643300691968_n.mp4"),
+    ),
+    CattTest(
+        "cast audio-only DASH aac content from youtube",
+        ["cast", "https://www.youtube.com/watch?v=7fhBiXjSNQc"],
+        check_data=("status_text", "Casting: Dj Money J   Old School Scratch mix")
     ),
     CattTest(
         'cast "http" format audio content from mixcloud (testing format hack)',
