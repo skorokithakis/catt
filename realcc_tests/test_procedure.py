@@ -133,6 +133,11 @@ DEFAULT_CTRL_TESTS = [
         check_data=("status_text", "Casting: Dj Money J   Old School Scratch mix")
     ),
     CattTest(
+        "cast first audio track from audiomack album using default controller",
+        ["cast", "https://audiomack.com/album/phonyppl/moza-ik"],
+        check_data=("status_text", "Casting: mō'zā-ik. - Way Too Far."),
+    ),
+    CattTest(
         "cast h264 1280x720 / aac content directly from google commondatastorage",
         ["cast", "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"],
         check_data=("content_id", "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"),
@@ -198,6 +203,7 @@ AUDIO_ONLY_TESTS = [
     CattTest(
         'cast "http" format audio content from mixcloud (testing format hack)',
         ["cast", "https://www.mixcloud.com/robert-toombs/tbt-2/"],
+        sleep=20,
         substring=True,
         check_data=("content_id", "/c/m4a/64/7/3/0/1/774c-fb1a-45e9-a913-cb9e0eae9f98.m4a?sig=LGG0WHTLkXUAuoOVsdcbcA"),
     ),
