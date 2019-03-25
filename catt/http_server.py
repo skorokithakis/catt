@@ -92,8 +92,9 @@ def serve_file(filename, address="", port=45114, content_type=None):
                 # This is supposed to happen when the Chromecast seeks or stops.
                 pass
             except BrokenPipeError:
-                sys.exit(
-                    "Device disconnected while playing. Please check that the video file is compatible with the device."
+                print(
+                    "Device disconnected while playing. Please check that the video file is compatible with the device.",
+                    file=sys.stderr,
                 )
             except:  # noqa
                 traceback.print_exc()
