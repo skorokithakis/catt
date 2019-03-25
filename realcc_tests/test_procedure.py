@@ -130,7 +130,7 @@ DEFAULT_CTRL_TESTS = [
     CattTest(
         "cast h264 1280x720 / aac content from youtube using default controller",
         ["cast", "-f", "https://www.youtube.com/watch?v=7fhBiXjSNQc"],
-        check_data=("status_text", "Casting: Dj Money J   Old School Scratch mix")
+        check_data=("status_text", "Casting: Dj Money J   Old School Scratch mix"),
     ),
     CattTest(
         "cast first audio track from audiomack album using default controller",
@@ -193,7 +193,7 @@ AUDIO_ONLY_TESTS = [
     CattTest(
         "cast audio-only DASH aac content from youtube",
         ["cast", "https://www.youtube.com/watch?v=7fhBiXjSNQc"],
-        check_data=("status_text", "Casting: Dj Money J   Old School Scratch mix")
+        check_data=("status_text", "Casting: Dj Money J   Old School Scratch mix"),
     ),
     CattTest(
         "cast first video from youtube playlist on default controller",

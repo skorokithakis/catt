@@ -5,6 +5,8 @@
 
 ### Fixes
 
+* Refuse to install under Python 2. [Stavros Korokithakis]
+
 * Show better error message if Chromecast disconnects while playing. [Stavros Korokithakis]
 
 
