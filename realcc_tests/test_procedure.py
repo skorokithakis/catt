@@ -42,7 +42,6 @@ class CattTest:
         if substring and time_test:
             raise CattTestError("Test type mismatch.")
 
-        self.desc = desc
         self._cmd_args = cmd_args
         self._cmd = []  # type: list
         self._validate_cmd = []  # type: list
@@ -54,6 +53,7 @@ class CattTest:
         self._check_err = check_err
         self._output = None  # type: Any
         self._failed = False  # type: bool
+        self.desc = desc + (" (should fail)" if self._should_fail else "")
         self.dump = ""  # type: str
 
     def set_cmd_base(self, base: list) -> None:
@@ -84,7 +84,7 @@ class CattTest:
     def _regular_test(self, time_margin: int = 5) -> bool:
         catt_val = self._get_val(self._check_key)
         if self._time_test:
-            passed = int(catt_val) - int(self._check_val) <= time_margin
+            passed = abs(int(catt_val) - int(self._check_val)) <= time_margin
             extra_info = "(time margin is {} seconds)".format(time_margin)
         elif self._substring:
             passed = self._check_val in catt_val
@@ -128,6 +128,16 @@ DEFAULT_CTRL_TESTS = [
         check_data=("content_id", "https://clips-media-assets2.twitch.tv/AT-cm%7C304482431-360.mp4"),
     ),
     CattTest(
+        "cast h264 1280x720 / aac content from youtube using default controller",
+        ["cast", "-f", "https://www.youtube.com/watch?v=7fhBiXjSNQc"],
+        check_data=("status_text", "Casting: Dj Money J   Old School Scratch mix"),
+    ),
+    CattTest(
+        "cast first audio track from audiomack album using default controller",
+        ["cast", "https://audiomack.com/album/phonyppl/moza-ik"],
+        check_data=("status_text", "Casting: mō'zā-ik. - Way Too Far."),
+    ),
+    CattTest(
         "cast h264 1280x720 / aac content directly from google commondatastorage",
         ["cast", "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"],
         check_data=("content_id", "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"),
@@ -135,14 +145,14 @@ DEFAULT_CTRL_TESTS = [
     CattTest("seek to 6:33", ["seek", "6:33"], sleep=2, time_test=True, check_data=("current_time", "393")),
     CattTest("rewind by 30 seconds", ["rewind", "30"], sleep=2, time_test=True, check_data=("current_time", "363")),
     CattTest(
-        "try to use add cmd with default controller (should fail)",
+        "try to use add cmd with default controller",
         ["add", "https://www.youtube.com/watch?v=QcJoW9Lwzs0"],
         sleep=3,
         should_fail=True,
         check_err="This action is not supported by the default controller",
     ),
     CattTest(
-        "try to use clear cmd with default controller (should fail)",
+        "try to use clear cmd with default controller",
         ["clear"],
         sleep=3,
         should_fail=True,
@@ -163,7 +173,7 @@ YOUTUBE_CTRL_TESTS = [
     ),
     CattTest("skip to next entry in playlist", ["skip"], sleep=15, check_data=("content_id", "Ff_FvEkuG8w")),
     CattTest(
-        "try to add invalid video-url to playlist (should fail)",
+        "try to add invalid video-url to playlist",
         ["add", "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"],
         sleep=3,
         should_fail=True,
@@ -181,8 +191,19 @@ AUDIO_ONLY_TESTS = [
         check_data=("content_id", "18106055_10158549666610183_8333687643300691968_n.mp4"),
     ),
     CattTest(
+        "cast audio-only DASH aac content from youtube",
+        ["cast", "https://www.youtube.com/watch?v=7fhBiXjSNQc"],
+        check_data=("status_text", "Casting: Dj Money J   Old School Scratch mix"),
+    ),
+    CattTest(
+        "cast first video from youtube playlist on default controller",
+        ["cast", "https://www.youtube.com/watch?v=J4R7M4xH_BA&list=PLhReEC3095X2aQ29-iW2bto0cYPaxch75"],
+        check_data=("status_text", "Casting: The Warrior: A 2015 Psychedelic Trance Mix"),
+    ),
+    CattTest(
         'cast "http" format audio content from mixcloud (testing format hack)',
         ["cast", "https://www.mixcloud.com/robert-toombs/tbt-2/"],
+        sleep=20,
         substring=True,
         check_data=("content_id", "/c/m4a/64/7/3/0/1/774c-fb1a-45e9-a913-cb9e0eae9f98.m4a?sig=LGG0WHTLkXUAuoOVsdcbcA"),
     ),
