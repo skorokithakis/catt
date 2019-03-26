@@ -8,4 +8,4 @@ if sys.version_info.major < 3:
 
 __author__ = "Stavros Korokithakis"
 __email__ = "hi@stavros.io"
-__version__ = "0.9.3"
+__version__ = "0.9.4"
