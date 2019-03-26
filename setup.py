@@ -59,5 +59,6 @@ setup(
     ],
     test_suite="tests",
     tests_require=test_requirements,
+    python_requires=">=3.4",
     entry_points={"console_scripts": ["catt=catt.cli:main"]},
 )
