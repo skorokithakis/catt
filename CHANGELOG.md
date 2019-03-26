@@ -1,6 +1,13 @@
 # Changelog
 
 
+## v0.9.4 (2019-03-26)
+
+### Fixes
+
+* Make catt refuse to install under 2 more. [Stavros Korokithakis]
+
+
 ## v0.9.3 (2019-03-26)
 
 ### Fixes
