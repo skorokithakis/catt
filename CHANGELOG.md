@@ -1,7 +1,7 @@
 # Changelog
 
 
-## Unreleased
+## v0.9.3 (2019-03-26)
 
 ### Fixes
 
