@@ -1,6 +1,13 @@
 # Changelog
 
 
+## v0.9.5 (2019-03-26)
+
+### Fixes
+
+* Only build py3 wheels/packages. [Stavros Korokithakis]
+
+
 ## v0.9.4 (2019-03-26)
 
 ### Fixes
