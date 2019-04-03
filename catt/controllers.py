@@ -321,6 +321,17 @@ class MediaStatusListener:
         return self._state_event.wait(timeout=timeout)
 
 
+class SimpleListener:
+    def __init__(self):
+        self._status_received = threading.Event()
+
+    def new_media_status(self, status):
+        self._status_received.set()
+
+    def block_until_status_received(self):
+        self._status_received.wait()
+
+
 class CastController:
     def __init__(self, cast: pychromecast.Chromecast, app: App, prep: Optional[str] = None) -> None:
         self._cast = cast
@@ -355,7 +366,7 @@ class CastController:
         """Make sure chromecast is not inactive or idle."""
 
         self._check_inactive()
-        self._cast.media_controller.block_until_active(1.0)
+        self._update_status()
         if self._is_idle:
             raise CastError("Nothing is currently playing")
 
@@ -363,11 +374,17 @@ class CastController:
         """Make sure chromecast is not inactive."""
 
         self._check_inactive()
-        self._cast.media_controller.block_until_active(1.0)
+        self._update_status()
 
     def _check_inactive(self):
         if self._cast.app_id == BACKDROP_APP_ID or not self._cast.app_id:
             raise CastError("Chromecast is inactive")
+
+    def _update_status(self):
+        listener = SimpleListener()
+        self._cast.media_controller.register_status_listener(listener)
+        self._cast.media_controller.update_status()
+        listener.block_until_status_received()
 
     @property
     def cc_name(self):
