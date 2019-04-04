@@ -381,16 +381,19 @@ class CastController:
             raise CastError("Chromecast is inactive")
 
     def _update_status(self):
-        def get_status():
+        # Under rare circumstances, a lot of fields are not populated in the updated status.
+        # This causes unexpected results in the is_idle logic of this class (among others).
+        # An extra update appears to weed out these incomplete statuses.
+        def update():
             listener = SimpleListener()
             self._cast.media_controller.register_status_listener(listener)
             self._cast.media_controller.update_status()
             listener.block_until_status_received()
-            return self._cast.media_controller.status
 
-        status = get_status()
+        update()
+        status = self._cast.media_controller.status
         if status.current_time and not status.content_id:
-            get_status()
+            update()
 
     @property
     def cc_name(self):
