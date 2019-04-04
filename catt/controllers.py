@@ -381,10 +381,16 @@ class CastController:
             raise CastError("Chromecast is inactive")
 
     def _update_status(self):
-        listener = SimpleListener()
-        self._cast.media_controller.register_status_listener(listener)
-        self._cast.media_controller.update_status()
-        listener.block_until_status_received()
+        def get_status():
+            listener = SimpleListener()
+            self._cast.media_controller.register_status_listener(listener)
+            self._cast.media_controller.update_status()
+            listener.block_until_status_received()
+            return self._cast.media_controller.status
+
+        status = get_status()
+        if status.current_time and not status.content_id:
+            get_status()
 
     @property
     def cc_name(self):
