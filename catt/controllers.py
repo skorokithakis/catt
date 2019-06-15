@@ -70,6 +70,15 @@ def get_chromecast_with_ip(device_ip, port=DEFAULT_PORT):
 
 
 def get_cast(device=None):
+    """
+    Attempt to connect with requested device (or any device if none has been specified).
+
+    :param device: Can be an ip-address or a name.
+    :type device: str
+    :returns: Chromecast object for use in a CastController.
+    :rtype: pychromecast.Chromecast
+    """
+
     cast = None
 
     if device and is_ipaddress(device):

@@ -74,6 +74,13 @@ def process_path(ctx, param, value):
 
 
 def process_device(ctx, param, value):
+    """
+    Resolve real device name when value is an alias.
+
+    :param value: Can be an ip-address or a name (alias or real name).
+    :type value: str
+    """
+
     if is_ipaddress(value):
         return value
     else:
