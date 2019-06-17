@@ -92,3 +92,12 @@ def get_local_ip(host):
                 return aip
             else:
                 continue
+
+
+def is_ipaddress(device):
+    try:
+        ipaddress.ip_address(device)
+    except ValueError:
+        return False
+    else:
+        return True

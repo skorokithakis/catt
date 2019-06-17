@@ -202,10 +202,9 @@ AUDIO_ONLY_TESTS = [
     ),
     CattTest(
         'cast "http" format audio content from mixcloud (testing format hack)',
-        ["cast", "https://www.mixcloud.com/robert-toombs/tbt-2/"],
-        sleep=20,
+        ["cast", "https://www.mixcloud.com/Jazzmo/in-the-zone-march-2019-guidos-lounge-cafe/"],
         substring=True,
-        check_data=("content_id", "/c/m4a/64/7/3/0/1/774c-fb1a-45e9-a913-cb9e0eae9f98.m4a?sig=LGG0WHTLkXUAuoOVsdcbcA"),
+        check_data=("content_id", "/c/m4a/64/b/2/c/2/0d0c-d480-4c6a-9a9f-f485bd73bc45.m4a?sig=d65siY8itREY5iOVdGwC8w"),
     ),
     CattTest(
         'cast "wav" format audio content from bandcamp (testing format hack)',

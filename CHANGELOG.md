@@ -1,6 +1,13 @@
 # Changelog
 
 
+## Unreleased
+
+### Fixes
+
+* Try to eliminate spurious error msgs when seeking (#194) [theychx]
+
+
 ## v0.9.5 (2019-03-26)
 
 ### Fixes

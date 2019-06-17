@@ -17,7 +17,7 @@ from pychromecast.controllers.youtube import YouTubeController
 from .__init__ import __version__ as CATT_VERSION
 from .error import AppSelectionError, CastError, ControllerError, ListenerError, StateFileError
 from .stream_info import StreamInfo
-from .util import warning
+from .util import is_ipaddress, warning
 
 NO_PLAYER_STATE_IDS = [DASHCAST_APP_ID]
 DEVICES_WITH_TWO_MODEL_NAMES = {"Eureka Dongle": "Chromecast"}
@@ -69,20 +69,36 @@ def get_chromecast_with_ip(device_ip, port=DEFAULT_PORT):
         return None
 
 
-def get_cast(device_name=None):
+def get_cast(device=None):
+    """
+    Attempt to connect with requested device (or any device if none has been specified).
+
+    :param device: Can be an ip-address or a name.
+    :type device: str
+    :returns: Chromecast object for use in a CastController.
+    :rtype: pychromecast.Chromecast
+    """
+
     cast = None
-    cache = Cache()
-    cc_ip, cc_port = cache.get_data(device_name)
 
-    if cc_ip:
-        cast = get_chromecast_with_ip(cc_ip, cc_port)
-    if not cast:
-        cast = get_chromecast(device_name)
+    if device and is_ipaddress(device):
+        cast = get_chromecast_with_ip(device, DEFAULT_PORT)
         if not cast:
-            msg = 'Specified device "%s" not found' % device_name if device_name else "No devices found"
+            msg = "No device found at {}".format(device)
             raise CastError(msg)
+    else:
+        cache = Cache()
+        cc_ip, cc_port = cache.get_data(device)
 
-    cache.set_data(cast.name, cast.host, cast.port)
+        if cc_ip:
+            cast = get_chromecast_with_ip(cc_ip, cc_port)
+        if not cast:
+            cast = get_chromecast(device)
+            if not cast:
+                msg = 'Specified device "{}" not found'.format(device) if device else "No devices found"
+                raise CastError(msg)
+        cache.set_data(cast.name, cast.host, cast.port)
+
     cast.wait()
     return cast
 
