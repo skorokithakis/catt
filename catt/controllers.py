@@ -1,3 +1,4 @@
+# isort:imports-stdlib
 import hashlib
 import json
 import tempfile
@@ -6,6 +7,19 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Optional  # noqa
 
+try:
+    # This horrible hack is because I didn't like YouTube reporting "Python" as the device when casting something.
+    # I couldn't just monkey-patch YouTubeSession because the name is in a global in `YouTubeSession.py`, which gets
+    # overwritten by `__init__.py` when importing, so I had to use the inspect module to change it in the closure.
+    # Some might say this goes too far. I say it doesn't go too far enough.  -- Stavros
+    import inspect
+    from casttube import YouTubeSession
+
+    inspect.getclosurevars(YouTubeSession._bind).globals["BIND_DATA"]["name"] = "CATT"
+except:  # noqa - No need to bother your pretty little head with this exception, interpreter.
+    pass
+
+# isort:imports-thirdparty
 import pychromecast
 from pychromecast.config import APP_BACKDROP as BACKDROP_APP_ID
 from pychromecast.config import APP_DASHCAST as DASHCAST_APP_ID
@@ -14,6 +28,7 @@ from pychromecast.config import APP_YOUTUBE as YOUTUBE_APP_ID
 from pychromecast.controllers.dashcast import DashCastController as PyChromecastDashCastController
 from pychromecast.controllers.youtube import YouTubeController
 
+# isort:imports-localfolder
 from .__init__ import __version__ as CATT_VERSION
 from .error import AppSelectionError, CastError, ControllerError, ListenerError, StateFileError
 from .stream_info import StreamInfo

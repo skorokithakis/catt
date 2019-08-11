@@ -3,6 +3,10 @@
 
 ## Unreleased
 
+### Features
+
+* Add ability to use ip-address as device argument  (#197) [theychx]
+
 ### Fixes
 
 * Try to eliminate spurious error msgs when seeking (#194) [theychx]
