@@ -14,7 +14,7 @@ from pychromecast.config import APP_YOUTUBE as YOUTUBE_APP_ID
 from pychromecast.controllers.dashcast import DashCastController as PyChromecastDashCastController
 from pychromecast.controllers.youtube import YouTubeController
 
-from .__init__ import __version__ as CATT_VERSION
+from . import __version__
 from .error import AppSelectionError, CastError, ControllerError, ListenerError, StateFileError
 from .stream_info import StreamInfo
 from .util import is_ipaddress, warning
@@ -208,7 +208,7 @@ class CattStore:
 
 class Cache(CattStore):
     def __init__(self):
-        vhash = hashlib.sha1(CATT_VERSION.encode()).hexdigest()[:8]
+        vhash = hashlib.sha1(__version__.encode()).hexdigest()[:8]
         cache_path = Path(tempfile.gettempdir(), "catt_%s_cache" % vhash, "chromecast_hosts")
         super(Cache, self).__init__(cache_path)
         self._create_store_dir()
