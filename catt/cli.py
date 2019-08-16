@@ -157,9 +157,7 @@ def cast(settings, video_url, subtitles, force_default, random_play, no_subs, no
     )
 
     if stream.is_local_file:
-        st_thr = Thread(
-            target=serve_file, args=(video_url, stream.local_ip, stream.local_port, stream.guessed_content_type)
-        )
+        st_thr = Thread(target=serve_file, args=(video_url, stream.local_ip, stream.port, stream.guessed_content_type))
         st_thr.setDaemon(True)
         st_thr.start()
     elif stream.is_playlist and not (no_playlist and stream.video_id):

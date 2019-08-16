@@ -27,7 +27,7 @@ DEFAULT_YTDL_OPTS = {"quiet": True, "no_warnings": True}
 class StreamInfo:
     def __init__(self, video_url, host=None, model=None, device_type=None, ytdl_options=None):
         self.local_ip = get_local_ip(host)
-        self.local_port = random.randrange(45000, 47000)
+        self.port = random.randrange(45000, 47000)
 
         if "://" in video_url:
             self._ydl = youtube_dl.YoutubeDL(dict(ytdl_options) if ytdl_options else DEFAULT_YTDL_OPTS)
@@ -96,7 +96,7 @@ class StreamInfo:
     @property
     def video_url(self):
         if self.is_local_file:
-            return "http://%s:%s/?loaded_from_catt" % (self.local_ip, self.local_port)
+            return "http://%s:%s/?loaded_from_catt" % (self.local_ip, self.port)
         elif self.is_remote_file or self.is_playlist_with_active_entry:
             return self._get_stream_url(self._info)
         else:
