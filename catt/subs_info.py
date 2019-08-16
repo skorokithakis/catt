@@ -11,30 +11,28 @@ class SubsInfo:
         self._subs_url = subs_url
         self.local_ip = local_ip
         self.port = port
-
+        subs = self._read_subs(subs_url)
         ext = subs_url.lower().split(".")[-1]
-        if "://" in subs_url:
-            if ext == "srt":
-                conv_subs = self._convert_srt_to_webvtt(self._fetch_remote_subs(subs_url))
-                self.file = create_temp_file(conv_subs)
-            else:
-                self.file = create_temp_file(self._fetch_remote_subs(subs_url))
-        else:
-            if ext == "srt":
-                conv_subs = self._convert_srt_to_webvtt(self._read_srt_subs(subs_url))
-                self.file = create_temp_file(conv_subs)
-            else:
-                self.file = subs_url
+
+        if ext == "srt":
+            subs = self._convert_srt_to_webvtt(subs)
+        self.file = create_temp_file(subs)
 
     @property
     def url(self):
         return "http://{}:{}/{}".format(self.local_ip, self.port, self.file)
 
+    def _read_subs(self, subs_url: str) -> str:
+        if "://" in subs_url:
+            return self._fetch_remote_subs(subs_url)
+        else:
+            return self._read_local_subs(subs_url)
+
     def _convert_srt_to_webvtt(self, content: str) -> str:
         content = re.sub(r"^(.*? \-\-\> .*?)$", lambda m: m.group(1).replace(",", "."), content, flags=re.MULTILINE)
         return "WEBVTT\n\n" + content
 
-    def _read_srt_subs(self, filename: str) -> str:
+    def _read_local_subs(self, filename: str) -> str:
         for possible_encoding in ["utf-8", "iso-8859-15"]:
             try:
                 with open(filename, "r", encoding=possible_encoding) as srtfile:
