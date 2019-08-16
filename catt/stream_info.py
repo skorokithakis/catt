@@ -26,8 +26,8 @@ DEFAULT_YTDL_OPTS = {"quiet": True, "no_warnings": True}
 
 class StreamInfo:
     def __init__(self, video_url, host=None, model=None, device_type=None, ytdl_options=None):
-        self.local_ip = get_local_ip(host)
-        self.port = random.randrange(45000, 47000)
+        self.local_ip = get_local_ip(host) if host else None
+        self.port = random.randrange(45000, 47000) if host else None
 
         if "://" in video_url:
             self._ydl = youtube_dl.YoutubeDL(dict(ytdl_options) if ytdl_options else DEFAULT_YTDL_OPTS)
