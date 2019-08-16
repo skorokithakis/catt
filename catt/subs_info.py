@@ -9,7 +9,7 @@ from .util import create_temp_file
 class SubsInfo:
     def __init__(self, subs_url: str, local_ip: str, port: int) -> None:
         self._subs_url = subs_url
-        self._local_ip = local_ip
+        self.local_ip = local_ip
         self.port = port
 
         ext = subs_url.lower().split(".")[-1]
@@ -28,7 +28,7 @@ class SubsInfo:
 
     @property
     def url(self):
-        return "http://{}:{}/{}".format(self._local_ip, self.port, self.file)
+        return "http://{}:{}/{}".format(self.local_ip, self.port, self.file)
 
     def _convert_srt_to_webvtt(self, content: str) -> str:
         content = re.sub(r"^(.*? \-\-\> .*?)$", lambda m: m.group(1).replace(",", "."), content, flags=re.MULTILINE)

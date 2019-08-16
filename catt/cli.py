@@ -183,7 +183,7 @@ def cast(settings, video_url, subtitles, force_default, random_play, no_subs, no
             subtitles = hunt_subtitles(video_url)
         if subtitles:
             subs = SubsInfo(subtitles, stream.local_ip, stream.port + 1)
-            su_thr = Thread(target=serve_file, args=(subs.file, stream.local_ip, subs.port, "text/vtt;charset=utf-8"))
+            su_thr = Thread(target=serve_file, args=(subs.file, subs.local_ip, subs.port, "text/vtt;charset=utf-8"))
             su_thr.setDaemon(True)
             su_thr.start()
 
