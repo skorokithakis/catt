@@ -7,7 +7,7 @@ from .util import create_temp_file
 
 
 class SubsInfo:
-    def __init__(self, subs_url, local_ip, port):
+    def __init__(self, subs_url: str, local_ip: str, port: int) -> None:
         self._subs_url = subs_url
         self._local_ip = local_ip
         self.port = port
@@ -30,11 +30,11 @@ class SubsInfo:
     def url(self):
         return "http://{}:{}/{}".format(self._local_ip, self.port, self.file)
 
-    def _convert_srt_to_webvtt(self, content):
+    def _convert_srt_to_webvtt(self, content: str) -> str:
         content = re.sub(r"^(.*? \-\-\> .*?)$", lambda m: m.group(1).replace(",", "."), content, flags=re.MULTILINE)
         return "WEBVTT\n\n" + content
 
-    def _read_srt_subs(self, filename):
+    def _read_srt_subs(self, filename: str) -> str:
         for possible_encoding in ["utf-8", "iso-8859-15"]:
             try:
                 with open(filename, "r", encoding=possible_encoding) as srtfile:
@@ -44,7 +44,7 @@ class SubsInfo:
                 pass
         raise SubtitlesError("Could not find the proper encoding of {}. Please convert it to utf-8".format(filename))
 
-    def _fetch_remote_subs(self, url):
+    def _fetch_remote_subs(self, url: str) -> str:
         response = requests.get(url)
         if not response:
             raise SubtitlesError("Remote subtitles file not found")
