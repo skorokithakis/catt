@@ -113,6 +113,13 @@ def write_config(settings):
         raise CliError("No device specified")
 
 
+def create_server_thread(server_args):
+    thr = Thread(target=serve_file, args=server_args)
+    thr.setDaemon(True)
+    thr.start()
+    return thr
+
+
 def process_subtitles(ctx, param, value):
     if not value:
         return None
@@ -157,9 +164,7 @@ def cast(settings, video_url, subtitles, force_default, random_play, no_subs, no
     )
 
     if stream.is_local_file:
-        st_thr = Thread(target=serve_file, args=(video_url, stream.local_ip, stream.port, stream.guessed_content_type))
-        st_thr.setDaemon(True)
-        st_thr.start()
+        st_thr = create_server_thread((video_url, stream.local_ip, stream.port, stream.guessed_content_type))
     elif stream.is_playlist and not (no_playlist and stream.video_id):
         if stream.playlist_length == 0:
             cst.kill(idle_only=True)
@@ -183,9 +188,7 @@ def cast(settings, video_url, subtitles, force_default, random_play, no_subs, no
             subtitles = hunt_subtitles(video_url)
         if subtitles:
             subs = SubsInfo(subtitles, stream.local_ip, stream.port + 1)
-            su_thr = Thread(target=serve_file, args=(subs.file, subs.local_ip, subs.port, "text/vtt;charset=utf-8"))
-            su_thr.setDaemon(True)
-            su_thr.start()
+            su_thr = create_server_thread((subs.file, subs.local_ip, subs.port, "text/vtt;charset=utf-8"))
 
         click.echo("Casting %s file %s..." % ("local" if stream.is_local_file else "remote", video_url))
         click.echo('Playing "%s" on "%s"...' % (stream.video_title, cst.cc_name))
