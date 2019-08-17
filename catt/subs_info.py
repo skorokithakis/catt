@@ -7,13 +7,20 @@ from .util import create_temp_file
 
 
 class SubsInfo:
+    """
+    This class facilitates fetching/reading a remote/local subtitles file,
+    converting it to webvtt if needed, and then exposing a path to a tempfile
+    holding the subtitles, ready to be served.
+    An url to the (expected to be) served file is also exposed. The supplied
+    local_ip and port params are used for this purpose.
+    """
+
     def __init__(self, subs_url: str, local_ip: str, port: int) -> None:
         self._subs_url = subs_url
         self.local_ip = local_ip
         self.port = port
         subs = self._read_subs(subs_url)
         ext = subs_url.lower().split(".")[-1]
-
         if ext == "srt":
             subs = self._convert_srt_to_webvtt(subs)
         self.file = create_temp_file(subs)
