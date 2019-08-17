@@ -6,15 +6,16 @@ import sys
 import time
 from pathlib import Path
 from threading import Thread
+from urllib.parse import urlparse
 
 import click
-import requests
 
 from . import __version__
 from .controllers import Cache, CastState, StateFileError, StateMode, get_chromecast, get_chromecasts, setup_cast
-from .error import CastError, CattUserError, CliError, SubsEncodingError
+from .error import CastError, CattUserError, CliError
 from .http_server import serve_file
-from .util import convert_srt_to_webvtt, echo_json, human_time, hunt_subtitle, is_ipaddress, read_srt_subs, warning
+from .subs_info import SubsInfo
+from .util import echo_json, human_time, hunt_subtitles, is_ipaddress, warning
 
 CONFIG_DIR = Path(click.get_app_dir("catt"))
 CONFIG_PATH = Path(CONFIG_DIR, "catt.cfg")
@@ -112,46 +113,27 @@ def write_config(settings):
         raise CliError("No device specified")
 
 
-def load_subtitle_if_exists(subtitle, video, local_ip, port):
-    subtitle = subtitle if subtitle else hunt_subtitle(video)
-    if subtitle is None:
-        return None
-    click.echo("Using subtitle {}".format(subtitle))
-
-    if "://" in subtitle:
-        if subtitle.lower().endswith(".srt"):
-            content = requests.get(subtitle).text
-            subtitle = convert_srt_to_webvtt(content)
-        else:
-            return subtitle
-
-    if subtitle.lower().endswith(".srt"):
-        try:
-            content = read_srt_subs(subtitle)
-        except SubsEncodingError:
-            raise CliError("Could not find the proper encoding of {}. Please convert it to utf-8.".format(subtitle))
-        subtitle = convert_srt_to_webvtt(content)
-
-    thr = Thread(target=serve_file, args=(subtitle, local_ip, port, "text/vtt;charset=utf-8"))
+def create_server_thread(server_args):
+    thr = Thread(target=serve_file, args=server_args)
     thr.setDaemon(True)
     thr.start()
-    subtitle_url = "http://{}:{}/{}".format(local_ip, port, subtitle)
-    return subtitle_url
+    return thr
 
 
-def process_subtitle(ctx, param, value):
-    if value is None:
+def process_subtitles(ctx, param, value):
+    if not value:
         return None
-    if "://" in value:
-        return value
-    if not Path(value).is_file():
-        raise CliError("Subtitle file [{}] does not exist".format(value))
+    pval = urlparse(value).path if "://" in value else value
+    if not pval.lower().endswith((".srt", ".vtt")):
+        raise CliError("Invalid subtitles format, only srt and vtt are supported")
+    if "://" not in value and not Path(value).is_file():
+        raise CliError("Subtitles file [{}] does not exist".format(value))
     return value
 
 
 @cli.command(short_help="Send a video to a Chromecast for playing.")
 @click.argument("video_url", callback=process_url)
-@click.option("-s", "--subtitle", callback=process_subtitle, metavar="SUB", help="Specify a subtitle.")
+@click.option("-s", "--subtitles", callback=process_subtitles, metavar="SUB", help="Specify a subtitles file.")
 @click.option(
     "-f",
     "--force-default",
@@ -173,20 +155,16 @@ def process_subtitle(ctx, param, value):
     "Should be passed as `-y option=value`, and can be specified multiple times (implies --force-default).",
 )
 @click.pass_obj
-def cast(settings, video_url, subtitle, force_default, random_play, no_subs, no_playlist, ytdl_option):
+def cast(settings, video_url, subtitles, force_default, random_play, no_subs, no_playlist, ytdl_option):
     controller = "default" if force_default or ytdl_option else None
-    subtitle_url = None
     playlist_playback = False
+    st_thr = su_thr = subs = None
     cst, stream = setup_cast(
         settings["device"], video_url=video_url, prep="app", controller=controller, ytdl_options=ytdl_option
     )
 
     if stream.is_local_file:
-        if subtitle or not no_subs:
-            subtitle_url = load_subtitle_if_exists(subtitle, video_url, stream.local_ip, stream.port + 1)
-        thr = Thread(target=serve_file, args=(video_url, stream.local_ip, stream.port, stream.guessed_content_type))
-        thr.setDaemon(True)
-        thr.start()
+        st_thr = create_server_thread((video_url, stream.local_ip, stream.port, stream.guessed_content_type))
     elif stream.is_playlist and not (no_playlist and stream.video_id):
         if stream.playlist_length == 0:
             cst.kill(idle_only=True)
@@ -206,6 +184,12 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs, no_
         video_id = stream.video_id or stream.playlist_all_ids[0]
         cst.play_playlist(stream.playlist_id, video_id=video_id)
     else:
+        if not subtitles and not no_subs and stream.is_local_file:
+            subtitles = hunt_subtitles(video_url)
+        if subtitles:
+            subs = SubsInfo(subtitles, stream.local_ip, stream.port + 1)
+            su_thr = create_server_thread((subs.file, subs.local_ip, subs.port, "text/vtt;charset=utf-8"))
+
         click.echo("Casting %s file %s..." % ("local" if stream.is_local_file else "remote", video_url))
         click.echo('Playing "%s" on "%s"...' % (stream.video_title, cst.cc_name))
         if cst.info_type == "url":
@@ -213,16 +197,17 @@ def cast(settings, video_url, subtitle, force_default, random_play, no_subs, no_
                 stream.video_url,
                 title=stream.video_title,
                 content_type=stream.guessed_content_type,
-                subtitles=subtitle_url,
+                subtitles=subs.url if subs else None,
                 thumb=stream.video_thumbnail,
             )
         elif cst.info_type == "id":
             cst.play_media_id(stream.video_id)
         else:
             raise ValueError("Invalid or undefined info type")
-        if stream.is_local_file:
-            click.echo("Serving local file, press Ctrl+C when done.")
-            while thr.is_alive():
+
+        if stream.is_local_file or subs:
+            click.echo("Serving local file(s), press Ctrl+C when done.")
+            while (st_thr and st_thr.is_alive()) or (su_thr and su_thr.is_alive()):
                 time.sleep(1)
 
 

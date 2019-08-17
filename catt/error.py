@@ -43,8 +43,8 @@ class APIError(CattError):
     pass
 
 
-class SubsEncodingError(CattError):
-    """ When the encoding of a requested subtitles file cannot be determined. """
+class SubtitlesError(CattUserError):
+    """ When a specified subtitles file cannot be found or its encoding cannot be determined. """
 
     pass
 

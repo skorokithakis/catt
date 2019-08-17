@@ -1,14 +1,11 @@
 import ipaddress
 import json
-import re
 import tempfile
 import time
 from pathlib import Path
 
 import click
 import ifaddr
-
-from .error import SubsEncodingError
 
 
 def warning(msg):
@@ -39,7 +36,7 @@ def guess_mime(path):
     return extensions.get(extension, "video/mp4")
 
 
-def hunt_subtitle(video):
+def hunt_subtitles(video):
     """Searches for subtitles in the current folder"""
 
     video_path = Path(video)
@@ -52,25 +49,10 @@ def hunt_subtitle(video):
     return None
 
 
-def convert_srt_to_webvtt(content):
-    content = re.sub(r"^(.*? \-\-\> .*?)$", lambda m: m.group(1).replace(",", "."), content, flags=re.MULTILINE)
-
-    with tempfile.NamedTemporaryFile(mode="w+b", suffix=".vtt", delete=False) as vttfile:
-        target_filename = vttfile.name
-        vttfile.write("WEBVTT\n\n".encode())
-        vttfile.write(content.encode())
-        return target_filename
-
-
-def read_srt_subs(filename):
-    for possible_encoding in ["utf-8", "iso-8859-15"]:
-        try:
-            with open(filename, "r", encoding=possible_encoding) as srtfile:
-                content = srtfile.read()
-                return content
-        except UnicodeDecodeError:
-            pass
-    raise SubsEncodingError
+def create_temp_file(content):
+    with tempfile.NamedTemporaryFile(mode="w+b", suffix=".vtt", delete=False) as tfile:
+        tfile.write(content.encode())
+        return tfile.name
 
 
 def human_time(seconds: int):
