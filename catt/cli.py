@@ -106,8 +106,8 @@ def cli(ctx, delete_cache, device):
 @click.pass_obj
 def write_config(settings):
     if settings.get("device"):
-        # This is so we fail if the specified Chromecast cannot be found.
-        get_chromecast(settings["device"])
+        if not get_chromecast(settings["device"]):
+            raise CliError("Specified device not found")
         writeconfig(settings)
     else:
         raise CliError("No device specified")
