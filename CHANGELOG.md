@@ -5,6 +5,8 @@
 
 ### Features
 
+* Add ability to use subtitles with remote content (#207) [theychx]
+
 * Add ability to use ip-address as device argument  (#197) [theychx]
 
 ### Fixes
