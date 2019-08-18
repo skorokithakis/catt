@@ -69,7 +69,7 @@ def get_local_ip(host):
             except ValueError:
                 continue
             ipt = [(ip, adapter_ip.network_prefix) for ip in (aip, host)]
-            catt_net, cc_net = [ipaddress.ip_network("%s/%s" % ip, strict=False) for ip in ipt]
+            catt_net, cc_net = [ipaddress.ip_network("{0}/{1}".format(*ip), strict=False) for ip in ipt]
             if catt_net == cc_net:
                 return aip
             else:

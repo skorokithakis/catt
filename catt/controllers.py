@@ -127,7 +127,7 @@ def get_app(id_or_name, cast_type=None, strict=False, show_warning=False):
     if not cast_type:
         raise AppSelectionError("Cast type is needed for app selection")
     elif cast_type not in app.supported_device_types:
-        msg = "The %s app is not available for this device" % app.name.capitalize()
+        msg = "The {} app is not available for this device".format(app.name.capitalize())
         if strict:
             raise AppSelectionError("{} (strict is set)".format(msg))
         elif show_warning:
@@ -142,7 +142,7 @@ def get_app(id_or_name, cast_type=None, strict=False, show_warning=False):
 def get_controller(cast, app, action=None, prep=None):
     controller = {"youtube": YoutubeCastController, "dashcast": DashCastController}.get(app.name, DefaultCastController)
     if action and action not in dir(controller):
-        raise ControllerError("This action is not supported by the %s controller" % app.name)
+        raise ControllerError("This action is not supported by the {} controller".format(app.name))
     return controller(cast, app, prep=prep)
 
 
@@ -209,7 +209,7 @@ class CattStore:
 class Cache(CattStore):
     def __init__(self):
         vhash = hashlib.sha1(__version__.encode()).hexdigest()[:8]
-        cache_path = Path(tempfile.gettempdir(), "catt_%s_cache" % vhash, "chromecast_hosts")
+        cache_path = Path(tempfile.gettempdir(), "catt_{}_cache".format(vhash), "chromecast_hosts")
         super(Cache, self).__init__(cache_path)
         self._create_store_dir()
 
