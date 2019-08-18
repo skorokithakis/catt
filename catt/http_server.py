@@ -34,11 +34,11 @@ def parse_byte_range(byte_range):
 
     match = BYTE_RANGE_RE.match(byte_range)
     if not match:
-        raise ValueError("Invalid byte range %s" % byte_range)
+        raise ValueError("Invalid byte range {}".format(byte_range))
 
     first, last = [x and int(x) for x in match.groups()]
     if last and last < first:
-        raise ValueError("Invalid byte range %s" % byte_range)
+        raise ValueError("Invalid byte range {}".format(byte_range))
     return first, last
 
 
@@ -75,7 +75,7 @@ def serve_file(filename, address="", port=45114, content_type=None):
                     self.send_response(200)
                 else:
                     self.send_response(206)
-                    self.send_header("Content-Range", "bytes %s-%s/%s" % (first, last, stats.st_size))
+                    self.send_header("Content-Range", "bytes {}-{}/{}".format(first, last, stats.st_size))
 
                 self.send_header("Accept-Ranges", "bytes")
                 self.send_header("Content-type", content_type)

@@ -30,7 +30,7 @@ class CattTimeParamType(click.ParamType):
             if (tlen > 1 and any(t > 59 for t in tdesc)) or tlen > 3:
                 raise ValueError
         except ValueError:
-            self.fail("%s is not a valid time description." % value, param, ctx)
+            self.fail("{} is not a valid time description.".format(value))
 
         tdesc.reverse()
         return sum(tdesc[p] * 60 ** p for p in range(tlen))
@@ -42,7 +42,7 @@ CATT_TIME = CattTimeParamType()
 class YtdlOptParamType(click.ParamType):
     def convert(self, value, param, ctx):
         if "=" not in value:
-            self.fail("%s is not a valid key/value pair." % value, param, ctx)
+            self.fail("{} is not a valid key/value pair.".format(value))
 
         ykey, yval = value.split("=", 1)
         yval = {"true": True, "false": False}.get(yval.lower().strip(), yval)
@@ -74,6 +74,17 @@ def process_path(ctx, param, value):
     return path
 
 
+def process_subtitles(ctx, param, value):
+    if not value:
+        return None
+    pval = urlparse(value).path if "://" in value else value
+    if not pval.lower().endswith((".srt", ".vtt")):
+        raise CliError("Invalid subtitles format, only srt and vtt are supported")
+    if "://" not in value and not Path(value).is_file():
+        raise CliError("Subtitles file [{}] does not exist".format(value))
+    return value
+
+
 def process_device(ctx, param, value):
     """
     Resolve real device name when value is an alias.
@@ -86,6 +97,13 @@ def process_device(ctx, param, value):
         return value
     else:
         return ctx.default_map["aliases"].get(value, value)
+
+
+def create_server_thread(server_args):
+    thr = Thread(target=serve_file, args=server_args)
+    thr.setDaemon(True)
+    thr.start()
+    return thr
 
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
@@ -111,24 +129,6 @@ def write_config(settings):
         writeconfig(settings)
     else:
         raise CliError("No device specified")
-
-
-def create_server_thread(server_args):
-    thr = Thread(target=serve_file, args=server_args)
-    thr.setDaemon(True)
-    thr.start()
-    return thr
-
-
-def process_subtitles(ctx, param, value):
-    if not value:
-        return None
-    pval = urlparse(value).path if "://" in value else value
-    if not pval.lower().endswith((".srt", ".vtt")):
-        raise CliError("Invalid subtitles format, only srt and vtt are supported")
-    if "://" not in value and not Path(value).is_file():
-        raise CliError("Subtitles file [{}] does not exist".format(value))
-    return value
 
 
 @cli.command(short_help="Send a video to a Chromecast for playing.")
@@ -180,7 +180,7 @@ def cast(settings, video_url, subtitles, force_default, random_play, no_subs, no
             stream.set_playlist_entry(entry)
 
     if playlist_playback:
-        click.echo("Casting remote playlist %s..." % video_url)
+        click.echo("Casting remote playlist {}...".format(video_url))
         video_id = stream.video_id or stream.playlist_all_ids[0]
         cst.play_playlist(stream.playlist_id, video_id=video_id)
     else:
@@ -190,8 +190,8 @@ def cast(settings, video_url, subtitles, force_default, random_play, no_subs, no
             subs = SubsInfo(subtitles, stream.local_ip, stream.port + 1)
             su_thr = create_server_thread((subs.file, subs.local_ip, subs.port, "text/vtt;charset=utf-8"))
 
-        click.echo("Casting %s file %s..." % ("local" if stream.is_local_file else "remote", video_url))
-        click.echo('Playing "%s" on "%s"...' % (stream.video_title, cst.cc_name))
+        click.echo("Casting {} file {}...".format("local" if stream.is_local_file else "remote", video_url))
+        click.echo('Playing "{}" on "{}"...'.format(stream.video_title, cst.cc_name))
         if cst.info_type == "url":
             cst.play_media_url(
                 stream.video_url,
@@ -216,7 +216,7 @@ def cast(settings, video_url, subtitles, force_default, random_play, no_subs, no
 @click.pass_obj
 def cast_site(settings, url):
     cst = setup_cast(settings["device"], controller="dashcast", action="load_url", prep="app")
-    click.echo('Casting %s on "%s"...' % (url, cst.cc_name))
+    click.echo('Casting {} on "{}"...'.format(url, cst.cc_name))
     cst.load_url(url)
 
 
@@ -228,7 +228,7 @@ def add(settings, video_url, play_next):
     cst, stream = setup_cast(settings["device"], video_url=video_url, action="add", prep="control")
     if cst.name != stream.extractor or not (stream.is_remote_file or stream.is_playlist_with_active_entry):
         raise CliError("This url cannot be added to the queue")
-    click.echo('Adding video id "%s" to the queue.' % stream.video_id)
+    click.echo('Adding video id "{}" to the queue.'.format(stream.video_id))
     if play_next:
         cst.add_next(stream.video_id)
     else:
@@ -242,7 +242,7 @@ def remove(settings, video_url):
     cst, stream = setup_cast(settings["device"], video_url=video_url, action="remove", prep="control")
     if cst.name != stream.extractor or not stream.is_remote_file:
         raise CliError("This url cannot be removed from the queue")
-    click.echo('Removing video id "%s" from the queue.' % stream.video_id)
+    click.echo('Removing video id "{}" from the queue.'.format(stream.video_id))
     cst.remove(stream.video_id)
 
 
@@ -354,7 +354,7 @@ def info(settings, json_output):
         echo_json(info)
     else:
         for (key, value) in info.items():
-            click.echo("%s: %s" % (key, value))
+            click.echo("{}: {}".format(key, value))
 
 
 @cli.command(short_help="Scan the local network and show all Chromecasts and their IPs.")
@@ -429,23 +429,23 @@ def restore(settings, path):
 
 def print_status(status):
     if status.get("title"):
-        click.echo("Title: %s" % status["title"])
+        click.echo("Title: {}".format(status["title"]))
 
     if status.get("current_time"):
         current = human_time(status["current_time"])
         if status.get("duration"):
             duration = human_time(status["duration"])
             remaining = human_time(status["remaining"])
-            click.echo("Time: %s / %s (%s%%)" % (current, duration, status["progress"]))
-            click.echo("Remaining time: %s" % remaining)
+            click.echo("Time: {} / {} ({}%)".format(current, duration, status["progress"]))
+            click.echo("Remaining time: {}".format(remaining))
         else:
-            click.echo("Time: %s" % current)
+            click.echo("Time: {}".format(current))
 
     if status.get("player_state"):
-        click.echo("State: %s" % status["player_state"])
+        click.echo("State: {}".format(status["player_state"]))
 
     if status.get("volume_level"):
-        click.echo("Volume: %s" % status["volume_level"])
+        click.echo("Volume: {}".format(status["volume_level"]))
 
 
 def writeconfig(settings):

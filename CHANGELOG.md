@@ -11,6 +11,8 @@
 
 ### Fixes
 
+* Adapt write_config to "new" get_chromecast (#208) [theychx]
+
 * Try to eliminate spurious error msgs when seeking (#194) [theychx]
 
 

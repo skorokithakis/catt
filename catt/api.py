@@ -34,7 +34,7 @@ class CattDevice:
             self._create_cast()
 
     def __repr__(self) -> str:
-        return "<CattDevice: %s>" % (self.name or self.ip_addr)
+        return "<CattDevice: {}>".format(self.name or self.ip_addr)
 
     def _create_cast(self) -> None:
         self._cast = get_chromecast_with_ip(self.ip_addr) if self.ip_addr else get_chromecast(self.name)
