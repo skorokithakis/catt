@@ -74,6 +74,17 @@ def process_path(ctx, param, value):
     return path
 
 
+def process_subtitles(ctx, param, value):
+    if not value:
+        return None
+    pval = urlparse(value).path if "://" in value else value
+    if not pval.lower().endswith((".srt", ".vtt")):
+        raise CliError("Invalid subtitles format, only srt and vtt are supported")
+    if "://" not in value and not Path(value).is_file():
+        raise CliError("Subtitles file [{}] does not exist".format(value))
+    return value
+
+
 def process_device(ctx, param, value):
     """
     Resolve real device name when value is an alias.
@@ -86,6 +97,13 @@ def process_device(ctx, param, value):
         return value
     else:
         return ctx.default_map["aliases"].get(value, value)
+
+
+def create_server_thread(server_args):
+    thr = Thread(target=serve_file, args=server_args)
+    thr.setDaemon(True)
+    thr.start()
+    return thr
 
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
@@ -111,24 +129,6 @@ def write_config(settings):
         writeconfig(settings)
     else:
         raise CliError("No device specified")
-
-
-def create_server_thread(server_args):
-    thr = Thread(target=serve_file, args=server_args)
-    thr.setDaemon(True)
-    thr.start()
-    return thr
-
-
-def process_subtitles(ctx, param, value):
-    if not value:
-        return None
-    pval = urlparse(value).path if "://" in value else value
-    if not pval.lower().endswith((".srt", ".vtt")):
-        raise CliError("Invalid subtitles format, only srt and vtt are supported")
-    if "://" not in value and not Path(value).is_file():
-        raise CliError("Subtitles file [{}] does not exist".format(value))
-    return value
 
 
 @cli.command(short_help="Send a video to a Chromecast for playing.")
