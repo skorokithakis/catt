@@ -120,6 +120,11 @@ class StreamInfo:
             return None
 
     @property
+    def guessed_content_category(self):
+        content_type = self.guessed_content_type
+        return content_type.split("/")[0] if content_type else None
+
+    @property
     def playlist_length(self):
         return len(self._entries) if self.is_playlist else None
 

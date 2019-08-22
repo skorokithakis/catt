@@ -99,8 +99,8 @@ def process_device(ctx, param, value):
         return ctx.default_map["aliases"].get(value, value)
 
 
-def create_server_thread(server_args):
-    thr = Thread(target=serve_file, args=server_args)
+def create_server_thread(filename, address, port, content_type, single_req=False):
+    thr = Thread(target=serve_file, args=(filename, address, port, content_type, single_req))
     thr.setDaemon(True)
     thr.start()
     return thr
@@ -162,9 +162,12 @@ def cast(settings, video_url, subtitles, force_default, random_play, no_subs, no
     cst, stream = setup_cast(
         settings["device"], video_url=video_url, prep="app", controller=controller, ytdl_options=ytdl_option
     )
+    media_is_image = stream.guessed_content_category == "image"
 
     if stream.is_local_file:
-        st_thr = create_server_thread((video_url, stream.local_ip, stream.port, stream.guessed_content_type))
+        st_thr = create_server_thread(
+            video_url, stream.local_ip, stream.port, stream.guessed_content_type, single_req=media_is_image
+        )
     elif stream.is_playlist and not (no_playlist and stream.video_id):
         if stream.playlist_length == 0:
             cst.kill(idle_only=True)
@@ -188,10 +191,14 @@ def cast(settings, video_url, subtitles, force_default, random_play, no_subs, no
             subtitles = hunt_subtitles(video_url)
         if subtitles:
             subs = SubsInfo(subtitles, stream.local_ip, stream.port + 1)
-            su_thr = create_server_thread((subs.file, subs.local_ip, subs.port, "text/vtt;charset=utf-8"))
+            su_thr = create_server_thread(
+                subs.file, subs.local_ip, subs.port, "text/vtt;charset=utf-8", single_req=True
+            )
 
         click.echo("Casting {} file {}...".format("local" if stream.is_local_file else "remote", video_url))
-        click.echo('Playing "{}" on "{}"...'.format(stream.video_title, cst.cc_name))
+        click.echo(
+            '{} "{}" on "{}"...'.format("Showing" if media_is_image else "Playing", stream.video_title, cst.cc_name)
+        )
         if cst.info_type == "url":
             cst.play_media_url(
                 stream.video_url,
@@ -206,7 +213,8 @@ def cast(settings, video_url, subtitles, force_default, random_play, no_subs, no
             raise ValueError("Invalid or undefined info type")
 
         if stream.is_local_file or subs:
-            click.echo("Serving local file(s), press Ctrl+C when done.")
+            add_msg = ", press Ctrl+C when done" if stream.is_local_file and not media_is_image else ""
+            click.echo("Serving local file(s){}.".format(add_msg))
             while (st_thr and st_thr.is_alive()) or (su_thr and su_thr.is_alive()):
                 time.sleep(1)
 
