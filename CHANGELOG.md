@@ -1,7 +1,7 @@
 # Changelog
 
 
-## Unreleased
+## v0.10.0 (2019-08-19)
 
 ### Features
 
