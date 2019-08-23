@@ -114,18 +114,20 @@ class CattTest:
 
 DEFAULT_CTRL_TESTS = [
     CattTest(
-        "cast h264 1280x720 / aac content from twitch.tv",
-        ["cast", "https://clips.twitch.tv/CloudyEnticingChickpeaCeilingCat"],
-        check_data=("content_id", "https://clips-media-assets2.twitch.tv/AT-cm%7C304482431.mp4"),
+        "cast h264 1920x1080 / aac content from dailymotion",
+        ["cast", "http://www.dailymotion.com/video/x6fotne"],
+        substring=True,
+        check_data=("content_id", "/H264-1920x1080/video/x6fotne.mp4"),
     ),
     CattTest("set volume to 50", ["volume", "50"], sleep=2, check_data=("volume_level", 0.5)),
     CattTest("set volume to 100", ["volume", "100"], sleep=2, check_data=("volume_level", 1.0)),
     CattTest("lower volume by 50 ", ["volumedown", "50"], sleep=2, check_data=("volume_level", 0.5)),
     CattTest("raise volume by 50", ["volumeup", "50"], sleep=2, check_data=("volume_level", 1.0)),
     CattTest(
-        "cast h264 640x360 / aac content from twitch.tv",
-        ["cast", "-y", "format=360", "https://clips.twitch.tv/CloudyEnticingChickpeaCeilingCat"],
-        check_data=("content_id", "https://clips-media-assets2.twitch.tv/AT-cm%7C304482431-360.mp4"),
+        "cast h264 320x240 / aac content from dailymotion",
+        ["cast", "-y", "format=http-240", "http://www.dailymotion.com/video/x6fotne"],
+        substring=True,
+        check_data=("content_id", "/H264-320x240/video/x6fotne.mp4"),
     ),
     CattTest(
         "cast h264 1280x720 / aac content from youtube using default controller",

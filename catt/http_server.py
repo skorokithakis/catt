@@ -42,7 +42,7 @@ def parse_byte_range(byte_range):
     return first, last
 
 
-def serve_file(filename, address="", port=45114, content_type=None):
+def serve_file(filename, address="", port=45114, content_type=None, single_req=False):
     class FileHandler(BaseHTTPRequestHandler):
         def format_size(self, size):
             for size_unity in ["B", "KB", "MB", "GB", "TB"]:
@@ -108,5 +108,8 @@ def serve_file(filename, address="", port=45114, content_type=None):
     stats = mediapath.stat()
 
     httpd = socketserver.TCPServer((address, port), FileHandler)
-    httpd.serve_forever()
+    if single_req:
+        httpd.handle_request()
+    else:
+        httpd.serve_forever()
     httpd.server_close()
