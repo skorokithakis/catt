@@ -1,11 +1,16 @@
 import ipaddress
 import json
+import sys
 import tempfile
 import time
 from pathlib import Path
 
 import click
-import ifaddr
+
+try:
+    import netifaces
+except ImportError:
+    import ifaddr
 
 
 def warning(msg):
@@ -60,20 +65,25 @@ def human_time(seconds: int):
 
 
 def get_local_ip(host):
-    for adapter in ifaddr.get_adapters():
-        for adapter_ip in adapter.ips:
-            aip = adapter_ip.ip[0] if isinstance(adapter_ip.ip, tuple) else adapter_ip.ip
-            try:
-                if not isinstance(ipaddress.ip_address(host), type(ipaddress.ip_address(aip))):
-                    raise ValueError
-            except ValueError:
-                continue
-            ipt = [(ip, adapter_ip.network_prefix) for ip in (aip, host)]
-            catt_net, cc_net = [ipaddress.ip_network("{0}/{1}".format(*ip), strict=False) for ip in ipt]
-            if catt_net == cc_net:
-                return aip
-            else:
-                continue
+    if "netifaces" in sys.modules:
+        interface = netifaces.gateways()["default"][netifaces.AF_INET][1]
+        return netifaces.ifaddresses(interface)[netifaces.AF_INET][0]["addr"]
+    else:
+        for adapter in ifaddr.get_adapters():
+            for adapter_ip in adapter.ips:
+                aip = adapter_ip.ip[0] if isinstance(adapter_ip.ip, tuple) else adapter_ip.ip
+                try:
+                    if not isinstance(ipaddress.ip_address(host), type(ipaddress.ip_address(aip))):
+                        continue
+                except ValueError:
+                    continue
+                ipt = [(ip, adapter_ip.network_prefix) for ip in (aip, host)]
+                catt_net, cc_net = [ipaddress.ip_network("{0}/{1}".format(*ip), strict=False) for ip in ipt]
+                if catt_net == cc_net:
+                    return aip
+                else:
+                    continue
+        raise ValueError("No adapters found")
 
 
 def is_ipaddress(device):
