@@ -406,6 +406,10 @@ class CastController:
             self._cast.media_controller.update_status()
             listener.block_until_status_received()
 
+        if "urn:x-cast:com.google.cast.media" not in self._cast.status.namespaces:
+            # This namespace needs to be supported, in order for listeners to work.
+            # So far only Dashcast appears to be affected.
+            return
         update()
         status = self._cast.media_controller.status
         if status.current_time and not status.content_id:

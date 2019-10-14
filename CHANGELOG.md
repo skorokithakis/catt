@@ -1,6 +1,13 @@
 # Changelog
 
 
+## Unreleased
+
+### Fixes
+
+* Only serve files forever if it is necessary (#210) [Stavros Korokithakis]
+
+
 ## v0.10.0 (2019-08-19)
 
 ### Features
