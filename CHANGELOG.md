@@ -5,6 +5,8 @@
 
 ### Fixes
 
+* Fix namespace related crash when using DashCast. [Stavros Korokithakis]
+
 * Only serve files forever if it is necessary (#210) [Stavros Korokithakis]
 
 
