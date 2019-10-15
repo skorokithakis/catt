@@ -1,5 +1,6 @@
 import ipaddress
 import json
+import socket
 import tempfile
 import time
 from pathlib import Path
@@ -60,12 +61,21 @@ def human_time(seconds: int):
 
 
 def get_local_ip(host):
+    """
+    The primary ifaddr based approach, tries to guess the local ip from the cc ip,
+    by comparing the subnet of ip-addresses of all the local adapters to the subnet of the cc ip.
+    This should work on all platforms, but requires the catt box and the cc to be on the same subnet.
+    As a fallback we use a socket based approach, that does not suffer from this limitation, but
+    might not work on all platforms.
+    """
+
+    host_ipversion = type(ipaddress.ip_address(host))
     for adapter in ifaddr.get_adapters():
         for adapter_ip in adapter.ips:
             aip = adapter_ip.ip[0] if isinstance(adapter_ip.ip, tuple) else adapter_ip.ip
             try:
-                if not isinstance(ipaddress.ip_address(host), type(ipaddress.ip_address(aip))):
-                    raise ValueError
+                if not isinstance(ipaddress.ip_address(aip), host_ipversion):
+                    continue
             except ValueError:
                 continue
             ipt = [(ip, adapter_ip.network_prefix) for ip in (aip, host)]
@@ -74,6 +84,11 @@ def get_local_ip(host):
                 return aip
             else:
                 continue
+
+    return [
+        (s.connect(("8.8.8.8", 53)), s.getsockname()[0], s.close())
+        for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]
+    ][0][1]
 
 
 def is_ipaddress(device):
