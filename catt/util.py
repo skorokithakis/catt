@@ -85,10 +85,13 @@ def get_local_ip(host):
             else:
                 continue
 
-    return [
-        (s.connect(("8.8.8.8", 53)), s.getsockname()[0], s.close())
-        for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]
-    ][0][1]
+    try:
+        return [
+            (s.connect(("8.8.8.8", 53)), s.getsockname()[0], s.close())
+            for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]
+        ][0][1]
+    except OSError:
+        return None
 
 
 def is_ipaddress(device):
