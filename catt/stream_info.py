@@ -3,7 +3,7 @@ from pathlib import Path
 
 import youtube_dl
 
-from .error import ExtractionError, FormatError, LocalIPError, PlaylistError
+from .error import ExtractionError, FormatError, PlaylistError
 from .util import get_local_ip, guess_mime
 
 AUDIO_DEVICE_TYPES = ["audio", "group"]
@@ -59,8 +59,6 @@ class StreamInfo:
             else:
                 self._info = self._get_stream_info(self._preinfo)
         else:
-            if not self.local_ip:
-                raise LocalIPError("Local IP-address could not be determined")
             self._local_file = video_url
             self.is_local_file = True
 

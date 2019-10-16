@@ -99,6 +99,11 @@ def process_device(ctx, param, value):
         return ctx.default_map["aliases"].get(value, value)
 
 
+def fail_if_no_ip(ipaddr):
+    if not ipaddr:
+        raise CliError("Local IP-address could not be determined")
+
+
 def create_server_thread(filename, address, port, content_type, single_req=False):
     thr = Thread(target=serve_file, args=(filename, address, port, content_type, single_req))
     thr.setDaemon(True)
@@ -165,6 +170,7 @@ def cast(settings, video_url, subtitles, force_default, random_play, no_subs, no
     media_is_image = stream.guessed_content_category == "image"
 
     if stream.is_local_file:
+        fail_if_no_ip(stream.local_ip)
         st_thr = create_server_thread(
             video_url, stream.local_ip, stream.port, stream.guessed_content_type, single_req=media_is_image
         )
@@ -190,6 +196,7 @@ def cast(settings, video_url, subtitles, force_default, random_play, no_subs, no
         if not subtitles and not no_subs and stream.is_local_file:
             subtitles = hunt_subtitles(video_url)
         if subtitles:
+            fail_if_no_ip(stream.local_ip)
             subs = SubsInfo(subtitles, stream.local_ip, stream.port + 1)
             su_thr = create_server_thread(
                 subs.file, subs.local_ip, subs.port, "text/vtt;charset=utf-8", single_req=True

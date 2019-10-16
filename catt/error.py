@@ -77,9 +77,3 @@ class FormatError(CattUserError):
     """ When the supplied format filter is invalid or excludes all available formats. """
 
     pass
-
-
-class LocalIPError(CattUserError):
-    """ When the ip-address of the local machine cannot be determined. """
-
-    pass
