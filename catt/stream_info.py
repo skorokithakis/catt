@@ -7,7 +7,7 @@ from .error import ExtractionError, FormatError, PlaylistError
 from .util import get_local_ip, guess_mime
 
 AUDIO_DEVICE_TYPES = ["audio", "group"]
-ULTRA_MODELS = [("Xiaomi", "MIBOX3"), ("Google Inc.", "Chromecast Ultra")]
+ULTRA_MODELS = [("Xiaomi", "MIBOX3"), ("Unknown manufacturer", "Chromecast Ultra")]
 
 BEST_MAX_2K = "best[width <=? 1920][height <=? 1080]"
 BEST_MAX_4K = "best[width <=? 3840][height <=? 2160]"
