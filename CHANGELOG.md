@@ -5,6 +5,8 @@
 
 ### Fixes
 
+* Add socket based fallback approach in get_local_ip. [Stavros Korokithakis]
+
 * Add socket based fallback approach in get_local_ip. [theychx]
 
 * Fix namespace related crash when using DashCast. [Stavros Korokithakis]
