@@ -237,11 +237,7 @@ class Cache(CattStore):
             # When the user does not specify a device, we need to make an attempt
             # to consistently return the same IP, thus the alphabetical sorting.
             fetched = data[min(data, key=str)]
-        return (
-            CCInfo(fetched["ip"], fetched["port"], fetched["manufacturer"], fetched["model_name"], fetched["cast_type"])
-            if fetched
-            else None
-        )
+        return CCInfo(**fetched) if fetched else None
 
     def set_data(self, name: str, device_entry: CCInfo) -> None:  # type: ignore
         data = self._read_store()
