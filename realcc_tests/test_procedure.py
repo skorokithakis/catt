@@ -187,7 +187,8 @@ DASHCAST_CTRL_TESTS = [
     CattTest(
         "cast GitHub website frontpage",
         ["cast_site", "https://github.com"],
-        check_data=("status_text", "The world’s leading software development platform · GitHub"),
+        substring=True,
+        check_data=("status_text", "GitHub"),
     )
 ]
 
