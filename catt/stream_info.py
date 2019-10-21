@@ -7,6 +7,10 @@ from .error import ExtractionError, FormatError, PlaylistError
 from .util import get_local_ip, guess_mime
 
 AUDIO_DEVICE_TYPES = ["audio", "group"]
+# The manufacturer field is currently unavailable for Google products.
+# It is still accessible via DIAL for some devices, but this resource
+# is currently not being used by PyChromecast.
+# See https://github.com/balloob/pychromecast/pull/197
 ULTRA_MODELS = [("Xiaomi", "MIBOX3"), ("Unknown manufacturer", "Chromecast Ultra")]
 
 BEST_MAX_2K = "best[width <=? 1920][height <=? 1080]"
