@@ -19,7 +19,7 @@ from .error import AppSelectionError, CastError, ControllerError, ListenerError,
 from .stream_info import StreamInfo
 from .util import is_ipaddress, warning
 
-NO_PLAYER_STATE_IDS = [DASHCAST_APP_ID]
+GOOGLE_MEDIA_NAMESPACE = "urn:x-cast:com.google.cast.media"
 DEFAULT_PORT = 8009
 VALID_STATE_EVENTS = ["UNKNOWN", "IDLE", "BUFFERING", "PLAYING", "PAUSED"]
 
@@ -407,7 +407,7 @@ class CastController:
             self._cast.media_controller.update_status()
             listener.block_until_status_received()
 
-        if "urn:x-cast:com.google.cast.media" not in self._cast.status.namespaces:
+        if not self._supports_google_media_namespace:
             # This namespace needs to be supported, in order for listeners to work.
             # So far only Dashcast appears to be affected.
             return
@@ -462,6 +462,10 @@ class CastController:
         return status.content_id.endswith("?loaded_from_catt")
 
     @property
+    def _supports_google_media_namespace(self):
+        return GOOGLE_MEDIA_NAMESPACE in self._cast.status.namespaces
+
+    @property
     def _is_seekable(self):
         status = self._cast.media_controller.status
         return status.duration and status.stream_type == "BUFFERED"
@@ -477,9 +481,9 @@ class CastController:
     @property
     def _is_idle(self):
         status = self._cast.media_controller.status
-        # Dashcast (and maybe others) returns player_state == "UNKNOWN" while being active,
-        # so we maintain a list of those apps.
-        return status.player_state in ["UNKNOWN", "IDLE"] and self._cast.app_id not in NO_PLAYER_STATE_IDS
+        # Dashcast (and maybe others) does not support the google media namespace, and thus
+        # "player_state" will be "UNKNOWN" for such apps, regardless of state.
+        return status.player_state in ["UNKNOWN", "IDLE"] and self._supports_google_media_namespace
 
     def volume(self, level: float) -> None:
         self._cast.set_volume(level)
