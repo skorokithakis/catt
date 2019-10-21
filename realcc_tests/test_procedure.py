@@ -183,6 +183,15 @@ YOUTUBE_CTRL_TESTS = [
     ),
 ]
 
+DASHCAST_CTRL_TESTS = [
+    CattTest(
+        "cast GitHub website frontpage",
+        ["cast_site", "https://github.com"],
+        substring=True,
+        check_data=("status_text", "GitHub"),
+    )
+]
+
 # Some of the audio tests will fail on non-audio devices,
 # as they are fed the regular video+audio streams.
 AUDIO_ONLY_TESTS = [
@@ -216,7 +225,7 @@ AUDIO_ONLY_TESTS = [
     ),
 ]
 
-STANDARD_TESTS = DEFAULT_CTRL_TESTS + YOUTUBE_CTRL_TESTS
+STANDARD_TESTS = DEFAULT_CTRL_TESTS + YOUTUBE_CTRL_TESTS + DASHCAST_CTRL_TESTS
 AUDIO_TESTS = AUDIO_ONLY_TESTS
 ULTRA_TESTS = []  # type: list
 
