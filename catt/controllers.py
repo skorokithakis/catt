@@ -20,7 +20,6 @@ from .stream_info import StreamInfo
 from .util import is_ipaddress, warning
 
 NO_PLAYER_STATE_IDS = [DASHCAST_APP_ID]
-DEVICES_WITH_TWO_MODEL_NAMES = {"Eureka Dongle": "Chromecast"}
 DEFAULT_PORT = 8009
 VALID_STATE_EVENTS = ["UNKNOWN", "IDLE", "BUFFERING", "PLAYING", "PAUSED"]
 
@@ -75,8 +74,9 @@ def get_cast(device=None):
 
     :param device: Can be an ip-address or a name.
     :type device: str
-    :returns: Chromecast object for use in a CastController.
-    :rtype: pychromecast.Chromecast
+    :returns: Chromecast object for use in a CastController,
+              and CCInfo object for use in setup_cast and StreamInfo
+    :rtype: (pychromecast.Chromecast, CCInfo)
     """
 
     cast = None
@@ -86,30 +86,23 @@ def get_cast(device=None):
         if not cast:
             msg = "No device found at {}".format(device)
             raise CastError(msg)
+        cc_info = CCInfo(cast.host, cast.port, None, None, cast.cast_type)
     else:
         cache = Cache()
-        cc_ip, cc_port = cache.get_data(device)
+        cc_info = cache.get_data(device)
 
-        if cc_ip:
-            cast = get_chromecast_with_ip(cc_ip, cc_port)
+        if cc_info:
+            cast = get_chromecast_with_ip(cc_info.ip, cc_info.port)
         if not cast:
             cast = get_chromecast(device)
             if not cast:
                 msg = 'Specified device "{}" not found'.format(device) if device else "No devices found"
                 raise CastError(msg)
-        cache.set_data(cast.name, cast.host, cast.port)
+            cc_info = CCInfo(cast.host, cast.port, cast.device.manufacturer, cast.model_name, cast.cast_type)
+            cache.set_data(cast.name, cc_info)
 
     cast.wait()
-    return cast
-
-
-def get_stream(url, device_info=None, host=None, ytdl_options=None):
-    cc_info = cast_type = None
-    if device_info:
-        model_name = DEVICES_WITH_TWO_MODEL_NAMES.get(device_info.model_name, device_info.model_name)
-        cc_info = (device_info.manufacturer, model_name)
-        cast_type = device_info.cast_type
-    return StreamInfo(url, host=host, model=cc_info, device_type=cast_type, ytdl_options=ytdl_options)
+    return (cast, cc_info)
 
 
 def get_app(id_or_name, cast_type=None, strict=False, show_warning=False):
@@ -147,11 +140,9 @@ def get_controller(cast, app, action=None, prep=None):
 
 
 def setup_cast(device_name, video_url=None, controller=None, ytdl_options=None, action=None, prep=None):
-    cast = get_cast(device_name)
-    cast_type = cast.cast_type
-    stream = (
-        get_stream(video_url, device_info=cast.device, host=cast.host, ytdl_options=ytdl_options) if video_url else None
-    )
+    cast, cc_info = get_cast(device_name)
+    cast_type = cc_info.cast_type
+    stream = StreamInfo(video_url, device_info=cc_info, ytdl_options=ytdl_options) if video_url else None
 
     if controller:
         app = get_app(controller, cast_type, strict=True)
@@ -206,6 +197,19 @@ class CattStore:
             pass
 
 
+class CCInfo:
+    def __init__(self, ip, port, manufacturer, model_name, cast_type):
+        self.ip = ip
+        self.port = port
+        self.manufacturer = manufacturer
+        self.model_name = model_name
+        self.cast_type = cast_type
+
+    @property
+    def all_info(self):
+        return self.__dict__
+
+
 class Cache(CattStore):
     def __init__(self):
         vhash = hashlib.sha1(__version__.encode()).hexdigest()[:8]
@@ -215,32 +219,29 @@ class Cache(CattStore):
 
         if not self.store_path.is_file():
             devices = get_chromecasts()
-            cache_data = {d.name: self._create_device_entry(d.host, d.port) for d in devices}
+            cache_data = {
+                d.name: CCInfo(d.host, d.port, d.device.manufacturer, d.model_name, d.cast_type).all_info
+                for d in devices
+            }
             self._write_store(cache_data)
-
-    def _create_device_entry(self, ip, port):
-        device_data = {"ip": ip}
-        if port != DEFAULT_PORT:
-            device_data["group_port"] = port
-        return device_data
 
     def get_data(self, name: str):  # type: ignore
         data = self._read_store()
         # In the case that cache has been initialized with no cc's on the
         # network, we need to ensure auto-discovery.
         if not data:
-            return (None, None)
+            return None
         if name:
             fetched = data.get(name)
         else:
             # When the user does not specify a device, we need to make an attempt
             # to consistently return the same IP, thus the alphabetical sorting.
             fetched = data[min(data, key=str)]
-        return (fetched["ip"], fetched.get("group_port", 0)) if fetched else (None, None)
+        return CCInfo(**fetched) if fetched else None
 
-    def set_data(self, name: str, ip: str, port: int) -> None:  # type: ignore
+    def set_data(self, name: str, device_entry: CCInfo) -> None:  # type: ignore
         data = self._read_store()
-        data[name] = self._create_device_entry(ip, port)
+        data[name] = device_entry.all_info
         self._write_store(data)
 
 

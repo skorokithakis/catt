@@ -1,5 +1,6 @@
-from .controllers import get_app, get_chromecast, get_chromecast_with_ip, get_chromecasts, get_controller, get_stream
+from .controllers import get_app, get_chromecast, get_chromecast_with_ip, get_chromecasts, get_controller
 from .error import APIError, CastError
+from .stream_info import StreamInfo
 
 
 def discover() -> list:
@@ -69,7 +70,7 @@ class CattDevice:
         """
 
         if resolve:
-            stream = get_stream(url)
+            stream = StreamInfo(url)
             url = stream.video_url
         self.controller.prep_app()
         self.controller.play_media_url(url)

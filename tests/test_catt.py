@@ -3,7 +3,7 @@
 
 import unittest
 
-from catt.controllers import Cache
+from catt.controllers import Cache, CCInfo
 from catt.stream_info import StreamInfo
 
 
@@ -31,12 +31,21 @@ class TestThings(unittest.TestCase):
 
     def test_cache(self):
         cache = Cache()
-        cache.set_data("name", "ip", "port")
-        self.assertEqual(cache.get_data("name"), ("ip", "port"))
+        cache.set_data("name", CCInfo("192.168.0.6", 8009, "Fake Factory Inc.", "Fakecast", "fake"))
+        self.assertEqual(
+            cache.get_data("name").all_info,
+            {
+                "ip": "192.168.0.6",
+                "port": 8009,
+                "manufacturer": "Fake Factory Inc.",
+                "model_name": "Fakecast",
+                "cast_type": "fake",
+            },
+        )
 
         cache.clear()
         cache = Cache()
-        self.assertEqual(cache.get_data("name"), (None, None))
+        self.assertEqual(cache.get_data("name"), None)
         cache.clear()
 
 

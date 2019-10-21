@@ -7,7 +7,11 @@ from .error import ExtractionError, FormatError, PlaylistError
 from .util import get_local_ip, guess_mime
 
 AUDIO_DEVICE_TYPES = ["audio", "group"]
-ULTRA_MODELS = [("Xiaomi", "MIBOX3"), ("Google Inc.", "Chromecast Ultra")]
+# The manufacturer field is currently unavailable for Google products.
+# It is still accessible via DIAL for some devices, but this resource
+# is currently not being used by PyChromecast.
+# See https://github.com/balloob/pychromecast/pull/197
+ULTRA_MODELS = [("Xiaomi", "MIBOX3"), ("Unknown manufacturer", "Chromecast Ultra")]
 
 BEST_MAX_2K = "best[width <=? 1920][height <=? 1080]"
 BEST_MAX_4K = "best[width <=? 3840][height <=? 2160]"
@@ -15,9 +19,9 @@ BEST_ONLY_AUDIO = "bestaudio"
 BEST_FALLBACK = "/best"
 MAX_50FPS = "[fps <=? 50]"
 TWITCH_NO_60FPS = "[format_id != 1080p60__source_][format_id != 720p60]"
-MIXCLOUD_NO_DASH = "[format_id != dash-a1-x3]"
+MIXCLOUD_NO_DASH_HLS = "[format_id != dash-a1-x3][format_id != hls-67]"
 BANDCAMP_NO_AIFF_ALAC = "[format_id != aiff-lossless][format_id != alac]"
-AUDIO_FORMAT = BEST_ONLY_AUDIO + MIXCLOUD_NO_DASH + BANDCAMP_NO_AIFF_ALAC + BEST_FALLBACK
+AUDIO_FORMAT = BEST_ONLY_AUDIO + MIXCLOUD_NO_DASH_HLS + BANDCAMP_NO_AIFF_ALAC + BEST_FALLBACK
 ULTRA_FORMAT = BEST_MAX_4K + BANDCAMP_NO_AIFF_ALAC
 STANDARD_FORMAT = BEST_MAX_2K + MAX_50FPS + TWITCH_NO_60FPS + BANDCAMP_NO_AIFF_ALAC
 
@@ -25,9 +29,9 @@ DEFAULT_YTDL_OPTS = {"quiet": True, "no_warnings": True}
 
 
 class StreamInfo:
-    def __init__(self, video_url, host=None, model=None, device_type=None, ytdl_options=None):
-        self.local_ip = get_local_ip(host) if host else None
-        self.port = random.randrange(45000, 47000) if host else None
+    def __init__(self, video_url, device_info=None, ytdl_options=None):
+        self.local_ip = get_local_ip(device_info.ip) if device_info else None
+        self.port = random.randrange(45000, 47000) if device_info else None
 
         if "://" in video_url:
             self._ydl = youtube_dl.YoutubeDL(dict(ytdl_options) if ytdl_options else DEFAULT_YTDL_OPTS)
@@ -37,11 +41,13 @@ class StreamInfo:
                 self._preinfo = self._get_stream_preinfo(self._preinfo["url"])
             self.is_local_file = False
 
+            model = (device_info.manufacturer, device_info.model_name) if device_info else None
+            cast_type = device_info.cast_type if device_info else None
             if "format" in self._ydl.params:
                 # We pop the "format" item, as it will make get_stream_info fail,
                 # if it holds an invalid value.
                 self._best_format = self._ydl.params.pop("format")
-            elif device_type and device_type in AUDIO_DEVICE_TYPES:
+            elif cast_type and cast_type in AUDIO_DEVICE_TYPES:
                 self._best_format = AUDIO_FORMAT
             elif model and model in ULTRA_MODELS:
                 self._best_format = ULTRA_FORMAT
