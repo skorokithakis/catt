@@ -19,7 +19,7 @@ BEST_ONLY_AUDIO = "bestaudio"
 BEST_FALLBACK = "/best"
 MAX_50FPS = "[fps <=? 50]"
 TWITCH_NO_60FPS = "[format_id != 1080p60__source_][format_id != 720p60]"
-MIXCLOUD_NO_DASH_HLS = "[format_id != dash-a1-x3][format_id != hls-67]"
+MIXCLOUD_NO_DASH_HLS = "[format_id != dash-a1-x3][format_id !*= hls-6]"
 BANDCAMP_NO_AIFF_ALAC = "[format_id != aiff-lossless][format_id != alac]"
 AUDIO_FORMAT = BEST_ONLY_AUDIO + MIXCLOUD_NO_DASH_HLS + BANDCAMP_NO_AIFF_ALAC + BEST_FALLBACK
 ULTRA_FORMAT = BEST_MAX_4K + BANDCAMP_NO_AIFF_ALAC
