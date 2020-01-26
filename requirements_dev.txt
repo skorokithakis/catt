@@ -10,3 +10,4 @@ isort
 mypy
 gitchangelog
 pystache
+PyYAML==5.2;python_version<"3.5"
