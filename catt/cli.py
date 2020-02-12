@@ -159,8 +159,15 @@ def write_config(settings):
     help="YouTube-DL option. "
     "Should be passed as `-y option=value`, and can be specified multiple times (implies --force-default).",
 )
+@click.option(
+    "-b",
+    "--block",
+    is_flag=True,
+    help="Keep catt process alive until playback has ended "
+    "(currently exits after playback of single media, so not useful with playlists yet).",
+)
 @click.pass_obj
-def cast(settings, video_url, subtitles, force_default, random_play, no_subs, no_playlist, ytdl_option):
+def cast(settings, video_url, subtitles, force_default, random_play, no_subs, no_playlist, ytdl_option, block):
     controller = "default" if force_default or ytdl_option else None
     playlist_playback = False
     st_thr = su_thr = subs = None
@@ -168,6 +175,7 @@ def cast(settings, video_url, subtitles, force_default, random_play, no_subs, no
         settings["device"], video_url=video_url, prep="app", controller=controller, ytdl_options=ytdl_option
     )
     media_is_image = stream.guessed_content_category == "image"
+    local_or_remote = "local" if stream.is_local_file else "remote"
 
     if stream.is_local_file:
         fail_if_no_ip(stream.local_ip)
@@ -202,7 +210,7 @@ def cast(settings, video_url, subtitles, force_default, random_play, no_subs, no
                 subs.file, subs.local_ip, subs.port, "text/vtt;charset=utf-8", single_req=True
             )
 
-        click.echo("Casting {} file {}...".format("local" if stream.is_local_file else "remote", video_url))
+        click.echo("Casting {} file {}...".format(local_or_remote, video_url))
         click.echo(
             '{} "{}" on "{}"...'.format("Showing" if media_is_image else "Playing", stream.video_title, cst.cc_name)
         )
@@ -219,11 +227,15 @@ def cast(settings, video_url, subtitles, force_default, random_play, no_subs, no
         else:
             raise ValueError("Invalid or undefined info type")
 
-        if stream.is_local_file or subs:
-            add_msg = ", press Ctrl+C when done" if stream.is_local_file and not media_is_image else ""
-            click.echo("Serving local file(s){}.".format(add_msg))
-            while (st_thr and st_thr.is_alive()) or (su_thr and su_thr.is_alive()):
-                time.sleep(1)
+    if stream.is_local_file or subs:
+        click.echo("Serving local file(s).")
+    if (stream.is_local_file and not media_is_image) or block:
+        if not cst.wait_for(["PLAYING"], timeout=10):
+            raise CliError("Playback of {} file has failed".format(local_or_remote))
+        cst.wait_for(["UNKNOWN", "IDLE"])
+    elif (stream.is_local_file and media_is_image) or subs:
+        while (st_thr and st_thr.is_alive()) or (su_thr and su_thr.is_alive()):
+            time.sleep(1)
 
 
 @cli.command("cast_site", short_help="Cast any website to a Chromecast.")
