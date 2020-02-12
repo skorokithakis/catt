@@ -1,7 +1,7 @@
 # Changelog
 
 
-## Unreleased
+## v0.10.3 (2020-01-26)
 
 ### Fixes
 
