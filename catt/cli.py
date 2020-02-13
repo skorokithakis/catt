@@ -229,7 +229,7 @@ def cast(settings, video_url, subtitles, force_default, random_play, no_subs, no
 
     if stream.is_local_file or subs:
         click.echo("Serving local file(s).")
-    if (stream.is_local_file and not media_is_image) or block:
+    if not media_is_image and (stream.is_local_file or block):
         if not cst.wait_for(["PLAYING"], timeout=10):
             raise CliError("Playback of {} file has failed".format(local_or_remote))
         cst.wait_for(["UNKNOWN", "IDLE"])
