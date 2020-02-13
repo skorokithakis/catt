@@ -163,8 +163,9 @@ def write_config(settings):
     "-b",
     "--block",
     is_flag=True,
-    help="Keep catt process alive until playback has ended "
-    "(currently exits after playback of single media, so not useful with playlists yet).",
+    help="Keep catt process alive until playback has ended. "
+    "Only useful when casting remote files, as catt is already running a server when casting local files. "
+    "Currently exits after playback of single media, so not useful with playlists yet.",
 )
 @click.pass_obj
 def cast(settings, video_url, subtitles, force_default, random_play, no_subs, no_playlist, ytdl_option, block):
