@@ -1,6 +1,13 @@
 # Changelog
 
 
+## Unreleased
+
+### Features
+
+* Add block option to cast cmd. [theychx]
+
+
 ## v0.10.3 (2020-01-26)
 
 ### Fixes
