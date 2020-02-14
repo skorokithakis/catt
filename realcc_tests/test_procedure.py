@@ -117,17 +117,17 @@ DEFAULT_CTRL_TESTS = [
         "cast h264 1920x1080 / aac content from dailymotion",
         ["cast", "http://www.dailymotion.com/video/x6fotne"],
         substring=True,
-        check_data=("content_id", "/H264-1920x1080/video/x6fotne.mp4"),
+        check_data=("content_id", "/389149466_mp4_h264_aac_fhd.mp4"),
     ),
     CattTest("set volume to 50", ["volume", "50"], sleep=2, check_data=("volume_level", 0.5)),
     CattTest("set volume to 100", ["volume", "100"], sleep=2, check_data=("volume_level", 1.0)),
     CattTest("lower volume by 50 ", ["volumedown", "50"], sleep=2, check_data=("volume_level", 0.5)),
     CattTest("raise volume by 50", ["volumeup", "50"], sleep=2, check_data=("volume_level", 1.0)),
     CattTest(
-        "cast h264 320x240 / aac content from dailymotion",
-        ["cast", "-y", "format=http-240", "http://www.dailymotion.com/video/x6fotne"],
+        "cast h264 320x184 / aac content from dailymotion",
+        ["cast", "-y", "format=http-240-1", "http://www.dailymotion.com/video/x6fotne"],
         substring=True,
-        check_data=("content_id", "/H264-320x240/video/x6fotne.mp4"),
+        check_data=("content_id", "/389149466_mp4_h264_aac_ld.mp4"),
     ),
     CattTest(
         "cast h264 1280x720 / aac content from youtube using default controller",
@@ -208,8 +208,8 @@ AUDIO_ONLY_TESTS = [
     ),
     CattTest(
         "cast first video from youtube playlist on default controller",
-        ["cast", "https://www.youtube.com/watch?v=J4R7M4xH_BA&list=PLhReEC3095X2aQ29-iW2bto0cYPaxch75"],
-        check_data=("status_text", "Casting: The Warrior: A 2015 Psychedelic Trance Mix"),
+        ["cast", "https://www.youtube.com/watch?v=jSL1nXza7pM&list=PLAxEbmfNXWuIhN2ppUdbvXCKwalXYvs8V&index=2&t=0s"],
+        check_data=("status_text", "Casting: DAF - Liebe auf den Ersten Blick"),
     ),
     CattTest(
         'cast "http" format audio content from mixcloud (testing format hack)',
