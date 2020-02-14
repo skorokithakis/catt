@@ -117,7 +117,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 @click.group(context_settings=CONTEXT_SETTINGS)
 @click.option("--delete-cache", is_flag=True, help="Empty the Chromecast discovery cache.")
 @click.option("-d", "--device", metavar="NAME_OR_IP", callback=process_device, help="Select Chromecast device.")
-@click.version_option(version=__version__, prog_name="catt", message="%(prog)s v%(version)s, Xylophone Xtravaganza.")
+@click.version_option(version=__version__, prog_name="catt", message="%(prog)s v%(version)s, Yearning Yachtman.")
 @click.pass_context
 def cli(ctx, delete_cache, device):
     if delete_cache:
