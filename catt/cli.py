@@ -168,7 +168,7 @@ def write_config(settings):
     "Currently exits after playback of single media, so not useful with playlists yet.",
 )
 @click.pass_obj
-def cast(settings, video_url, subtitles, force_default, random_play, no_subs, no_playlist, ytdl_option, block):
+def cast(settings, video_url, subtitles, force_default, random_play, no_subs, no_playlist, ytdl_option, block=False):
     controller = "default" if force_default or ytdl_option else None
     playlist_playback = False
     st_thr = su_thr = subs = None
