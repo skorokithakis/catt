@@ -296,10 +296,17 @@ def play(settings):
 
 
 @cli.command(short_help="Stop playing.")
+@click.option(
+    "-f",
+    "--force",
+    is_flag=True,
+    help="Start dummy chromecast app before sending stop command "
+    "(for devices that do not respond to stop command under certain circumstances).",
+)
 @click.pass_obj
-def stop(settings):
+def stop(settings, force):
     cst = setup_cast(settings["device"])
-    cst.kill()
+    cst.kill(force=force)
 
 
 @cli.command(short_help="Rewind a video by TIME duration.")
