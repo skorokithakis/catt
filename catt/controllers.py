@@ -504,13 +504,16 @@ class CastController:
                           when catt fails with certain invalid actions (such as trying
                           to cast an empty playlist).
         :type idle_only: bool
+        :param force: If set, a dummy chromecast app is launched before killing the session.
+                      This is a workaround for some devices that do not respond to this
+                      command under certain circumstances.
+        :type force: bool
         """
 
         if idle_only and not self._is_idle:
             return
-        # Some devices do not respond to quit_app() under certain circumstaces,
-        # so as a workaround, we start an unrelated Google cloud app (which is functionally
-        # identical to the Default Media Receiver) before calling quit_app().
+        # The Google cloud app which is launched by the workaround is functionally
+        # identical to the Default Media Receiver.
         if force:
             listener = CastStatusListener(CLOUD_APP_ID)
             self._cast.register_status_listener(listener)

@@ -300,7 +300,7 @@ def play(settings):
     "-f",
     "--force",
     is_flag=True,
-    help="Start dummy chromecast app before sending stop command "
+    help="Launch dummy chromecast app before sending stop command "
     "(for devices that do not respond to stop command under certain circumstances).",
 )
 @click.pass_obj
