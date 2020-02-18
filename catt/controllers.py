@@ -22,6 +22,7 @@ from .util import is_ipaddress, warning
 GOOGLE_MEDIA_NAMESPACE = "urn:x-cast:com.google.cast.media"
 DEFAULT_PORT = 8009
 VALID_STATE_EVENTS = ["UNKNOWN", "IDLE", "BUFFERING", "PLAYING", "PAUSED"]
+CLOUD_APP_ID = "38579375"
 
 
 class App:
@@ -280,10 +281,10 @@ class CastState(CattStore):
 
 
 class CastStatusListener:
-    def __init__(self, app_id, active_app_id):
+    def __init__(self, app_id, active_app_id=None):
         self.app_id = app_id
         self.app_ready = threading.Event()
-        if app_id == active_app_id and app_id != DASHCAST_APP_ID:
+        if (active_app_id and app_id == active_app_id) and app_id != DASHCAST_APP_ID:
             self.app_ready.set()
 
     def new_cast_status(self, status):
@@ -494,7 +495,7 @@ class CastController:
     def volumedown(self, delta: float) -> None:
         self._cast.volume_down(delta)
 
-    def kill(self, idle_only=False):
+    def kill(self, idle_only=False, force=False):
         """
         Kills current Chromecast session.
 
@@ -503,10 +504,21 @@ class CastController:
                           when catt fails with certain invalid actions (such as trying
                           to cast an empty playlist).
         :type idle_only: bool
+        :param force: If set, a dummy chromecast app is launched before killing the session.
+                      This is a workaround for some devices that do not respond to this
+                      command under certain circumstances.
+        :type force: bool
         """
 
         if idle_only and not self._is_idle:
             return
+        # The Google cloud app which is launched by the workaround is functionally
+        # identical to the Default Media Receiver.
+        if force:
+            listener = CastStatusListener(CLOUD_APP_ID)
+            self._cast.register_status_listener(listener)
+            self._cast.start_app(CLOUD_APP_ID)
+            listener.app_ready.wait()
         self._cast.quit_app()
 
 
