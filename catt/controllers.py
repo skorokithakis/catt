@@ -534,17 +534,10 @@ class MediaControllerMixin:
 
     def play_toggle(self):
         state = self._cast.media_controller.status.player_state
-        if state == "PLAYING":
+        if state in ["BUFFERING", "PLAYING"]:
             self.pause()
         elif state == "PAUSED":
             self.play()
-        elif state == "BUFFERING":
-            try:
-                self.wait_for(["PLAYING"])
-            except AttributeError:
-                raise CastError("Stream is buffering")
-            else:
-                self.pause()
         else:
             raise ValueError("Invalid or undefined state type")
 
