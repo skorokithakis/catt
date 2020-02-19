@@ -532,6 +532,15 @@ class MediaControllerMixin:
     def pause(self):
         self._cast.media_controller.pause()
 
+    def play_toggle(self):
+        state = self._cast.media_controller.status.player_state
+        if state == "PAUSED":
+            self.play()
+        elif state in ["BUFFERING", "PLAYING"]:
+            self.pause()
+        else:
+            raise ValueError("Invalid or undefined state type")
+
     def seek(self, seconds: int) -> None:
         if self._is_seekable:
             self._cast.media_controller.seek(seconds)

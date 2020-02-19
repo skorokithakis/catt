@@ -5,6 +5,8 @@
 
 ### Features
 
+* Add force option to stop cmd (#238) [theychx]
+
 * Add block option to cast cmd (#237) [theychx]
 
 

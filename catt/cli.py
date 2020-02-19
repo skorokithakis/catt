@@ -295,6 +295,13 @@ def play(settings):
     cst.play()
 
 
+@cli.command("play_toggle", short_help="Toggle between playing and paused state.")
+@click.pass_obj
+def play_toggle(settings):
+    cst = setup_cast(settings["device"], action="play_toggle", prep="control")
+    cst.play_toggle()
+
+
 @cli.command(short_help="Stop playing.")
 @click.option(
     "-f",
