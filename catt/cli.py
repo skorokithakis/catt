@@ -125,17 +125,6 @@ def cli(ctx, delete_cache, device):
     ctx.obj["device"] = device
 
 
-@cli.command("write_config", short_help="Write the name of default Chromecast device to config file.")
-@click.pass_obj
-def write_config(settings):
-    if settings.get("device"):
-        if not get_chromecast(settings["device"]):
-            raise CliError("Specified device not found")
-        writeconfig(settings)
-    else:
-        raise CliError("No device specified")
-
-
 @cli.command(short_help="Send a video to a Chromecast for playing.")
 @click.argument("video_url", callback=process_url)
 @click.option("-s", "--subtitles", callback=process_subtitles, metavar="SUB", help="Specify a subtitles file.")
@@ -469,6 +458,45 @@ def restore(settings, path):
     cst.restore(data["data"])
 
 
+@cli.command("set_default", short_help="Set the selected device as default.")
+@click.pass_obj
+def set_default(settings):
+    config, device = readconfig(), get_device_from_settings(settings)
+    config["options"]["device"] = device
+    writeconfig(config)
+
+
+@cli.command("del_default", short_help="Delete the default device.")
+@click.pass_obj
+def del_default(settings):
+    config = readconfig()
+    if "device" not in config["options"]:
+        raise CliError("No default device is set, so none deleted")
+    config["options"].pop("device")
+    writeconfig(config)
+
+
+@cli.command("set_alias", short_help="Set an alias name for the selected device.")
+@click.argument("name")
+@click.pass_obj
+def set_alias(settings, name):
+    config, device = readconfig(), get_device_from_settings(settings)
+    config["aliases"][name] = device
+    writeconfig(config)
+
+
+@cli.command("del_alias", short_help="Delete the alias name of the selected device.")
+@click.pass_obj
+def del_alias(settings):
+    config, device = readconfig(), get_device_from_settings(settings)
+    try:
+        alias = next(a for a, d in config["aliases"].items() if d == device)
+    except StopIteration:
+        raise CliError('No alias exists for "{}", so none deleted'.format(device))
+    config["aliases"].pop(alias)
+    writeconfig(config)
+
+
 def print_status(status):
     if status.get("title"):
         click.echo("Title: {}".format(status["title"]))
@@ -490,51 +518,53 @@ def print_status(status):
         click.echo("Volume: {}".format(status["volume_level"]))
 
 
-def writeconfig(settings):
-    try:
-        CONFIG_DIR.mkdir()
-    except FileExistsError:
-        pass
+def get_device_from_settings(settings):
+    device = settings.get("device")
+    if device:
+        if not get_chromecast(device):
+            raise CliError('Specified device "{}" not found'.format(device))
+    else:
+        raise CliError("No device specified")
+    return device
 
-    # Put all the standalone options from the settings into an "options" key.
-    old_conf = readconfig()
-    conf = {"options": settings}
-    conf["aliases"] = old_conf["aliases"]
 
-    # Convert the conf dict into a ConfigParser instance.
-    config = configparser.ConfigParser()
-
-    for section, options in conf.items():
-        config.add_section(section)
-        for option, value in options.items():
-            config.set(section, option, value)
-
+def writeconfig(config):
     with CONFIG_PATH.open("w") as configfile:
         config.write(configfile)
 
 
 def readconfig():
-    """
-    Read the configuration from the config file.
+    config = configparser.ConfigParser()
+    try:
+        CONFIG_DIR.mkdir()
+    except FileExistsError:
+        pass
+    # ConfigParser.read does not take path-like objects <3.6.
+    config.read(str(CONFIG_PATH))
 
+    for req_section in ("options", "aliases"):
+        if req_section not in config.sections():
+            config.add_section(req_section)
+    return config
+
+
+def get_default_map():
+    """
     Returns a dictionary of the form:
         {"option": "value",
          "aliases": {"device1": "device_name"}}
     """
-    config = configparser.ConfigParser()
-    # ConfigParser.read does not take path-like objects <3.6.
-    config.read(str(CONFIG_PATH))
+
+    config = readconfig()
     conf_dict = {section: dict(config.items(section)) for section in config.sections()}
-
-    conf = conf_dict.get("options", {})
-    conf["aliases"] = conf_dict.get("aliases", {})
-
-    return conf
+    default_map = conf_dict["options"]
+    default_map["aliases"] = conf_dict["aliases"]
+    return default_map
 
 
 def main():
     try:
-        return cli(obj={}, default_map=readconfig())
+        return cli(obj={}, default_map=get_default_map())
     except CattUserError as err:
         sys.exit("Error: {}.".format(str(err)))
 
