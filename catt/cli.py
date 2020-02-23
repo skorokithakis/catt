@@ -458,6 +458,11 @@ def restore(settings, path):
     cst.restore(data["data"])
 
 
+@cli.command("write_config", short_help='Please use "set_default".')
+def write_config():
+    raise CliError('This command is now called "set_default"')
+
+
 @cli.command("set_default", short_help="Set the selected device as default.")
 @click.pass_obj
 def set_default(settings):
