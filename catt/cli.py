@@ -486,6 +486,9 @@ def del_default(settings):
 @click.pass_obj
 def set_alias(settings, name):
     config, device = readconfig(), get_device_from_settings(settings)
+    old_alias = get_alias_from_config(config, device)
+    if old_alias:
+        config["aliases"].pop(old_alias)
     config["aliases"][name] = device
     writeconfig(config)
 
@@ -494,9 +497,8 @@ def set_alias(settings, name):
 @click.pass_obj
 def del_alias(settings):
     config, device = readconfig(), get_device_from_settings(settings)
-    try:
-        alias = next(a for a, d in config["aliases"].items() if d == device)
-    except StopIteration:
+    alias = get_alias_from_config(config, device)
+    if not alias:
         raise CliError('No alias exists for "{}", so none deleted'.format(device))
     config["aliases"].pop(alias)
     writeconfig(config)
@@ -521,6 +523,13 @@ def print_status(status):
 
     if status.get("volume_level"):
         click.echo("Volume: {}".format(status["volume_level"]))
+
+
+def get_alias_from_config(config, device):
+    try:
+        return next(a for a, d in config["aliases"].items() if d == device)
+    except StopIteration:
+        return None
 
 
 def get_device_from_settings(settings):
