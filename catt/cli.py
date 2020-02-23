@@ -534,16 +534,17 @@ def get_device_from_settings(settings):
 
 
 def writeconfig(config):
+    try:
+        CONFIG_DIR.mkdir()
+    except FileExistsError:
+        pass
+
     with CONFIG_PATH.open("w") as configfile:
         config.write(configfile)
 
 
 def readconfig():
     config = configparser.ConfigParser()
-    try:
-        CONFIG_DIR.mkdir()
-    except FileExistsError:
-        pass
     # ConfigParser.read does not take path-like objects <3.6.
     config.read(str(CONFIG_PATH))
 
