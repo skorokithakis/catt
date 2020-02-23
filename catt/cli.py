@@ -466,7 +466,8 @@ def write_config():
 @cli.command("set_default", short_help="Set the selected device as default.")
 @click.pass_obj
 def set_default(settings):
-    config, device = readconfig(), get_device_from_settings(settings)
+    config = readconfig()
+    device = get_device_from_settings(settings)
     config["options"]["device"] = device
     writeconfig(config)
 
@@ -485,7 +486,8 @@ def del_default(settings):
 @click.argument("name")
 @click.pass_obj
 def set_alias(settings, name):
-    config, device = readconfig(), get_device_from_settings(settings)
+    config = readconfig()
+    device = get_device_from_settings(settings)
     old_alias = get_alias_from_config(config, device)
     if old_alias:
         config["aliases"].pop(old_alias)
@@ -496,7 +498,8 @@ def set_alias(settings, name):
 @cli.command("del_alias", short_help="Delete the alias name of the selected device.")
 @click.pass_obj
 def del_alias(settings):
-    config, device = readconfig(), get_device_from_settings(settings)
+    config = readconfig()
+    device = get_device_from_settings(settings)
     alias = get_alias_from_config(config, device)
     if not alias:
         raise CliError('No alias exists for "{}", so none deleted'.format(device))
