@@ -5,6 +5,8 @@
 
 ### Features
 
+* Add cmds for config file manipulation (#240) [theychx]
+
 * Add play_toggle cmd (#239) [theychx]
 
 * Add force option to stop cmd (#238) [theychx]
