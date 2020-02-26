@@ -9,7 +9,7 @@ import click
 import ifaddr
 
 
-def warning(msg):
+def echo_warning(msg):
     click.secho("Warning: ", fg="red", nl=False, err=True)
     click.echo("{}.".format(msg), err=True)
 

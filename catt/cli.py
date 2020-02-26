@@ -15,7 +15,7 @@ from .controllers import Cache, CastState, StateFileError, StateMode, get_chrome
 from .error import CastError, CattUserError, CliError
 from .http_server import serve_file
 from .subs_info import SubsInfo
-from .util import echo_json, human_time, hunt_subtitles, is_ipaddress, warning
+from .util import echo_json, echo_warning, human_time, hunt_subtitles, is_ipaddress
 
 CONFIG_DIR = Path(click.get_app_dir("catt"))
 CONFIG_PATH = Path(CONFIG_DIR, "catt.cfg")
@@ -182,7 +182,7 @@ def cast(settings, video_url, subtitles, force_default, random_play, no_subs, no
             if random_play:
                 entry = random.randrange(0, stream.playlist_length)
             else:
-                warning("Playlist playback not possible, playing first video")
+                echo_warning("Playlist playback not possible, playing first video")
                 entry = 0
             stream.set_playlist_entry(entry)
 
@@ -422,7 +422,7 @@ def save(settings, path):
     if not cst.save_capability or cst.is_streaming_local_file:
         raise CliError("Saving state of this kind of content is not supported")
     elif cst.save_capability == "partial":
-        warning("Please be advised that playlist data will not be saved")
+        echo_warning("Please be advised that playlist data will not be saved")
 
     print_status(cst.media_info)
     if path and path.is_file():
