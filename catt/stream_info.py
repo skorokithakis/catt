@@ -119,7 +119,7 @@ class StreamInfo:
     @property
     def guessed_content_type(self):
         if self.is_local_file:
-            return guess_mime(self.video_title)
+            return guess_mime(Path(self._local_file).name)
         elif self._is_direct_link:
             return guess_mime(self._info["webpage_url_basename"])
         else:
