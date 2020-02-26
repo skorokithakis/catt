@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 import click
 
 from . import __version__
-from .controllers import Cache, CastState, StateFileError, StateMode, get_chromecast, get_chromecasts, setup_cast
+from .controllers import Cache, CastState, StateFileError, StateMode, get_chromecasts, setup_cast
 from .error import CastError, CattUserError, CliError
 from .http_server import serve_file
 from .subs_info import SubsInfo
@@ -517,7 +517,13 @@ def get_alias_from_config(config, device):
 def get_device_from_settings(settings):
     device = settings.get("device")
     if device:
-        if not get_chromecast(device):
+        devices = get_chromecasts()
+        try:
+            if is_ipaddress(device):
+                next(d for d in devices if d.host == device)
+            else:
+                next(d for d in devices if d.name == device)
+        except StopIteration:
             raise CliError('Specified device "{}" not found'.format(device))
     else:
         raise CliError("No device specified")
