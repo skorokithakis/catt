@@ -17,7 +17,7 @@ from pychromecast.controllers.youtube import YouTubeController
 from . import __version__
 from .error import AppSelectionError, CastError, ControllerError, ListenerError, StateFileError
 from .stream_info import StreamInfo
-from .util import is_ipaddress, warning
+from .util import echo_warning, is_ipaddress
 
 GOOGLE_MEDIA_NAMESPACE = "urn:x-cast:com.google.cast.media"
 DEFAULT_PORT = 8009
@@ -125,7 +125,7 @@ def get_app(id_or_name, cast_type=None, strict=False, show_warning=False):
         if strict:
             raise AppSelectionError("{} (strict is set)".format(msg))
         elif show_warning:
-            warning(msg)
+            echo_warning(msg)
         return DEFAULT_APP
     else:
         return app

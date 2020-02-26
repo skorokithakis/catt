@@ -9,13 +9,34 @@ import click
 import ifaddr
 
 
-def warning(msg):
+def echo_warning(msg):
     click.secho("Warning: ", fg="red", nl=False, err=True)
     click.echo("{}.".format(msg), err=True)
 
 
 def echo_json(data_dict):
     click.echo(json.dumps(data_dict, indent=4, default=str))
+
+
+def echo_status(status):
+    if status.get("title"):
+        click.echo("Title: {}".format(status["title"]))
+
+    if status.get("current_time"):
+        current = human_time(status["current_time"])
+        if status.get("duration"):
+            duration = human_time(status["duration"])
+            remaining = human_time(status["remaining"])
+            click.echo("Time: {} / {} ({}%)".format(current, duration, status["progress"]))
+            click.echo("Remaining time: {}".format(remaining))
+        else:
+            click.echo("Time: {}".format(current))
+
+    if status.get("player_state"):
+        click.echo("State: {}".format(status["player_state"]))
+
+    if status.get("volume_level"):
+        click.echo("Volume: {}".format(status["volume_level"]))
 
 
 def guess_mime(path):

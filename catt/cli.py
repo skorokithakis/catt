@@ -15,7 +15,7 @@ from .controllers import Cache, CastState, StateFileError, StateMode, get_chrome
 from .error import CastError, CattUserError, CliError
 from .http_server import serve_file
 from .subs_info import SubsInfo
-from .util import echo_json, human_time, hunt_subtitles, is_ipaddress, warning
+from .util import echo_json, echo_status, echo_warning, hunt_subtitles, is_ipaddress
 
 CONFIG_DIR = Path(click.get_app_dir("catt"))
 CONFIG_PATH = Path(CONFIG_DIR, "catt.cfg")
@@ -182,7 +182,7 @@ def cast(settings, video_url, subtitles, force_default, random_play, no_subs, no
             if random_play:
                 entry = random.randrange(0, stream.playlist_length)
             else:
-                warning("Playlist playback not possible, playing first video")
+                echo_warning("Playlist playback not possible, playing first video")
                 entry = 0
             stream.set_playlist_entry(entry)
 
@@ -364,7 +364,7 @@ def volumedown(settings, delta):
 @click.pass_obj
 def status(settings):
     cst = setup_cast(settings["device"], prep="info")
-    print_status(cst.cast_info)
+    echo_status(cst.cast_info)
 
 
 @cli.command(short_help="Show complete information about the currently-playing video.")
@@ -422,9 +422,9 @@ def save(settings, path):
     if not cst.save_capability or cst.is_streaming_local_file:
         raise CliError("Saving state of this kind of content is not supported")
     elif cst.save_capability == "partial":
-        warning("Please be advised that playlist data will not be saved")
+        echo_warning("Please be advised that playlist data will not be saved")
 
-    print_status(cst.media_info)
+    echo_status(cst.media_info)
     if path and path.is_file():
         click.confirm("File already exists. Overwrite?", abort=True)
     click.echo("Saving...")
@@ -452,7 +452,7 @@ def restore(settings, path):
     if not data:
         raise CliError("No save data found for this device")
 
-    print_status(data["data"])
+    echo_status(data["data"])
     click.echo("Restoring...")
     cst = setup_cast(settings["device"], prep="app", controller=data["controller"])
     cst.restore(data["data"])
@@ -505,27 +505,6 @@ def del_alias(settings):
         raise CliError('No alias exists for "{}", so none deleted'.format(device))
     config["aliases"].pop(alias)
     writeconfig(config)
-
-
-def print_status(status):
-    if status.get("title"):
-        click.echo("Title: {}".format(status["title"]))
-
-    if status.get("current_time"):
-        current = human_time(status["current_time"])
-        if status.get("duration"):
-            duration = human_time(status["duration"])
-            remaining = human_time(status["remaining"])
-            click.echo("Time: {} / {} ({}%)".format(current, duration, status["progress"]))
-            click.echo("Remaining time: {}".format(remaining))
-        else:
-            click.echo("Time: {}".format(current))
-
-    if status.get("player_state"):
-        click.echo("State: {}".format(status["player_state"]))
-
-    if status.get("volume_level"):
-        click.echo("Volume: {}".format(status["volume_level"]))
 
 
 def get_alias_from_config(config, device):
