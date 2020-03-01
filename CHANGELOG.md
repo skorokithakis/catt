@@ -1,7 +1,7 @@
 # Changelog
 
 
-## Unreleased
+## v0.11.0 (2020-03-01)
 
 ### Features
 
@@ -12,6 +12,10 @@
 * Add force option to stop cmd (#238) [theychx]
 
 * Add block option to cast cmd (#237) [theychx]
+
+### Fixes
+
+* Fix filename display (#244) [theychx]
 
 
 ## v0.10.3 (2020-01-26)
