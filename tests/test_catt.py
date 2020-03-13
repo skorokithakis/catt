@@ -8,8 +8,13 @@ from catt.stream_info import StreamInfo
 from youtube_dl.utils import DownloadError
 
 
-# To mitigate failing tests executed by CI, caused by "Too Many Requests" youtube issues.
 def ignore_tmr_failure(func):
+    """
+    Ignore "Too many requests" failures in a test.
+
+    YouTube will sometimes throttle us and cause the tests to flap. This decorator
+    catches the "Too many requests" exceptions in tests and ignores them.
+    """
     def wrapper(*args):
         try:
             return func(*args)
