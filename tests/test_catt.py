@@ -15,6 +15,7 @@ def ignore_tmr_failure(func):
     YouTube will sometimes throttle us and cause the tests to flap. This decorator
     catches the "Too many requests" exceptions in tests and ignores them.
     """
+
     def wrapper(*args):
         try:
             return func(*args)
