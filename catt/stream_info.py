@@ -29,7 +29,8 @@ DEFAULT_YTDL_OPTS = {"quiet": True, "no_warnings": True}
 
 
 class StreamInfo:
-    def __init__(self, video_url, device_info=None, ytdl_options=None):
+    def __init__(self, video_url, device_info=None, ytdl_options=None, throw_ytdl_dl_errs=False):
+        self._throw_ytdl_dl_errs = throw_ytdl_dl_errs
         self.local_ip = get_local_ip(device_info.ip) if device_info else None
         self.port = random.randrange(45000, 47000) if device_info else None
 
@@ -164,7 +165,17 @@ class StreamInfo:
         try:
             return self._ydl.extract_info(video_url, process=False)
         except youtube_dl.utils.DownloadError:
-            raise ExtractionError("Remote resource not found")
+            # We sometimes get CI failures when testing with YouTube videos,
+            # as YouTube throttles our connections intermittently. We evaluated
+            # various solutions and the one we agreed on was ignoring the specific
+            # "Too many requests" exceptions when testing.
+            # To do that, we needed a way to raise exceptions instead of swallowing
+            # them, so we could ignore the ones we didn't need in the tests. This
+            # property is the way to do that.
+            if self._throw_ytdl_dl_errs:
+                raise
+            else:
+                raise ExtractionError("Remote resource not found")
 
     def _get_stream_info(self, preinfo):
         try:
