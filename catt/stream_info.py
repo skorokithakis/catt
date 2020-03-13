@@ -165,8 +165,13 @@ class StreamInfo:
         try:
             return self._ydl.extract_info(video_url, process=False)
         except youtube_dl.utils.DownloadError:
-            # To mitigate failing tests executed by CI, caused by "Too Many Requests" youtube issues.
-            # The relevant ytdl expection is caught in the test-suite and ignored.
+            # We sometimes get CI failures when testing with YouTube videos,
+            # as YouTube throttles our connections intermittently. We evaluated
+            # various solutions and the one we agreed on was ignoring the specific
+            # "Too many requests" exceptions when testing.
+            # To do that, we needed a way to raise exceptions instead of swallowing
+            # them, so we could ignore the ones we didn't need in the tests. This
+            # property is the way to do that.
             if self._throw_ytdl_dl_errs:
                 raise
             else:
