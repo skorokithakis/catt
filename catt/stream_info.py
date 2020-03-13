@@ -29,7 +29,8 @@ DEFAULT_YTDL_OPTS = {"quiet": True, "no_warnings": True}
 
 
 class StreamInfo:
-    def __init__(self, video_url, device_info=None, ytdl_options=None):
+    def __init__(self, video_url, device_info=None, ytdl_options=None, throw_ytdl_dl_errs=False):
+        self._throw_ytdl_dl_errs = throw_ytdl_dl_errs
         self.local_ip = get_local_ip(device_info.ip) if device_info else None
         self.port = random.randrange(45000, 47000) if device_info else None
 
@@ -164,7 +165,12 @@ class StreamInfo:
         try:
             return self._ydl.extract_info(video_url, process=False)
         except youtube_dl.utils.DownloadError:
-            raise ExtractionError("Remote resource not found")
+            # To mitigate failing tests executed by CI, caused by "Too Many Requests" youtube issues.
+            # The relevant ytdl expection is caught in the test-suite and ignored.
+            if self._throw_ytdl_dl_errs:
+                raise
+            else:
+                raise ExtractionError("Remote resource not found")
 
     def _get_stream_info(self, preinfo):
         try:
