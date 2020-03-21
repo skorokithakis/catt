@@ -532,7 +532,7 @@ def get_device_from_settings(settings):
 
 def writeconfig(config):
     try:
-        CONFIG_DIR.mkdir()
+        CONFIG_DIR.mkdir(parents=True)
     except FileExistsError:
         pass
 
