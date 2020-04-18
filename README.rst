@@ -59,6 +59,10 @@ TTML and Line 21 subtitles, ``catt`` conveniently converts SRTs to WEBVTT for yo
 Please note that the Chromecast has a slow CPU but a reasonably recent version of Google Chrome. The display
 resolution is 1280x720.
 
+If you want to pass youtube-dl options to catt through the `-y` command-line flag, you need to use youtube-dl's
+`internal option name <https://github.com/ytdl-org/youtube-dl/blob/master/youtube_dl/__init__.py#L317>`, rather
+than its command-line name.
+
 Configuration file
 """"""""""""""""""
 

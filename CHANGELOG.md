@@ -1,6 +1,13 @@
 # Changelog
 
 
+## Unreleased
+
+### Fixes
+
+* Create parent directories if config dir doesn't exist (fixes #251) (#252) [Stavros Korokithakis]
+
+
 ## v0.11.0 (2020-03-01)
 
 ### Features
