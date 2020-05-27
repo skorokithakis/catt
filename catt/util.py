@@ -51,6 +51,7 @@ def guess_mime(path):
         ".mkv": "video/x-matroska",
         ".bmp": "image/bmp",
         ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
         ".gif": "image/gif",
         ".png": "image/png",
         ".webp": "image/web",
