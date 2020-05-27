@@ -3,6 +3,10 @@
 
 ## Unreleased
 
+### Features
+
+* Add subtitles to the API. [Stavros Korokithakis]
+
 ### Fixes
 
 * Create parent directories if config dir doesn't exist (fixes #251) (#252) [Stavros Korokithakis]
