@@ -21,11 +21,11 @@ with open("README.rst") as readme_file:
     readme = readme_file.read()
 
 requirements = [
-    "youtube-dl>=2019.01.24",
-    "PyChromecast>=4.1.1",
-    "Click>=5.0",
-    "ifaddr>=0.1.4",
-    "requests>=2.18.4",
+    "youtube-dl>=2020.6.6",
+    "PyChromecast>=6.0.0",
+    "Click>=7.1.2",
+    "ifaddr>=0.1.7",
+    "requests>=2.23.0",
     'typing;python_version<"3.5"',
 ]
 
