@@ -5,6 +5,10 @@
 
 ### Fixes
 
+* Force pychromecast 7, update to new api. [Ian Calvert]
+
+* Recognize the .jpeg suffix as a jpeg file (#262) [Stavros Korokithakis]
+
 * Create parent directories if config dir doesn't exist (fixes #251) (#252) [Stavros Korokithakis]
 
 
