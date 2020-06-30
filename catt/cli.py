@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import configparser
 import random
 import sys
@@ -11,11 +10,22 @@ from urllib.parse import urlparse
 import click
 
 from . import __version__
-from .controllers import Cache, CastState, StateFileError, StateMode, get_chromecasts, setup_cast
-from .error import CastError, CattUserError, CliError
+from .controllers import Cache
+from .controllers import CastState
+from .controllers import get_chromecasts
+from .controllers import setup_cast
+from .controllers import StateFileError
+from .controllers import StateMode
+from .error import CastError
+from .error import CattUserError
+from .error import CliError
 from .http_server import serve_file
 from .subs_info import SubsInfo
-from .util import echo_json, echo_status, echo_warning, hunt_subtitles, is_ipaddress
+from .util import echo_json
+from .util import echo_status
+from .util import echo_warning
+from .util import hunt_subtitles
+from .util import is_ipaddress
 
 CONFIG_DIR = Path(click.get_app_dir("catt"))
 CONFIG_PATH = Path(CONFIG_DIR, "catt.cfg")
