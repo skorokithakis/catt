@@ -3,8 +3,11 @@ from pathlib import Path
 
 import youtube_dl
 
-from .error import ExtractionError, FormatError, PlaylistError
-from .util import get_local_ip, guess_mime
+from .error import ExtractionError
+from .error import FormatError
+from .error import PlaylistError
+from .util import get_local_ip
+from .util import guess_mime
 
 AUDIO_DEVICE_TYPES = ["audio", "group"]
 # The manufacturer field is currently unavailable for Google products.

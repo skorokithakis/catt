@@ -1,5 +1,10 @@
-from .controllers import get_app, get_chromecast_and_ccinfo, get_chromecast_with_ip, get_chromecasts, get_controller
-from .error import APIError, CastError
+from .controllers import get_app
+from .controllers import get_chromecast
+from .controllers import get_chromecast_with_ip
+from .controllers import get_chromecasts
+from .controllers import get_controller
+from .error import APIError
+from .error import CastError
 from .stream_info import StreamInfo
 
 

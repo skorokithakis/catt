@@ -4,7 +4,8 @@ import tempfile
 import threading
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional  # noqa
+from typing import Any
+from typing import Optional
 
 import pychromecast
 from pychromecast.config import APP_BACKDROP as BACKDROP_APP_ID
@@ -16,9 +17,14 @@ from pychromecast.controllers.youtube import YouTubeController
 from pychromecast.discovery import get_host_from_service_info, get_info_from_service
 
 from . import __version__
-from .error import AppSelectionError, CastError, ControllerError, ListenerError, StateFileError
+from .error import AppSelectionError
+from .error import CastError
+from .error import ControllerError
+from .error import ListenerError
+from .error import StateFileError
 from .stream_info import StreamInfo
-from .util import echo_warning, is_ipaddress
+from .util import echo_warning
+from .util import is_ipaddress
 
 GOOGLE_MEDIA_NAMESPACE = "urn:x-cast:com.google.cast.media"
 DEFAULT_PORT = 8009

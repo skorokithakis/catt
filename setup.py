@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-
 import sys
 
 from catt import __version__
@@ -22,7 +20,7 @@ with open("README.rst") as readme_file:
 
 requirements = [
     "youtube-dl>=2020.6.6",
-    "PyChromecast>=7.0.0",
+    "PyChromecast~=6.0",
     "Click>=7.1.2",
     "ifaddr>=0.1.7",
     "requests>=2.23.0",
