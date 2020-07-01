@@ -47,7 +47,7 @@ APPS = [
 
 
 def get_chromecasts():
-    devices, _browser = pychromecast.get_chromecasts()
+    devices = pychromecast.get_chromecasts()
     devices.sort(key=lambda cc: cc.name)
     return devices
 
