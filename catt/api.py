@@ -38,7 +38,8 @@ class CattDevice:
         self.uuid = None
 
         self._cast = None
-        self._cast_controller: Optional[CastController] = None
+        # Type comment for compatibility with Py3.5-.
+        self._cast_controller = None  # type: Optional[CastController]
         if not lazy:
             self._create_cast()
 
