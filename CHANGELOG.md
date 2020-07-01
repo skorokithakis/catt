@@ -1,6 +1,13 @@
 # Changelog
 
 
+## v0.11.2 (2020-07-01)
+
+### Fixes
+
+* Revert to PyChromecast 6 until we can figure out what to do about 7. [Stavros Korokithakis]
+
+
 ## v0.11.1 (2020-06-29)
 
 ### Fixes
