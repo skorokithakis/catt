@@ -5,7 +5,9 @@ import threading
 from enum import Enum
 from pathlib import Path
 from typing import Any
+from typing import List
 from typing import Optional
+from typing import Tuple
 
 import pychromecast
 from pychromecast.config import APP_BACKDROP as BACKDROP_APP_ID
@@ -38,6 +40,19 @@ class App:
         self.supported_device_types = supported_device_types
 
 
+class CCInfo:
+    def __init__(self, ip, port, manufacturer, model_name, cast_type):
+        self.ip = ip
+        self.port = port
+        self.manufacturer = manufacturer
+        self.model_name = model_name
+        self.cast_type = cast_type
+
+    @property
+    def all_info(self):
+        return self.__dict__
+
+
 DEFAULT_APP = App(app_name="default", app_id=MEDIA_RECEIVER_APP_ID, supported_device_types=["cast", "audio", "group"])
 APPS = [
     DEFAULT_APP,
@@ -46,13 +61,13 @@ APPS = [
 ]
 
 
-def get_chromecasts():
+def get_chromecasts() -> List[pychromecast.Chromecast]:
     devices = pychromecast.get_chromecasts()
     devices.sort(key=lambda cc: cc.name)
     return devices
 
 
-def get_chromecast(device_name):
+def get_chromecast(device_name: Optional[str]) -> Optional[pychromecast.Chromecast]:
     devices = get_chromecasts()
     if not devices:
         return None
@@ -66,7 +81,7 @@ def get_chromecast(device_name):
         return devices[0]
 
 
-def get_chromecast_with_ip(device_ip, port=DEFAULT_PORT):
+def get_chromecast_with_ip(device_ip: str, port: int = DEFAULT_PORT) -> Optional[pychromecast.Chromecast]:
     try:
         # tries = 1 is necessary in order to stop pychromecast engaging
         # in a retry behaviour when ip is correct, but port is wrong.
@@ -75,7 +90,7 @@ def get_chromecast_with_ip(device_ip, port=DEFAULT_PORT):
         return None
 
 
-def get_cast(device=None):
+def get_cast(device: Optional[str] = None) -> Tuple[pychromecast.Chromecast, CCInfo]:
     """
     Attempt to connect with requested device (or any device if none has been specified).
 
@@ -96,10 +111,13 @@ def get_cast(device=None):
         cc_info = CCInfo(cast.host, cast.port, None, None, cast.cast_type)
     else:
         cache = Cache()
-        cc_info = cache.get_data(device)
+        maybe_cc_info = cache.get_data(device)
 
-        if cc_info:
-            cast = get_chromecast_with_ip(cc_info.ip, cc_info.port)
+        if maybe_cc_info:
+            # Get the Chromecast from the CCInfo IP/port.
+            cast = get_chromecast_with_ip(maybe_cc_info.ip, maybe_cc_info.port)
+            cc_info = maybe_cc_info
+
         if not cast:
             cast = get_chromecast(device)
             if not cast:
@@ -112,7 +130,7 @@ def get_cast(device=None):
     return (cast, cc_info)
 
 
-def get_app(id_or_name, cast_type=None, strict=False, show_warning=False):
+def get_app(id_or_name: str, cast_type: Optional[str] = None, strict: bool = False, show_warning: bool = False) -> App:
     try:
         app = next(a for a in APPS if id_or_name in [a.id, a.name])
     except StopIteration:
@@ -139,7 +157,7 @@ def get_app(id_or_name, cast_type=None, strict=False, show_warning=False):
 
 # I'm not sure it serves any purpose to have get_app and get_controller
 # as two separate functions. I'll probably merge them at some point.
-def get_controller(cast, app, action=None, prep=None):
+def get_controller(cast, app, action=None, prep=None) -> "CastController":
     controller = {"youtube": YoutubeCastController, "dashcast": DashCastController}.get(app.name, DefaultCastController)
     if action and action not in dir(controller):
         raise ControllerError("This action is not supported by the {} controller".format(app.name))
@@ -204,19 +222,6 @@ class CattStore:
             pass
 
 
-class CCInfo:
-    def __init__(self, ip, port, manufacturer, model_name, cast_type):
-        self.ip = ip
-        self.port = port
-        self.manufacturer = manufacturer
-        self.model_name = model_name
-        self.cast_type = cast_type
-
-    @property
-    def all_info(self):
-        return self.__dict__
-
-
 class Cache(CattStore):
     def __init__(self):
         vhash = hashlib.sha1(__version__.encode()).hexdigest()[:8]
@@ -232,7 +237,7 @@ class Cache(CattStore):
             }
             self._write_store(cache_data)
 
-    def get_data(self, name: str):  # type: ignore
+    def get_data(self, name: Optional[str]) -> Optional[CCInfo]:  # type: ignore
         data = self._read_store()
         # In the case that cache has been initialized with no cc's on the
         # network, we need to ensure auto-discovery.
@@ -268,7 +273,7 @@ class CastState(CattStore):
         elif mode == StateMode.ARBI:
             self._write_store({})
 
-    def get_data(self, name: str):  # type: ignore
+    def get_data(self, name: str) -> str:  # type: ignore
         try:
             data = self._read_store()
             if set(next(iter(data.values())).keys()) != set(["controller", "data"]):

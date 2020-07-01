@@ -1,3 +1,6 @@
+from typing import Optional
+
+from .controllers import CastController
 from .controllers import get_app
 from .controllers import get_chromecast
 from .controllers import get_chromecast_with_ip
@@ -35,7 +38,7 @@ class CattDevice:
         self.uuid = None
 
         self._cast = None
-        self._cast_controller = None
+        self._cast_controller: Optional[CastController] = None
         if not lazy:
             self._create_cast()
 
