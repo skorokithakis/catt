@@ -13,6 +13,7 @@ from pychromecast.config import APP_MEDIA_RECEIVER as MEDIA_RECEIVER_APP_ID
 from pychromecast.config import APP_YOUTUBE as YOUTUBE_APP_ID
 from pychromecast.controllers.dashcast import DashCastController as PyChromecastDashCastController
 from pychromecast.controllers.youtube import YouTubeController
+from pychromecast.discovery import get_host_from_service_info, get_info_from_service
 
 from . import __version__
 from .error import AppSelectionError, CastError, ControllerError, ListenerError, StateFileError
@@ -23,6 +24,7 @@ GOOGLE_MEDIA_NAMESPACE = "urn:x-cast:com.google.cast.media"
 DEFAULT_PORT = 8009
 VALID_STATE_EVENTS = ["UNKNOWN", "IDLE", "BUFFERING", "PLAYING", "PAUSED"]
 CLOUD_APP_ID = "38579375"
+GOOGLE_ZCONF = "_googlecast._tcp.local."
 
 
 class App:
@@ -41,23 +43,43 @@ APPS = [
 
 
 def get_chromecasts():
-    devices, _browser = pychromecast.get_chromecasts()
+    devices, browser = pychromecast.get_chromecasts()
     devices.sort(key=lambda cc: cc.name)
-    return devices
+    return (devices, browser.zc)
 
 
-def get_chromecast(device_name):
-    devices = get_chromecasts()
+def get_ccinfos(devices=None, zconf=None):
+    if zconf is None:
+        devices, zconf = get_chromecasts()
+    return [get_ccinfo(d, zconf) for d in devices]
+
+
+def get_ccinfo(device, zconf=None):
+    if zconf is None:
+        ip, port = device.host, device.port
+    else:
+        service_name = (
+            "-".join(device.model_name.split()) + "-" + str(device.uuid).replace("-", "") + "." + GOOGLE_ZCONF
+        )
+        ip, port = get_host_from_service_info(get_info_from_service(service_name, zconf))
+    return CCInfo(ip, port, device.device.manufacturer, device.model_name, device.cast_type)
+
+
+def get_chromecast_and_ccinfo(device_name):
+    devices, zconf = pychromecast.get_chromecasts()
     if not devices:
-        return None
+        found = None
 
     if device_name:
         try:
-            return next(cc for cc in devices if cc.name == device_name)
+            found = next(cc for cc in devices if cc.name == device_name)
         except StopIteration:
-            return None
+            found = None
     else:
-        return devices[0]
+        found = devices[0]
+
+    cc_info = get_ccinfo(found, zconf) if found else None
+    return (found, cc_info)
 
 
 def get_chromecast_with_ip(device_ip, port=DEFAULT_PORT):
@@ -87,7 +109,7 @@ def get_cast(device=None):
         if not cast:
             msg = "No device found at {}".format(device)
             raise CastError(msg)
-        cc_info = CCInfo(cast.host, cast.port, None, None, cast.cast_type)
+        cc_info = get_ccinfo(cast)
     else:
         cache = Cache()
         cc_info = cache.get_data(device)
@@ -95,11 +117,10 @@ def get_cast(device=None):
         if cc_info:
             cast = get_chromecast_with_ip(cc_info.ip, cc_info.port)
         if not cast:
-            cast = get_chromecast(device)
+            cast, cc_info = get_chromecast_and_ccinfo(device)
             if not cast:
                 msg = 'Specified device "{}" not found'.format(device) if device else "No devices found"
                 raise CastError(msg)
-            cc_info = CCInfo(cast.host, cast.port, cast.device.manufacturer, cast.model_name, cast.cast_type)
             cache.set_data(cast.name, cc_info)
 
     cast.wait()
@@ -166,6 +187,19 @@ def setup_cast(device_name, video_url=None, controller=None, ytdl_options=None, 
     return (cast_controller, stream) if stream else cast_controller
 
 
+class CCInfo:
+    def __init__(self, ip, port, manufacturer, model_name, cast_type):
+        self.ip = ip
+        self.port = port
+        self.manufacturer = manufacturer
+        self.model_name = model_name
+        self.cast_type = cast_type
+
+    @property
+    def all_info(self):
+        return self.__dict__
+
+
 class CattStore:
     def __init__(self, store_path):
         self.store_path = store_path
@@ -198,19 +232,6 @@ class CattStore:
             pass
 
 
-class CCInfo:
-    def __init__(self, ip, port, manufacturer, model_name, cast_type):
-        self.ip = ip
-        self.port = port
-        self.manufacturer = manufacturer
-        self.model_name = model_name
-        self.cast_type = cast_type
-
-    @property
-    def all_info(self):
-        return self.__dict__
-
-
 class Cache(CattStore):
     def __init__(self):
         vhash = hashlib.sha1(__version__.encode()).hexdigest()[:8]
@@ -219,11 +240,8 @@ class Cache(CattStore):
         self._create_store_dir()
 
         if not self.store_path.is_file():
-            devices = get_chromecasts()
-            cache_data = {
-                d.name: CCInfo(d.host, d.port, d.device.manufacturer, d.model_name, d.cast_type).all_info
-                for d in devices
-            }
+            devices, zconf = get_chromecasts()
+            cache_data = {d.name: get_ccinfo(d, zconf).all_info for d in devices}
             self._write_store(cache_data)
 
     def get_data(self, name: str):  # type: ignore

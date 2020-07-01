@@ -1,4 +1,4 @@
-from .controllers import get_app, get_chromecast, get_chromecast_with_ip, get_chromecasts, get_controller
+from .controllers import get_app, get_chromecast_and_ccinfo, get_chromecast_with_ip, get_chromecasts, get_controller
 from .error import APIError, CastError
 from .stream_info import StreamInfo
 
@@ -38,7 +38,7 @@ class CattDevice:
         return "<CattDevice: {}>".format(self.name or self.ip_addr)
 
     def _create_cast(self) -> None:
-        self._cast = get_chromecast_with_ip(self.ip_addr) if self.ip_addr else get_chromecast(self.name)
+        self._cast = get_chromecast_with_ip(self.ip_addr) if self.ip_addr else get_chromecast_and_ccinfo(self.name)
         if not self._cast:
             raise CastError("Device could not be found")
         self._cast.wait()
