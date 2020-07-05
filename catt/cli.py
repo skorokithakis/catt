@@ -10,8 +10,8 @@ from urllib.parse import urlparse
 import click
 
 from . import __version__
-from .controllers import Cache
 from .controllers import CastState
+from .controllers import get_all_ccinfos_as_dict
 from .controllers import get_chromecasts
 from .controllers import setup_cast
 from .controllers import StateFileError
@@ -125,13 +125,10 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
 @click.group(context_settings=CONTEXT_SETTINGS)
-@click.option("--delete-cache", is_flag=True, help="Empty the Chromecast discovery cache.")
 @click.option("-d", "--device", metavar="NAME_OR_IP", callback=process_device, help="Select Chromecast device.")
 @click.version_option(version=__version__, prog_name="catt", message="%(prog)s v%(version)s, Yearning Yachtman.")
 @click.pass_context
-def cli(ctx, delete_cache, device):
-    if delete_cache:
-        Cache().clear()
+def cli(ctx, device):
     ctx.obj["device"] = device
 
 
@@ -403,17 +400,7 @@ def info(settings, json_output):
 def scan(json_output):
     if not json_output:
         click.echo("Scanning Chromecasts...")
-    devices_dict = {
-        d.name: {
-            "host": d.host,
-            "port": d.port,
-            "manufacturer": d.device.manufacturer,
-            "model_name": d.model_name,
-            "uuid": d.uuid,
-            "cast_type": d.cast_type,
-        }
-        for d in get_chromecasts()
-    }
+    devices_dict = get_all_ccinfos_as_dict()
 
     if json_output:
         echo_json(devices_dict)
@@ -421,7 +408,7 @@ def scan(json_output):
         if not devices_dict:
             raise CastError("No devices found")
         for device in devices_dict.keys():
-            click.echo("{host} - {device} - {manufacturer} {model_name}".format(device=device, **devices_dict[device]))
+            click.echo("{ip} - {device} - {manufacturer} {model_name}".format(device=device, **devices_dict[device]))
 
 
 @cli.command(short_help="Save the current state of the Chromecast for later use.")
@@ -526,17 +513,16 @@ def get_alias_from_config(config, device):
 
 def get_device_from_settings(settings):
     device = settings.get("device")
-    if device:
-        devices = get_chromecasts()
-        try:
-            if is_ipaddress(device):
-                next(d for d in devices if d.host == device)
-            else:
-                next(d for d in devices if d.name == device)
-        except StopIteration:
-            raise CliError('Specified device "{}" not found'.format(device))
-    else:
+    if not device:
         raise CliError("No device specified")
+    devices = get_chromecasts()
+    try:
+        if is_ipaddress(device):
+            next(d for d in devices if d.host == device)
+        else:
+            next(d for d in devices if d.name == device)
+    except StopIteration:
+        raise CliError('Specified device "{}" not found'.format(device))
     return device
 
 

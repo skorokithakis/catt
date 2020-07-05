@@ -1,13 +1,13 @@
-import hashlib
 import json
-import tempfile
 import threading
 from enum import Enum
 from pathlib import Path
 from typing import Any
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
+from typing import Union
 
 import pychromecast
 from pychromecast.config import APP_BACKDROP as BACKDROP_APP_ID
@@ -17,7 +17,6 @@ from pychromecast.config import APP_YOUTUBE as YOUTUBE_APP_ID
 from pychromecast.controllers.dashcast import DashCastController as PyChromecastDashCastController
 from pychromecast.controllers.youtube import YouTubeController
 
-from . import __version__
 from .error import AppSelectionError
 from .error import CastError
 from .error import ControllerError
@@ -41,11 +40,12 @@ class App:
 
 
 class CCInfo:
-    def __init__(self, ip, port, manufacturer, model_name, cast_type):
+    def __init__(self, ip, port, manufacturer, model_name, uuid, cast_type):
         self.ip = ip
         self.port = port
         self.manufacturer = manufacturer
         self.model_name = model_name
+        self.uuid = uuid
         self.cast_type = cast_type
 
     @property
@@ -61,24 +61,24 @@ APPS = [
 ]
 
 
-def get_chromecasts() -> List[pychromecast.Chromecast]:
-    devices = pychromecast.get_chromecasts()
+def get_chromecasts_and_ips(names: Optional[List[str]] = None) -> List[Tuple[pychromecast.Chromecast, str]]:
+    if names:
+        services, browser = pychromecast.discovery.discover_listed_chromecasts(friendly_names=names)
+    else:
+        services, browser = pychromecast.discovery.discover_chromecasts()
+    pychromecast.stop_discovery(browser)
+    return [(pychromecast.get_chromecast_from_service(s, browser.zc), s[4]) for s in services]
+
+
+def get_chromecasts(names: Optional[List[str]] = None) -> List[pychromecast.Chromecast]:
+    devices = [d for d, _ in get_chromecasts_and_ips(names=names)]
     devices.sort(key=lambda cc: cc.name)
     return devices
 
 
-def get_chromecast(device_name: Optional[str]) -> Optional[pychromecast.Chromecast]:
-    devices = get_chromecasts()
-    if not devices:
-        return None
-
-    if device_name:
-        try:
-            return next(cc for cc in devices if cc.name == device_name)
-        except StopIteration:
-            return None
-    else:
-        return devices[0]
+def get_chromecast(device_name: Union[str, None]) -> Optional[pychromecast.Chromecast]:
+    devices = get_chromecasts([device_name]) if device_name else get_chromecasts()
+    return devices[0] if devices else None
 
 
 def get_chromecast_with_ip(device_ip: str, port: int = DEFAULT_PORT) -> Optional[pychromecast.Chromecast]:
@@ -90,7 +90,15 @@ def get_chromecast_with_ip(device_ip: str, port: int = DEFAULT_PORT) -> Optional
         return None
 
 
-def get_cast(device: Optional[str] = None) -> Tuple[pychromecast.Chromecast, CCInfo]:
+def get_ccinfo(device: pychromecast.Chromecast, ip: Optional[str] = None) -> CCInfo:
+    return CCInfo(ip, device.port, device.device.manufacturer, device.model_name, device.uuid, device.cast_type)
+
+
+def get_all_ccinfos_as_dict() -> Dict[str, Dict[str, str]]:
+    return {d.name: get_ccinfo(d, i).all_info for d, i in get_chromecasts_and_ips()}
+
+
+def get_cast(device: Optional[str] = None) -> pychromecast.Chromecast:
     """
     Attempt to connect with requested device (or any device if none has been specified).
 
@@ -98,7 +106,7 @@ def get_cast(device: Optional[str] = None) -> Tuple[pychromecast.Chromecast, CCI
     :type device: str
     :returns: Chromecast object for use in a CastController,
               and CCInfo object for use in setup_cast and StreamInfo
-    :rtype: (pychromecast.Chromecast, CCInfo)
+    :rtype: pychromecast.Chromecast
     """
 
     cast = None
@@ -108,26 +116,14 @@ def get_cast(device: Optional[str] = None) -> Tuple[pychromecast.Chromecast, CCI
         if not cast:
             msg = "No device found at {}".format(device)
             raise CastError(msg)
-        cc_info = CCInfo(cast.host, cast.port, None, None, cast.cast_type)
     else:
-        cache = Cache()
-        maybe_cc_info = cache.get_data(device)
-
-        if maybe_cc_info:
-            # Get the Chromecast from the CCInfo IP/port.
-            cast = get_chromecast_with_ip(maybe_cc_info.ip, maybe_cc_info.port)
-            cc_info = maybe_cc_info
-
+        cast = get_chromecast(device)
         if not cast:
-            cast = get_chromecast(device)
-            if not cast:
-                msg = 'Specified device "{}" not found'.format(device) if device else "No devices found"
-                raise CastError(msg)
-            cc_info = CCInfo(cast.host, cast.port, cast.device.manufacturer, cast.model_name, cast.cast_type)
-            cache.set_data(cast.name, cc_info)
+            msg = 'Specified device "{}" not found'.format(device) if device else "No devices found"
+            raise CastError(msg)
 
     cast.wait()
-    return (cast, cc_info)
+    return cast
 
 
 def get_app(id_or_name: str, cast_type: Optional[str] = None, strict: bool = False, show_warning: bool = False) -> App:
@@ -165,7 +161,8 @@ def get_controller(cast, app, action=None, prep=None) -> "CastController":
 
 
 def setup_cast(device_name, video_url=None, controller=None, ytdl_options=None, action=None, prep=None):
-    cast, cc_info = get_cast(device_name)
+    cast = get_cast(device_name)
+    cc_info = get_ccinfo(cast)
     cast_type = cc_info.cast_type
     stream = StreamInfo(video_url, device_info=cc_info, ytdl_options=ytdl_options) if video_url else None
 
@@ -220,41 +217,6 @@ class CattStore:
             self.store_path.parent.rmdir()
         except FileNotFoundError:
             pass
-
-
-class Cache(CattStore):
-    def __init__(self):
-        vhash = hashlib.sha1(__version__.encode()).hexdigest()[:8]
-        cache_path = Path(tempfile.gettempdir(), "catt_{}_cache".format(vhash), "chromecast_hosts")
-        super(Cache, self).__init__(cache_path)
-        self._create_store_dir()
-
-        if not self.store_path.is_file():
-            devices = get_chromecasts()
-            cache_data = {
-                d.name: CCInfo(d.host, d.port, d.device.manufacturer, d.model_name, d.cast_type).all_info
-                for d in devices
-            }
-            self._write_store(cache_data)
-
-    def get_data(self, name: Optional[str]) -> Optional[CCInfo]:  # type: ignore
-        data = self._read_store()
-        # In the case that cache has been initialized with no cc's on the
-        # network, we need to ensure auto-discovery.
-        if not data:
-            return None
-        if name:
-            fetched = data.get(name)
-        else:
-            # When the user does not specify a device, we need to make an attempt
-            # to consistently return the same IP, thus the alphabetical sorting.
-            fetched = data[min(data, key=str)]
-        return CCInfo(**fetched) if fetched else None
-
-    def set_data(self, name: str, device_entry: CCInfo) -> None:  # type: ignore
-        data = self._read_store()
-        data[name] = device_entry.all_info
-        self._write_store(data)
 
 
 class StateMode(Enum):
