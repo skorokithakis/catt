@@ -104,8 +104,7 @@ def get_cast(device: Optional[str] = None) -> pychromecast.Chromecast:
 
     :param device: Can be an ip-address or a name.
     :type device: str
-    :returns: Chromecast object for use in a CastController,
-              and CCInfo object for use in setup_cast and StreamInfo
+    :returns: Chromecast object for use in a CastController.
     :rtype: pychromecast.Chromecast
     """
 
