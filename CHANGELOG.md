@@ -1,6 +1,13 @@
 # Changelog
 
 
+## Unreleased
+
+### Fixes
+
+* Fix spurious "Invalid byte range" error. [Stavros Korokithakis]
+
+
 ## v0.11.2 (2020-07-01)
 
 ### Fixes
