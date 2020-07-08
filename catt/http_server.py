@@ -45,7 +45,9 @@ def parse_byte_range(byte_range: str) -> Tuple[Optional[int], Optional[int]]:
     if not match:
         raise ValueError("Invalid byte range {}".format(byte_range))
 
-    first, last = [int(x) for x in match.groups() if x]
+    first = int(match.groups()[0]) if match.groups()[0] else None
+    last = int(match.groups()[1]) if match.groups()[1] else None
+
     if last and last < first:
         raise ValueError("Invalid byte range {}".format(byte_range))
     return first, last
