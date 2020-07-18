@@ -1,7 +1,7 @@
 # Changelog
 
 
-## Unreleased
+## v0.11.3 (2020-07-18)
 
 ### Fixes
 
