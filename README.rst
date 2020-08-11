@@ -60,8 +60,13 @@ Please note that the Chromecast has a slow CPU but a reasonably recent version o
 resolution is 1280x720.
 
 If you want to pass youtube-dl options to catt through the `-y` command-line flag, you need to use youtube-dl's
-`internal option name <https://github.com/ytdl-org/youtube-dl/blob/master/youtube_dl/__init__.py#L317>`, rather
+`internal option name <https://github.com/ytdl-org/youtube-dl/blob/master/youtube_dl/__init__.py#L317>`_, rather
 than its command-line name.
+
+If you notice that catt stops working with video sites (YouTube, Vimeo, etc), just upgrade youtube-dl with `pip install
+-U youtube-dl` and that will probably fix it. This is because sites keep changing and youtube-dl is updated very
+regularly to keep them all working.
+
 
 Configuration file
 """"""""""""""""""
@@ -93,6 +98,7 @@ You can write an alias name for a device to ``catt.cfg`` by doing::
 
     catt -d <name_of_chromecast> set_alias <alias>
 
+
 Contributing
 ------------
 
@@ -122,6 +128,7 @@ Info
 
 * Free software: BSD license
 
+
 Features
 --------
 
@@ -129,6 +136,7 @@ Features
 * From `many, many online sources <http://rg3.github.io/youtube-dl/supportedsites.html>`_
 * Casts local files (videos, photos and music)
 * Casts any website to Chromecast
+
 
 Thanks
 ------

@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 import unittest
 
-from catt.controllers import Cache, CCInfo
-from catt.stream_info import StreamInfo
 from youtube_dl.utils import DownloadError
+
+from catt.controllers import Cache
+from catt.controllers import CCInfo
+from catt.stream_info import StreamInfo
 
 
 def ignore_tmr_failure(func):

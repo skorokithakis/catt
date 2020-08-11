@@ -1,5 +1,13 @@
-from .controllers import get_app, get_chromecast, get_chromecast_with_ip, get_chromecasts, get_controller
-from .error import APIError, CastError
+from typing import Optional
+
+from .controllers import CastController
+from .controllers import get_app
+from .controllers import get_chromecast
+from .controllers import get_chromecast_with_ip
+from .controllers import get_chromecasts
+from .controllers import get_controller
+from .error import APIError
+from .error import CastError
 from .stream_info import StreamInfo
 
 
@@ -30,7 +38,8 @@ class CattDevice:
         self.uuid = None
 
         self._cast = None
-        self._cast_controller = None
+        # Type comment for compatibility with Py3.5-.
+        self._cast_controller = None  # type: Optional[CastController]
         if not lazy:
             self._create_cast()
 

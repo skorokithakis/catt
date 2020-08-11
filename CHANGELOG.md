@@ -1,13 +1,31 @@
 # Changelog
 
 
-## Unreleased
+## v0.11.3 (2020-07-18)
 
 ### Features
 
 * Add subtitles to the API. [Stavros Korokithakis]
 
 ### Fixes
+
+* Fix spurious "Invalid byte range" error. [Stavros Korokithakis]
+
+
+## v0.11.2 (2020-07-01)
+
+### Fixes
+
+* Revert to PyChromecast 6 until we can figure out what to do about 7. [Stavros Korokithakis]
+
+
+## v0.11.1 (2020-06-29)
+
+### Fixes
+
+* Force pychromecast 7, update to new api. [Ian Calvert]
+
+* Recognize the .jpeg suffix as a jpeg file (#262) [Stavros Korokithakis]
 
 * Create parent directories if config dir doesn't exist (fixes #251) (#252) [Stavros Korokithakis]
 
