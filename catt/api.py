@@ -67,22 +67,24 @@ class CattDevice:
             self._create_controller()
         return self._cast_controller
 
-    def play_url(self, url: str, resolve: bool = False, block: bool = False) -> None:
+    def play_url(self, url: str, resolve: bool = False, block: bool = False, subtitle_url: str = None) -> None:
         """
         Initiate playback of content.
 
-        :param url: Network location of content.
-        :param resolve: Try to resolve location of content stream with Youtube-dl.
-                        If this is not set, it is assumed that the url points directly to the stream.
-        :param block: Block until playback has stopped,
-                      either by end of content being reached, or by interruption.
+        :param url:          Network location of content.
+        :param resolve:      Try to resolve location of content stream with Youtube-dl.
+                             If this is not set, it is assumed that the url points directly to the stream.
+        :param block:        Block until playback has stopped,
+                             either by end of content being reached, or by interruption.
+        :param subtitle_url: A URL to a subtitle file to use when playing. Make sure CORS headers are correct on the
+                             server when using this, and that the subtitles are in a suitable format.
         """
 
         if resolve:
             stream = StreamInfo(url)
             url = stream.video_url
         self.controller.prep_app()
-        self.controller.play_media_url(url)
+        self.controller.play_media_url(url, subtitles=subtitle_url)
 
         if self.controller.wait_for(["PLAYING"], timeout=10):
             if block:
