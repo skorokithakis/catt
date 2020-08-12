@@ -76,7 +76,8 @@ class CattDevice:
                              If this is not set, it is assumed that the url points directly to the stream.
         :param block:        Block until playback has stopped,
                              either by end of content being reached, or by interruption.
-        :param subtitle_url: A URL to a subtitle file to use when playing.
+        :param subtitle_url: A URL to a subtitle file to use when playing. Make sure CORS headers are correct on the
+                             server when using this, and that the subtitles are in a suitable format.
         """
 
         if resolve:
