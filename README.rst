@@ -67,6 +67,10 @@ If you notice that catt stops working with video sites (YouTube, Vimeo, etc), ju
 -U youtube-dl` and that will probably fix it. This is because sites keep changing and youtube-dl is updated very
 regularly to keep them all working.
 
+You can also run ``catt`` in Docker, if you prefer::
+
+    docker run -i -t python:3.7 /bin/bash -c "pip install catt; catt cast 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'"
+
 
 Configuration file
 """"""""""""""""""

@@ -5,11 +5,7 @@
 
 ### Features
 
-* Add subtitles to the API. [Stavros Korokithakis]
-
-### Fixes
-
-* Recognize the .jpeg suffix as a jpeg file. [Stavros Korokithakis]
+* Add remote-only subtitles to the API (#258) [Stavros Korokithakis]
 
 
 ## v0.11.3 (2020-07-18)
