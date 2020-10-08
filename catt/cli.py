@@ -12,7 +12,7 @@ import click
 from . import __version__
 from .controllers import CastState
 from .controllers import get_all_ccinfos_as_dict
-from .controllers import get_chromecasts
+from .controllers import get_chromecasts_and_ips
 from .controllers import setup_cast
 from .controllers import StateFileError
 from .controllers import StateMode
@@ -514,18 +514,18 @@ def get_alias_from_config(config, device):
 
 
 def get_device_from_settings(settings):
-    device = settings.get("device")
-    if not device:
+    device_desc = settings.get("device")
+    if not device_desc:
         raise CliError("No device specified")
-    devices = get_chromecasts()
+    devices_and_ips = get_chromecasts_and_ips()
     try:
-        if is_ipaddress(device):
-            next(d for d in devices if d.host == device)
+        if is_ipaddress(device_desc):
+            next(d for d in devices_and_ips if d[1] == device_desc)
         else:
-            next(d for d in devices if d.name == device)
+            next(d for d in devices_and_ips if d[0].name == device_desc)
     except StopIteration:
-        raise CliError('Specified device "{}" not found'.format(device))
-    return device
+        raise CliError('Specified device "{}" not found'.format(device_desc))
+    return device_desc
 
 
 def writeconfig(config):
