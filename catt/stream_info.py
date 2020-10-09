@@ -34,7 +34,7 @@ DEFAULT_YTDL_OPTS = {"quiet": True, "no_warnings": True}
 class StreamInfo:
     def __init__(self, video_url, device_info=None, ytdl_options=None, throw_ytdl_dl_errs=False):
         self._throw_ytdl_dl_errs = throw_ytdl_dl_errs
-        self.local_ip = get_local_ip(device_info.ip) if device_info else None
+        self.local_ip = get_local_ip(device_info["ip"]) if device_info else None
         self.port = random.randrange(45000, 47000) if device_info else None
 
         if "://" in video_url:
@@ -45,8 +45,8 @@ class StreamInfo:
                 self._preinfo = self._get_stream_preinfo(self._preinfo["url"])
             self.is_local_file = False
 
-            model = (device_info.manufacturer, device_info.model_name) if device_info else None
-            cast_type = device_info.cast_type if device_info else None
+            model = (device_info["manufacturer"], device_info["model_name"]) if device_info else None
+            cast_type = device_info["cast_type"] if device_info else None
             if "format" in self._ydl.params:
                 # We pop the "format" item, as it will make get_stream_info fail,
                 # if it holds an invalid value.

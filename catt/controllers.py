@@ -3,10 +3,8 @@ import threading
 from enum import Enum
 from pathlib import Path
 from typing import Any
-from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Tuple
 from typing import Union
 
 import pychromecast
@@ -39,18 +37,23 @@ class App:
         self.supported_device_types = supported_device_types
 
 
-class CCInfo:
-    def __init__(self, ip, port, manufacturer, model_name, uuid, cast_type):
+class CastDevice:
+    def __init__(self, cast: pychromecast.Chromecast, ip: str, port: int) -> None:
+        self.cast = cast
         self.ip = ip
         self.port = port
-        self.manufacturer = manufacturer
-        self.model_name = model_name
-        self.uuid = uuid
-        self.cast_type = cast_type
 
     @property
-    def all_info(self):
-        return self.__dict__
+    def info(self):
+        return {
+            "ip": self.ip,
+            "port": self.port,
+            "manufacturer": self.cast.device.manufacturer,
+            "model_name": self.cast.model_name,
+            "uuid": self.cast.uuid,
+            "cast_type": self.cast.cast_type,
+            "name": self.cast.name,
+        }
 
 
 DEFAULT_APP = App(app_name="default", app_id=MEDIA_RECEIVER_APP_ID, supported_device_types=["cast", "audio", "group"])
@@ -61,45 +64,39 @@ APPS = [
 ]
 
 
-def get_chromecasts_and_ips(names: Optional[List[str]] = None) -> List[Tuple[pychromecast.Chromecast, str]]:
+def get_cast_devices(names: Optional[List[str]] = None) -> List[CastDevice]:
     if names:
         services, browser = pychromecast.discovery.discover_listed_chromecasts(friendly_names=names)
     else:
         services, browser = pychromecast.discovery.discover_chromecasts()
     pychromecast.stop_discovery(browser)
 
-    devices = [(pychromecast.get_chromecast_from_service(s, browser.zc), s[4]) for s in services]
-    devices.sort(key=lambda d: d[0].name)
+    devices = [CastDevice(pychromecast.get_chromecast_from_service(s, browser.zc), s[4], s[5]) for s in services]
+    devices.sort(key=lambda d: d.cast.name)
     return devices
 
 
-def get_chromecasts() -> List[pychromecast.Chromecast]:
-    return [d for d, _ in get_chromecasts_and_ips()]
+def get_cast_devices_info():
+    devices = get_cast_devices()
+    return {d.cast.name: d.info for d in devices}
 
 
-def get_chromecast_and_ip(device_name: Union[str, None]) -> Union[Tuple[pychromecast.Chromecast, str], None]:
-    devices = get_chromecasts_and_ips([device_name]) if device_name else get_chromecasts_and_ips()
+def get_cast_device_with_name(device_name: Union[str, None]) -> Any:
+    devices = get_cast_devices([device_name]) if device_name else get_cast_devices()
     return devices[0] if devices else None
 
 
-def get_chromecast_with_ip(device_ip: str, port: int = DEFAULT_PORT) -> Optional[pychromecast.Chromecast]:
+def get_cast_device_with_ip(device_ip: str, port: int = DEFAULT_PORT) -> Any:
     try:
         # tries = 1 is necessary in order to stop pychromecast engaging
         # in a retry behaviour when ip is correct, but port is wrong.
-        return pychromecast.Chromecast(device_ip, port=port, tries=1)
+        cast = pychromecast.Chromecast(device_ip, port=port, tries=1)
+        return CastDevice(cast, device_ip, port)
     except pychromecast.error.ChromecastConnectionError:
         return None
 
 
-def get_ccinfo(device: pychromecast.Chromecast, ip: Optional[str] = None) -> CCInfo:
-    return CCInfo(ip, device.port, device.device.manufacturer, device.model_name, device.uuid, device.cast_type)
-
-
-def get_all_ccinfos_as_dict() -> Dict[str, Dict[str, str]]:
-    return {d.name: get_ccinfo(d, i).all_info for d, i in get_chromecasts_and_ips()}
-
-
-def get_cast(device_desc: Optional[str] = None) -> Tuple[pychromecast.Chromecast, CCInfo]:
+def get_cast_device(device_desc: Optional[str] = None) -> CastDevice:
     """
     Attempt to connect with requested device (or any device if none has been specified).
 
@@ -109,24 +106,21 @@ def get_cast(device_desc: Optional[str] = None) -> Tuple[pychromecast.Chromecast
     :rtype: pychromecast.Chromecast
     """
 
-    cast = None
+    cast_device = None
 
     if device_desc and is_ipaddress(device_desc):
-        cast = get_chromecast_with_ip(device_desc, DEFAULT_PORT)
-        if not cast:
+        cast_device = get_cast_device_with_ip(device_desc, DEFAULT_PORT)
+        if not cast_device:
             msg = "No device found at {}".format(device_desc)
             raise CastError(msg)
-        cc_info = get_ccinfo(cast, device_desc)
     else:
-        cast_and_ip = get_chromecast_and_ip(device_desc)
-        if not cast_and_ip:
+        cast_device = get_cast_device_with_name(device_desc)
+        if not cast_device:
             msg = 'Specified device "{}" not found'.format(device_desc) if device_desc else "No devices found"
             raise CastError(msg)
-        cast, ipadd = cast_and_ip
-        cc_info = get_ccinfo(cast, ipadd)
 
-    cast.wait()
-    return (cast, cc_info)
+    cast_device.cast.wait()
+    return cast_device
 
 
 def get_app(id_or_name: str, cast_type: Optional[str] = None, strict: bool = False, show_warning: bool = False) -> App:
@@ -163,10 +157,10 @@ def get_controller(cast, app, action=None, prep=None) -> "CastController":
     return controller(cast, app, prep=prep)
 
 
-def setup_cast(device_name, video_url=None, controller=None, ytdl_options=None, action=None, prep=None):
-    cast, cc_info = get_cast(device_name)
-    cast_type = cc_info.cast_type
-    stream = StreamInfo(video_url, device_info=cc_info, ytdl_options=ytdl_options) if video_url else None
+def setup_cast(device_desc, video_url=None, controller=None, ytdl_options=None, action=None, prep=None):
+    cast_device = get_cast_device(device_desc)
+    cast_type = cast_device.cast.cast_type
+    stream = StreamInfo(video_url, device_info=cast_device.info, ytdl_options=ytdl_options) if video_url else None
 
     if controller:
         app = get_app(controller, cast_type, strict=True)
@@ -180,12 +174,12 @@ def setup_cast(device_name, video_url=None, controller=None, ytdl_options=None, 
             app = get_app("default")
     else:
         # cast.app_id can be None, in the case of an inactive audio device.
-        if cast.app_id:
-            app = get_app(cast.app_id, cast_type)
+        if cast_device.cast.app_id:
+            app = get_app(cast_device.cast.app_id, cast_type)
         else:
             app = get_app("default")
 
-    cast_controller = get_controller(cast, app, action=action, prep=prep)
+    cast_controller = get_controller(cast_device.cast, app, action=action, prep=prep)
     return (cast_controller, stream) if stream else cast_controller
 
 

@@ -11,8 +11,7 @@ import click
 
 from . import __version__
 from .controllers import CastState
-from .controllers import get_all_ccinfos_as_dict
-from .controllers import get_chromecasts_and_ips
+from .controllers import get_cast_devices_info
 from .controllers import setup_cast
 from .controllers import StateFileError
 from .controllers import StateMode
@@ -402,15 +401,15 @@ def info(settings, json_output):
 def scan(json_output):
     if not json_output:
         click.echo("Scanning Chromecasts...")
-    devices_dict = get_all_ccinfos_as_dict()
+    devices = get_cast_devices_info()
 
     if json_output:
-        echo_json(devices_dict)
+        echo_json(devices)
     else:
-        if not devices_dict:
+        if not devices:
             raise CastError("No devices found")
-        for device in devices_dict.keys():
-            click.echo("{ip} - {device} - {manufacturer} {model_name}".format(device=device, **devices_dict[device]))
+        for device in devices.keys():
+            click.echo("{ip} - {device} - {manufacturer} {model_name}".format(device=device, **devices[device]))
 
 
 @cli.command(short_help="Save the current state of the Chromecast for later use.")
@@ -517,12 +516,12 @@ def get_device_from_settings(settings):
     device_desc = settings.get("device")
     if not device_desc:
         raise CliError("No device specified")
-    devices_and_ips = get_chromecasts_and_ips()
+    devices = get_cast_devices_info()
     try:
         if is_ipaddress(device_desc):
-            next(d for d in devices_and_ips if d[1] == device_desc)
+            next(d for d in devices if d["ip"] == device_desc)
         else:
-            next(d for d in devices_and_ips if d[0].name == device_desc)
+            next(d for d in devices if d["name"] == device_desc)
     except StopIteration:
         raise CliError('Specified device "{}" not found'.format(device_desc))
     return device_desc
