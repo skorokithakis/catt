@@ -66,6 +66,16 @@ class CastDevice:
 
 
 def get_cast_devices(names: Optional[List[str]] = None) -> List[CastDevice]:
+    """
+    Discover all available devices, optionally filtering them with list of specific device names
+    (which will speedup discovery, as pychromecast does this in a non-blocking manner).
+
+    :param names: Optional list of device names.
+    :type names: List[str]
+    :returns: List of CastDevice wrapper objects containing cast object and additional ip/port info.
+    :rtype: List[CastDevice]
+    """
+
     if names:
         services, browser = pychromecast.discovery.discover_listed_chromecasts(friendly_names=names)
     else:
@@ -78,16 +88,43 @@ def get_cast_devices(names: Optional[List[str]] = None) -> List[CastDevice]:
 
 
 def get_cast_devices_info() -> Dict[str, Dict[str, Union[str, int]]]:
+    """
+    Discover all available devices, and collect info from them.
+
+    :returns: Various device info, packed in dict w. device names as keys.
+    :rtype: Dict
+    """
+
     devices = get_cast_devices()
     return {d.cast.name: d.info for d in devices}
 
 
 def get_cast_device_with_name(device_name: Union[str, None]) -> Optional[CastDevice]:
+    """
+    Get specific device if supplied name is not None,
+    otherwise the device with the name that has the lowest alphabetical value.
+
+    :param device_name: Name of device.
+    :type device_name: str
+    :returns: CastDevice wrapper object containing cast object and additional ip/port info.
+    :rtype: CastDevice
+    """
+
     devices = get_cast_devices([device_name]) if device_name else get_cast_devices()
     return devices[0] if devices else None
 
 
 def get_cast_device_with_ip(device_ip: str, port: int = DEFAULT_PORT) -> Optional[CastDevice]:
+    """
+    Get specific device using its ip-address (and optionally port).
+
+    :param device_ip: Ip-address of device.
+    :type device_name: str
+    :param port: Optional port number of device.
+    :returns: CastDevice wrapper object containing cast object and additional ip/port info.
+    :rtype: CastDevice
+    """
+
     try:
         # tries = 1 is necessary in order to stop pychromecast engaging
         # in a retry behaviour when ip is correct, but port is wrong.
