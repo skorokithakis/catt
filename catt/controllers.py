@@ -81,12 +81,12 @@ def get_cast_devices_info():
     return {d.cast.name: d.info for d in devices}
 
 
-def get_cast_device_with_name(device_name: Union[str, None]) -> Any:
+def get_cast_device_with_name(device_name: Union[str, None]) -> Optional[CastDevice]:
     devices = get_cast_devices([device_name]) if device_name else get_cast_devices()
     return devices[0] if devices else None
 
 
-def get_cast_device_with_ip(device_ip: str, port: int = DEFAULT_PORT) -> Any:
+def get_cast_device_with_ip(device_ip: str, port: int = DEFAULT_PORT) -> Optional[CastDevice]:
     try:
         # tries = 1 is necessary in order to stop pychromecast engaging
         # in a retry behaviour when ip is correct, but port is wrong.
