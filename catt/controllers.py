@@ -3,6 +3,7 @@ import threading
 from enum import Enum
 from pathlib import Path
 from typing import Any
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
@@ -76,7 +77,7 @@ def get_cast_devices(names: Optional[List[str]] = None) -> List[CastDevice]:
     return devices
 
 
-def get_cast_devices_info():
+def get_cast_devices_info() -> Dict[str, Dict[str, Union[str, int]]]:
     devices = get_cast_devices()
     return {d.cast.name: d.info for d in devices}
 
