@@ -159,7 +159,9 @@ def get_controller(cast, app, action=None, prep=None) -> "CastController":
 
 def setup_cast(device_desc, video_url=None, controller=None, ytdl_options=None, action=None, prep=None):
     cast_device = get_cast_device(device_desc)
-    cast_type = cast_device.cast.cast_type
+    cast = cast_device.cast
+    cast_type = cast.cast_type
+    app_id = cast.app_id
     stream = StreamInfo(video_url, device_info=cast_device.info, ytdl_options=ytdl_options) if video_url else None
 
     if controller:
@@ -174,12 +176,12 @@ def setup_cast(device_desc, video_url=None, controller=None, ytdl_options=None, 
             app = get_app("default")
     else:
         # cast.app_id can be None, in the case of an inactive audio device.
-        if cast_device.cast.app_id:
-            app = get_app(cast_device.cast.app_id, cast_type)
+        if app_id:
+            app = get_app(app_id, cast_type)
         else:
             app = get_app("default")
 
-    cast_controller = get_controller(cast_device.cast, app, action=action, prep=prep)
+    cast_controller = get_controller(cast, app, action=action, prep=prep)
     return (cast_controller, stream) if stream else cast_controller
 
 
