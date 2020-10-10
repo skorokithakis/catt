@@ -37,6 +37,14 @@ class App:
         self.supported_device_types = supported_device_types
 
 
+DEFAULT_APP = App(app_name="default", app_id=MEDIA_RECEIVER_APP_ID, supported_device_types=["cast", "audio", "group"])
+APPS = [
+    DEFAULT_APP,
+    App(app_name="youtube", app_id=YOUTUBE_APP_ID, supported_device_types=["cast"]),
+    App(app_name="dashcast", app_id=DASHCAST_APP_ID, supported_device_types=["cast", "audio"]),
+]
+
+
 class CastDevice:
     def __init__(self, cast: pychromecast.Chromecast, ip: str, port: int) -> None:
         self.cast = cast
@@ -54,14 +62,6 @@ class CastDevice:
             "cast_type": self.cast.cast_type,
             "name": self.cast.name,
         }
-
-
-DEFAULT_APP = App(app_name="default", app_id=MEDIA_RECEIVER_APP_ID, supported_device_types=["cast", "audio", "group"])
-APPS = [
-    DEFAULT_APP,
-    App(app_name="youtube", app_id=YOUTUBE_APP_ID, supported_device_types=["cast"]),
-    App(app_name="dashcast", app_id=DASHCAST_APP_ID, supported_device_types=["cast", "audio"]),
-]
 
 
 def get_cast_devices(names: Optional[List[str]] = None) -> List[CastDevice]:
