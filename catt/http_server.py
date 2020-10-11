@@ -53,7 +53,11 @@ def parse_byte_range(byte_range: str) -> Tuple[Optional[int], Optional[int]]:
 
 
 def serve_file(
-    filename: str, address: str = "", port: int = 45114, content_type=None, single_req=False,
+    filename: str,
+    address: str = "",
+    port: int = 45114,
+    content_type=None,
+    single_req=False,
 ):
     class FileHandler(BaseHTTPRequestHandler):
         def format_size(self, size):
@@ -88,7 +92,8 @@ def serve_file(
                 else:
                     self.send_response(206)
                     self.send_header(
-                        "Content-Range", "bytes {}-{}/{}".format(first, last, stats.st_size),
+                        "Content-Range",
+                        "bytes {}-{}/{}".format(first, last, stats.st_size),
                     )
 
                 self.send_header("Accept-Ranges", "bytes")
@@ -96,7 +101,8 @@ def serve_file(
                 self.send_header("Content-Length", str(response_length))
                 self.send_header("Access-Control-Allow-Origin", "*")
                 self.send_header(
-                    "Last-Modified", time.strftime("%a %d %b %Y %H:%M:%S GMT", time.localtime(stats.st_mtime)),
+                    "Last-Modified",
+                    time.strftime("%a %d %b %Y %H:%M:%S GMT", time.localtime(stats.st_mtime)),
                 )
                 self.end_headers()
 
