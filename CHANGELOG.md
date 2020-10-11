@@ -7,6 +7,10 @@
 
 * Add remote-only subtitles to the API (#258) [Stavros Korokithakis]
 
+### Fixes
+
+* Wait longer for the Chromecast to connect to the HTTP server (#295) [Edd Barrett]
+
 
 ## v0.11.3 (2020-07-18)
 

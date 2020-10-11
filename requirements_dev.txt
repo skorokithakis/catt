@@ -1,4 +1,4 @@
-wheel==0.23.0
+wheel
 watchdog==0.8.3
 flake8
 pep8-naming!=0.6.0
