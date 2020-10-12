@@ -11,10 +11,10 @@ import click
 
 from . import __version__
 from .controllers import CastState
-from .controllers import get_cast_devices_info
 from .controllers import setup_cast
 from .controllers import StateFileError
 from .controllers import StateMode
+from .discovery import get_cast_devices_info
 from .error import CastError
 from .error import CattUserError
 from .error import CliError
