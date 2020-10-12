@@ -1,10 +1,11 @@
 from typing import Optional
 
 from .controllers import CastController
+from .controllers import CastDevice
 from .controllers import get_app
-from .controllers import get_chromecast
-from .controllers import get_chromecast_with_ip
-from .controllers import get_chromecasts
+from .controllers import get_cast_device_with_ip
+from .controllers import get_cast_device_with_name
+from .controllers import get_cast_devices
 from .controllers import get_controller
 from .error import APIError
 from .error import CastError
@@ -14,7 +15,7 @@ from .stream_info import StreamInfo
 def discover() -> list:
     """Perform discovery of devices present on local network, and return result."""
 
-    return [CattDevice(ip_addr=d.host) for d in get_chromecasts()]
+    return [CattDevice(ip_addr=d.ip) for d in get_cast_devices()]
 
 
 class CattDevice:
@@ -37,7 +38,7 @@ class CattDevice:
         self.ip_addr = ip_addr
         self.uuid = None
 
-        self._cast = None
+        self._cast_device = None  # type: Optional[CastDevice]
         # Type comment for compatibility with Py3.5-.
         self._cast_controller = None  # type: Optional[CastController]
         if not lazy:
@@ -47,21 +48,24 @@ class CattDevice:
         return "<CattDevice: {}>".format(self.name or self.ip_addr)
 
     def _create_cast(self) -> None:
-        self._cast = get_chromecast_with_ip(self.ip_addr) if self.ip_addr else get_chromecast(self.name)
-        if not self._cast:
+        self._cast_device = (
+            get_cast_device_with_ip(self.ip_addr) if self.ip_addr else get_cast_device_with_name(self.name)
+        )
+        if not self._cast_device:
             raise CastError("Device could not be found")
-        self._cast.wait()
-
+        self._cast = self._cast_device.cast
         self.name = self._cast.name
-        self.ip_addr = self._cast.host
+        self.ip_addr = self._cast_device.ip
         self.uuid = self._cast.uuid
+
+        self._cast.wait()
 
     def _create_controller(self) -> None:
         self._cast_controller = get_controller(self._cast, get_app("default"))
 
     @property
     def controller(self):
-        if not self._cast:
+        if not self._cast_device:
             self._create_cast()
         if not self._cast_controller:
             self._create_controller()
