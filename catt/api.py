@@ -1,12 +1,12 @@
 from typing import Optional
 
 from .controllers import CastController
-from .controllers import CastDevice
 from .controllers import get_app
-from .controllers import get_cast_device_with_ip
-from .controllers import get_cast_device_with_name
-from .controllers import get_cast_devices
 from .controllers import get_controller
+from .discovery import CastDevice
+from .discovery import get_cast_device_with_ip
+from .discovery import get_cast_device_with_name
+from .discovery import get_cast_devices
 from .error import APIError
 from .error import CastError
 from .stream_info import StreamInfo
