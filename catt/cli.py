@@ -96,18 +96,20 @@ def process_subtitles(ctx, param, value):
     return value
 
 
-def process_device(ctx, param, value):
+def process_device(device_desc, aliases):
     """
     Resolve real device name when value is an alias.
 
-    :param value: Can be an ip-address or a name (alias or real name).
-    :type value: str
+    :param device_desc: Can be an ip-address or a name (alias or real name).
+    :type device_desc: str
+    :param aliases: Dictionary of device aliases and their corresponding real names.
+    :type aliases: Dict[str, str]
     """
 
-    if is_ipaddress(value):
-        return value
+    if is_ipaddress(device_desc):
+        return device_desc
     else:
-        return ctx.default_map["aliases"].get(value, value)
+        return aliases.get(device_desc, device_desc)
 
 
 def fail_if_no_ip(ipaddr):
@@ -126,11 +128,13 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
 @click.group(context_settings=CONTEXT_SETTINGS)
-@click.option("-d", "--device", metavar="NAME_OR_IP", callback=process_device, help="Select Chromecast device.")
+@click.option("-d", "--device", metavar="NAME_OR_IP", help="Select Chromecast device.")
 @click.version_option(version=__version__, prog_name="catt", message="%(prog)s v%(version)s, Yearning Yachtman.")
 @click.pass_context
 def cli(ctx, device):
-    ctx.obj["device"] = device
+    device_from_config = ctx.obj["options"].get("device")
+    ctx.obj["selected_device"] = process_device(device or device_from_config, ctx.obj["aliases"])
+    ctx.obj["selected_device_is_from_cli"] = bool(device)
 
 
 @cli.command(short_help="Send a video to a Chromecast for playing.")
@@ -170,7 +174,7 @@ def cast(settings, video_url, subtitles, force_default, random_play, no_subs, no
     playlist_playback = False
     st_thr = su_thr = subs = None
     cst, stream = setup_cast(
-        settings["device"], video_url=video_url, prep="app", controller=controller, ytdl_options=ytdl_option
+        settings["selected_device"], video_url=video_url, prep="app", controller=controller, ytdl_options=ytdl_option
     )
     media_is_image = stream.guessed_content_category == "image"
     local_or_remote = "local" if stream.is_local_file else "remote"
@@ -240,7 +244,7 @@ def cast(settings, video_url, subtitles, force_default, random_play, no_subs, no
 @click.argument("url", callback=process_url)
 @click.pass_obj
 def cast_site(settings, url):
-    cst = setup_cast(settings["device"], controller="dashcast", action="load_url", prep="app")
+    cst = setup_cast(settings["selected_device"], controller="dashcast", action="load_url", prep="app")
     click.echo('Casting {} on "{}"...'.format(url, cst.cc_name))
     cst.load_url(url)
 
@@ -250,7 +254,7 @@ def cast_site(settings, url):
 @click.option("-n", "--play-next", is_flag=True, help="Add video immediately after currently playing video.")
 @click.pass_obj
 def add(settings, video_url, play_next):
-    cst, stream = setup_cast(settings["device"], video_url=video_url, action="add", prep="control")
+    cst, stream = setup_cast(settings["selected_device"], video_url=video_url, action="add", prep="control")
     if cst.name != stream.extractor or not (stream.is_remote_file or stream.is_playlist_with_active_entry):
         raise CliError("This url cannot be added to the queue")
     click.echo('Adding video id "{}" to the queue.'.format(stream.video_id))
@@ -264,7 +268,7 @@ def add(settings, video_url, play_next):
 @click.argument("video_url", callback=process_url)
 @click.pass_obj
 def remove(settings, video_url):
-    cst, stream = setup_cast(settings["device"], video_url=video_url, action="remove", prep="control")
+    cst, stream = setup_cast(settings["selected_device"], video_url=video_url, action="remove", prep="control")
     if cst.name != stream.extractor or not stream.is_remote_file:
         raise CliError("This url cannot be removed from the queue")
     click.echo('Removing video id "{}" from the queue.'.format(stream.video_id))
@@ -274,28 +278,28 @@ def remove(settings, video_url):
 @cli.command(short_help="Clear the queue (YouTube only).")
 @click.pass_obj
 def clear(settings):
-    cst = setup_cast(settings["device"], action="clear", prep="control")
+    cst = setup_cast(settings["selected_device"], action="clear", prep="control")
     cst.clear()
 
 
 @cli.command(short_help="Pause a video.")
 @click.pass_obj
 def pause(settings):
-    cst = setup_cast(settings["device"], action="pause", prep="control")
+    cst = setup_cast(settings["selected_device"], action="pause", prep="control")
     cst.pause()
 
 
 @cli.command(short_help="Resume a video after it has been paused.")
 @click.pass_obj
 def play(settings):
-    cst = setup_cast(settings["device"], action="play", prep="control")
+    cst = setup_cast(settings["selected_device"], action="play", prep="control")
     cst.play()
 
 
 @cli.command("play_toggle", short_help="Toggle between playing and paused state.")
 @click.pass_obj
 def play_toggle(settings):
-    cst = setup_cast(settings["device"], action="play_toggle", prep="control")
+    cst = setup_cast(settings["selected_device"], action="play_toggle", prep="control")
     cst.play_toggle()
 
 
@@ -309,7 +313,7 @@ def play_toggle(settings):
 )
 @click.pass_obj
 def stop(settings, force):
-    cst = setup_cast(settings["device"])
+    cst = setup_cast(settings["selected_device"])
     cst.kill(force=force)
 
 
@@ -317,7 +321,7 @@ def stop(settings, force):
 @click.argument("timedesc", type=CATT_TIME, required=False, default="30", metavar="TIME")
 @click.pass_obj
 def rewind(settings, timedesc):
-    cst = setup_cast(settings["device"], action="rewind", prep="control")
+    cst = setup_cast(settings["selected_device"], action="rewind", prep="control")
     cst.rewind(timedesc)
 
 
@@ -325,7 +329,7 @@ def rewind(settings, timedesc):
 @click.argument("timedesc", type=CATT_TIME, required=False, default="30", metavar="TIME")
 @click.pass_obj
 def ffwd(settings, timedesc):
-    cst = setup_cast(settings["device"], action="ffwd", prep="control")
+    cst = setup_cast(settings["selected_device"], action="ffwd", prep="control")
     cst.ffwd(timedesc)
 
 
@@ -333,14 +337,14 @@ def ffwd(settings, timedesc):
 @click.argument("timedesc", type=CATT_TIME, metavar="TIME")
 @click.pass_obj
 def seek(settings, timedesc):
-    cst = setup_cast(settings["device"], action="seek", prep="control")
+    cst = setup_cast(settings["selected_device"], action="seek", prep="control")
     cst.seek(timedesc)
 
 
 @cli.command(short_help="Skip to end of content.")
 @click.pass_obj
 def skip(settings):
-    cst = setup_cast(settings["device"], action="skip", prep="control")
+    cst = setup_cast(settings["selected_device"], action="skip", prep="control")
     cst.skip()
 
 
@@ -348,7 +352,7 @@ def skip(settings):
 @click.argument("level", type=click.IntRange(0, 100), metavar="LVL")
 @click.pass_obj
 def volume(settings, level):
-    cst = setup_cast(settings["device"])
+    cst = setup_cast(settings["selected_device"])
     cst.volume(level / 100.0)
 
 
@@ -356,7 +360,7 @@ def volume(settings, level):
 @click.argument("delta", type=click.IntRange(1, 100), required=False, default=10, metavar="DELTA")
 @click.pass_obj
 def volumeup(settings, delta):
-    cst = setup_cast(settings["device"])
+    cst = setup_cast(settings["selected_device"])
     cst.volumeup(delta / 100.0)
 
 
@@ -364,14 +368,14 @@ def volumeup(settings, delta):
 @click.argument("delta", type=click.IntRange(1, 100), required=False, default=10, metavar="DELTA")
 @click.pass_obj
 def volumedown(settings, delta):
-    cst = setup_cast(settings["device"])
+    cst = setup_cast(settings["selected_device"])
     cst.volumedown(delta / 100.0)
 
 
 @cli.command(short_help="Show some information about the currently-playing video.")
 @click.pass_obj
 def status(settings):
-    cst = setup_cast(settings["device"], prep="info")
+    cst = setup_cast(settings["selected_device"], prep="info")
     echo_status(cst.cast_info)
 
 
@@ -380,7 +384,7 @@ def status(settings):
 @click.pass_obj
 def info(settings, json_output):
     try:
-        cst = setup_cast(settings["device"], prep="info")
+        cst = setup_cast(settings["selected_device"], prep="info")
     except CastError:
         if json_output:
             info = {}
@@ -416,7 +420,7 @@ def scan(json_output):
 @click.argument("path", type=click.Path(writable=True), callback=process_path, required=False)
 @click.pass_obj
 def save(settings, path):
-    cst = setup_cast(settings["device"], prep="control")
+    cst = setup_cast(settings["selected_device"], prep="control")
     if not cst.save_capability or cst.is_streaming_local_file:
         raise CliError("Saving state of this kind of content is not supported")
     elif cst.save_capability == "partial":
@@ -441,7 +445,7 @@ def save(settings, path):
 def restore(settings, path):
     if not path and not STATE_PATH.is_file():
         raise CliError("Save file in config dir has not been created")
-    cst = setup_cast(settings["device"])
+    cst = setup_cast(settings["selected_device"])
     state = CastState(path or STATE_PATH, StateMode.READ)
     try:
         data = state.get_data(cst.cc_name if not path else None)
@@ -452,13 +456,13 @@ def restore(settings, path):
 
     echo_status(data["data"])
     click.echo("Restoring...")
-    cst = setup_cast(settings["device"], prep="app", controller=data["controller"])
+    cst = setup_cast(settings["selected_device"], prep="app", controller=data["controller"])
     cst.restore(data["data"])
 
 
-@cli.command("write_config", short_help='Please use "set_default".')
+@cli.command("write_config", short_help='DEPRECATED: Please use "set_default".')
 def write_config():
-    raise CliError('This command is now called "set_default"')
+    raise CliError('DEPRECATED: Please use "set_default"')
 
 
 @cli.command("set_default", short_help="Set the selected device as default.")
@@ -513,16 +517,15 @@ def get_alias_from_config(config, device):
 
 
 def get_device_from_settings(settings):
-    device_desc = settings.get("device")
-    if not device_desc:
-        raise CliError("No device specified")
+    device_desc = settings["selected_device"]
+    if not device_desc or not settings["selected_device_is_from_cli"]:
+        raise CliError("No device specified (must be explicitly specified with -d option)")
     devices = get_cast_devices_info()
-    try:
-        if is_ipaddress(device_desc):
-            next(d for d in devices if d["ip"] == device_desc)
-        else:
-            next(d for d in devices if d["name"] == device_desc)
-    except StopIteration:
+    if is_ipaddress(device_desc):
+        found = any(d["ip"] == device_desc for d in devices.values())
+    else:
+        found = device_desc in devices.keys()
+    if not found:
         raise CliError('Specified device "{}" not found'.format(device_desc))
     return device_desc
 
@@ -548,23 +551,20 @@ def readconfig():
     return config
 
 
-def get_default_map():
+def get_config_as_dict():
     """
     Returns a dictionary of the form:
-        {"option": "value",
+        {"options": {"key": "value"},
          "aliases": {"device1": "device_name"}}
     """
 
     config = readconfig()
-    conf_dict = {section: dict(config.items(section)) for section in config.sections()}
-    default_map = conf_dict["options"]
-    default_map["aliases"] = conf_dict["aliases"]
-    return default_map
+    return {section: dict(config.items(section)) for section in config.sections()}
 
 
 def main():
     try:
-        return cli(obj={}, default_map=get_default_map())
+        return cli(obj=get_config_as_dict())
     except CattUserError as err:
         sys.exit("Error: {}.".format(str(err)))
 
