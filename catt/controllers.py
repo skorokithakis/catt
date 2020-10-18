@@ -92,11 +92,13 @@ def setup_cast(device_desc, video_url=None, controller=None, ytdl_options=None, 
         else:
             app = get_app("default")
     else:
-        # cast.app_id can be None, in the case of an inactive audio device.
-        if app_id:
+        if app_id and app_id != BACKDROP_APP_ID:
             app = get_app(app_id, cast_type)
         else:
-            app = get_app("default")
+            if prep in ["control", "info"]:
+                raise CastError("Chromecast is inactive")
+            else:
+                app = get_app("default")
 
     cast_controller = get_controller(cast, app, action=action, prep=prep)
     return (cast_controller, stream) if stream else cast_controller
@@ -200,7 +202,7 @@ class CastStatusListener:
 
 
 class MediaStatusListener:
-    def __init__(self, current_state, states, invert=False, fail=False):
+    def __init__(self, current_state, states, invert=False):
         if any(s not in VALID_STATE_EVENTS for s in states):
             raise ListenerError("Invalid state(s)")
         if invert:
@@ -211,10 +213,7 @@ class MediaStatusListener:
         self._state_event = threading.Event()
         self._current_state = current_state
         if self._current_state in self._states_waited_for:
-            if fail:
-                raise ListenerError("Condition is already met (fail is set)")
-            else:
-                self._state_event.set()
+            self._state_event.set()
 
     def new_media_status(self, status):
         self._current_state = status.player_state
@@ -269,22 +268,14 @@ class CastController:
             self._cast_listener.app_ready.wait()
 
     def prep_control(self):
-        """Make sure chromecast is not inactive or idle."""
+        """Make sure chromecast is not idle."""
 
-        self._check_inactive()
         self._update_status()
         if self._is_idle:
             raise CastError("Nothing is currently playing")
 
     def prep_info(self):
-        """Make sure chromecast is not inactive."""
-
-        self._check_inactive()
         self._update_status()
-
-    def _check_inactive(self):
-        if self._cast.app_id == BACKDROP_APP_ID or not self._cast.app_id:
-            raise CastError("Chromecast is inactive")
 
     def _update_status(self):
         # Under rare circumstances, a lot of fields are not populated in the updated status.
@@ -462,10 +453,8 @@ class PlaybackBaseMixin:
     def play_playlist(self, playlist_id: str, video_id: str) -> None:
         raise NotImplementedError
 
-    def wait_for(self, states: list, invert: bool = False, fail: bool = False, timeout: Optional[int] = None) -> bool:
-        media_listener = MediaStatusListener(
-            self._cast.media_controller.status.player_state, states, invert=invert, fail=fail
-        )
+    def wait_for(self, states: list, invert: bool = False, timeout: Optional[int] = None) -> bool:
+        media_listener = MediaStatusListener(self._cast.media_controller.status.player_state, states, invert=invert)
         self._cast.media_controller.register_status_listener(media_listener)
 
         try:
