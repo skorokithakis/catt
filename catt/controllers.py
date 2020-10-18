@@ -83,22 +83,18 @@ def setup_cast(device_desc, video_url=None, controller=None, ytdl_options=None, 
 
     if controller:
         app = get_app(controller, cast_type, strict=True)
-    elif prep == "app":
-        if stream:
-            if stream.is_local_file:
-                app = get_app("default")
-            else:
-                app = get_app(stream.extractor, cast_type, show_warning=True)
-        else:
-            app = get_app("default")
-    else:
+
+    elif prep == "app" and stream and not stream.is_local_file:
+        app = get_app(stream.extractor, cast_type, show_warning=True)
+
+    elif prep in ["control", "info"]:
         if app_id and app_id != BACKDROP_APP_ID:
             app = get_app(app_id, cast_type)
         else:
-            if prep in ["control", "info"]:
-                raise CastError("Chromecast is inactive")
-            else:
-                app = get_app("default")
+            raise CastError("Chromecast is inactive")
+
+    else:
+        app = get_app("default")
 
     cast_controller = get_controller(cast, app, action=action, prep=prep)
     return (cast_controller, stream) if stream else cast_controller
