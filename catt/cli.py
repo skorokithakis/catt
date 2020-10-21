@@ -160,6 +160,7 @@ def cli(ctx, device):
     help="YouTube-DL option. "
     "Should be passed as `-y option=value`, and can be specified multiple times (implies --force-default).",
 )
+@click.option("--seek", type=CATT_TIME, metavar="TIME", help="Start playback at specific timestamp.")
 @click.option(
     "-b",
     "--block",
@@ -169,7 +170,9 @@ def cli(ctx, device):
     "Currently exits after playback of single media, so not useful with playlists yet.",
 )
 @click.pass_obj
-def cast(settings, video_url, subtitles, force_default, random_play, no_subs, no_playlist, ytdl_option, block=False):
+def cast(
+    settings, video_url, subtitles, force_default, random_play, no_subs, no_playlist, ytdl_option, seek, block=False
+):
     controller = "default" if force_default or ytdl_option else None
     playlist_playback = False
     st_thr = su_thr = subs = None
@@ -223,9 +226,10 @@ def cast(settings, video_url, subtitles, force_default, random_play, no_subs, no
                 content_type=stream.guessed_content_type,
                 subtitles=subs.url if subs else None,
                 thumb=stream.video_thumbnail,
+                current_time=seek,
             )
         elif cst.info_type == "id":
-            cst.play_media_id(stream.video_id)
+            cst.play_media_id(stream.video_id, current_time=seek)
         else:
             raise ValueError("Invalid or undefined info type")
 
