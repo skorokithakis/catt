@@ -146,6 +146,13 @@ DEFAULT_CTRL_TESTS = [
     CattTest("seek to 6:33", ["seek", "6:33"], sleep=2, time_test=True, check_data=("current_time", "393")),
     CattTest("rewind by 30 seconds", ["rewind", "30"], sleep=2, time_test=True, check_data=("current_time", "363")),
     CattTest(
+        "cast h264 1280x720 / aac content directly from google commondatastorage, start at 1:01",
+        ["cast", "--seek", "1:01", "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"],
+        sleep=5,
+        time_test=True,
+        check_data=("current_time", "61"),
+    ),
+    CattTest(
         "try to use add cmd with default controller",
         ["add", "https://www.youtube.com/watch?v=QcJoW9Lwzs0"],
         sleep=3,
@@ -166,6 +173,13 @@ YOUTUBE_CTRL_TESTS = [
         "cast video from youtube",
         ["cast", "https://www.youtube.com/watch?v=Rl4GiVtnLE4"],
         check_data=("content_id", "Rl4GiVtnLE4"),
+    ),
+    CattTest(
+        "cast video from youtube, start at 2:02",
+        ["cast", "--seek", "2:02", "https://www.youtube.com/watch?v=Rl4GiVtnLE4"],
+        sleep=5,
+        time_test=True,
+        check_data=("current_time", "122"),
     ),
     CattTest(
         "cast playlist from youtube",
