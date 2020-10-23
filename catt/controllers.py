@@ -443,7 +443,7 @@ class PlaybackBaseMixin:
     def play_media_url(self, video_url: str, **kwargs) -> None:
         raise NotImplementedError
 
-    def play_media_id(self, video_id: str) -> None:
+    def play_media_id(self, video_id: str, **kwargs) -> None:
         raise NotImplementedError
 
     def play_playlist(self, playlist_id: str, video_id: str) -> None:
@@ -511,8 +511,12 @@ class YoutubeCastController(CastController, MediaControllerMixin, PlaybackBaseMi
         self.save_capability = "partial"
         self.playlist_capability = "complete"
 
-    def play_media_id(self, video_id):
+    def play_media_id(self, video_id, **kwargs):
         self._controller.play_video(video_id)
+        current_time = kwargs.get("current_time")
+        if current_time:
+            self.wait_for(["PLAYING"])
+            self.seek(current_time)
 
     def play_playlist(self, playlist_id, video_id):
         self.clear()
@@ -535,6 +539,4 @@ class YoutubeCastController(CastController, MediaControllerMixin, PlaybackBaseMi
         self._controller.clear_playlist()
 
     def restore(self, data):
-        self.play_media_id(data["content_id"])
-        self.wait_for(["PLAYING"])
-        self.seek(data["current_time"])
+        self.play_media_id(data["content_id"], current_time=data["current_time"])

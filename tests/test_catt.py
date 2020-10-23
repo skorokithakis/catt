@@ -47,9 +47,9 @@ class TestThings(unittest.TestCase):
         self.assertEqual(stream.extractor, "youtube")
 
     def test_stream_info_other_video(self):
-        stream = StreamInfo("https://www.twitch.tv/buddha/clip/OutstandingSquareMallardBudStar")
+        stream = StreamInfo("https://www.twitch.tv/forsen/clip/TangibleSpicyDogeTooSpicy")
         self.assertIn("https://", stream.video_url)
-        self.assertEqual(stream.video_id, "471296669")
+        self.assertEqual(stream.video_id, "900171331")
         self.assertTrue(stream.is_remote_file)
         self.assertEqual(stream.extractor, "twitch")
 
