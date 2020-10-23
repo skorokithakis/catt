@@ -147,7 +147,7 @@ DEFAULT_CTRL_TESTS = [
     CattTest("rewind by 30 seconds", ["rewind", "30"], sleep=2, time_test=True, check_data=("current_time", "363")),
     CattTest(
         "cast h264 1280x720 / aac content directly from google commondatastorage, start at 1:01",
-        ["cast", "--seek", "1:01", "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"],
+        ["cast", "-t", "1:01", "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"],
         sleep=5,
         time_test=True,
         check_data=("current_time", "61"),
@@ -176,7 +176,7 @@ YOUTUBE_CTRL_TESTS = [
     ),
     CattTest(
         "cast video from youtube, start at 2:02",
-        ["cast", "--seek", "2:02", "https://www.youtube.com/watch?v=Rl4GiVtnLE4"],
+        ["cast", "-t", "2:02", "https://www.youtube.com/watch?v=Rl4GiVtnLE4"],
         sleep=5,
         time_test=True,
         check_data=("current_time", "122"),
