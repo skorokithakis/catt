@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 
 import click
 
+from . import __codename__
 from . import __version__
 from .controllers import CastState
 from .controllers import setup_cast
@@ -129,7 +130,11 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 @click.group(context_settings=CONTEXT_SETTINGS)
 @click.option("-d", "--device", metavar="NAME_OR_IP", help="Select Chromecast device.")
-@click.version_option(version=__version__, prog_name="catt", message="%(prog)s v%(version)s, Yearning Yachtman.")
+@click.version_option(
+    version=__version__,
+    prog_name="catt",
+    message="%(prog)s v%(version)s, " + __codename__ + ".",
+)
 @click.pass_context
 def cli(ctx, device):
     device_from_config = ctx.obj["options"].get("device")
@@ -139,18 +144,37 @@ def cli(ctx, device):
 
 @cli.command(short_help="Send a video to a Chromecast for playing.")
 @click.argument("video_url", callback=process_url)
-@click.option("-s", "--subtitles", callback=process_subtitles, metavar="SUB", help="Specify a subtitles file.")
+@click.option(
+    "-s",
+    "--subtitles",
+    callback=process_subtitles,
+    metavar="SUB",
+    help="Specify a subtitles file.",
+)
 @click.option(
     "-f",
     "--force-default",
     is_flag=True,
     help="Force use of the default Chromecast app (use if a custom app doesn't work).",
 )
-@click.option("-r", "--random-play", is_flag=True, help="Play random item from playlist, if applicable.")
 @click.option(
-    "--no-subs", is_flag=True, default=False, help="Don't try to load subtitles automatically from the local folder."
+    "-r",
+    "--random-play",
+    is_flag=True,
+    help="Play random item from playlist, if applicable.",
 )
-@click.option("-n", "--no-playlist", is_flag=True, help="Play only video, if url contains both video and playlist ids.")
+@click.option(
+    "--no-subs",
+    is_flag=True,
+    default=False,
+    help="Don't try to load subtitles automatically from the local folder.",
+)
+@click.option(
+    "-n",
+    "--no-playlist",
+    is_flag=True,
+    help="Play only video, if url contains both video and playlist ids.",
+)
 @click.option(
     "-y",
     "--ytdl-option",
@@ -160,7 +184,13 @@ def cli(ctx, device):
     help="YouTube-DL option. "
     "Should be passed as `-y option=value`, and can be specified multiple times (implies --force-default).",
 )
-@click.option("-t", "--seek-to", type=CATT_TIME, metavar="TIME", help="Start playback at specific timestamp.")
+@click.option(
+    "-t",
+    "--seek-to",
+    type=CATT_TIME,
+    metavar="TIME",
+    help="Start playback at specific timestamp.",
+)
 @click.option(
     "-b",
     "--block",
@@ -171,13 +201,26 @@ def cli(ctx, device):
 )
 @click.pass_obj
 def cast(
-    settings, video_url, subtitles, force_default, random_play, no_subs, no_playlist, ytdl_option, seek_to, block=False
+    settings,
+    video_url,
+    subtitles,
+    force_default,
+    random_play,
+    no_subs,
+    no_playlist,
+    ytdl_option,
+    seek_to,
+    block=False,
 ):
     controller = "default" if force_default or ytdl_option else None
     playlist_playback = False
     st_thr = su_thr = subs = None
     cst, stream = setup_cast(
-        settings["selected_device"], video_url=video_url, prep="app", controller=controller, ytdl_options=ytdl_option
+        settings["selected_device"],
+        video_url=video_url,
+        prep="app",
+        controller=controller,
+        ytdl_options=ytdl_option,
     )
     media_is_image = stream.guessed_content_category == "image"
     local_or_remote = "local" if stream.is_local_file else "remote"
@@ -185,7 +228,11 @@ def cast(
     if stream.is_local_file:
         fail_if_no_ip(stream.local_ip)
         st_thr = create_server_thread(
-            video_url, stream.local_ip, stream.port, stream.guessed_content_type, single_req=media_is_image
+            video_url,
+            stream.local_ip,
+            stream.port,
+            stream.guessed_content_type,
+            single_req=media_is_image,
         )
     elif stream.is_playlist and not (no_playlist and stream.video_id):
         if stream.playlist_length == 0:
@@ -212,12 +259,20 @@ def cast(
             fail_if_no_ip(stream.local_ip)
             subs = SubsInfo(subtitles, stream.local_ip, stream.port + 1)
             su_thr = create_server_thread(
-                subs.file, subs.local_ip, subs.port, "text/vtt;charset=utf-8", single_req=True
+                subs.file,
+                subs.local_ip,
+                subs.port,
+                "text/vtt;charset=utf-8",
+                single_req=True,
             )
 
         click.echo("Casting {} file {}...".format(local_or_remote, video_url))
         click.echo(
-            '{} "{}" on "{}"...'.format("Showing" if media_is_image else "Playing", stream.video_title, cst.cc_name)
+            '{} "{}" on "{}"...'.format(
+                "Showing" if media_is_image else "Playing",
+                stream.video_title,
+                cst.cc_name,
+            )
         )
         if cst.info_type == "url":
             cst.play_media_url(
@@ -248,14 +303,24 @@ def cast(
 @click.argument("url", callback=process_url)
 @click.pass_obj
 def cast_site(settings, url):
-    cst = setup_cast(settings["selected_device"], controller="dashcast", action="load_url", prep="app")
+    cst = setup_cast(
+        settings["selected_device"],
+        controller="dashcast",
+        action="load_url",
+        prep="app",
+    )
     click.echo('Casting {} on "{}"...'.format(url, cst.cc_name))
     cst.load_url(url)
 
 
 @cli.command(short_help="Add a video to the queue (YouTube only).")
 @click.argument("video_url", callback=process_url)
-@click.option("-n", "--play-next", is_flag=True, help="Add video immediately after currently playing video.")
+@click.option(
+    "-n",
+    "--play-next",
+    is_flag=True,
+    help="Add video immediately after currently playing video.",
+)
 @click.pass_obj
 def add(settings, video_url, play_next):
     cst, stream = setup_cast(settings["selected_device"], video_url=video_url, action="add", prep="control")
@@ -272,7 +337,12 @@ def add(settings, video_url, play_next):
 @click.argument("video_url", callback=process_url)
 @click.pass_obj
 def remove(settings, video_url):
-    cst, stream = setup_cast(settings["selected_device"], video_url=video_url, action="remove", prep="control")
+    cst, stream = setup_cast(
+        settings["selected_device"],
+        video_url=video_url,
+        action="remove",
+        prep="control",
+    )
     if cst.name != stream.extractor or not stream.is_remote_file:
         raise CliError("This url cannot be removed from the queue")
     click.echo('Removing video id "{}" from the queue.'.format(stream.video_id))

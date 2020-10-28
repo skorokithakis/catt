@@ -5,6 +5,8 @@
 
 ### Features
 
+* Add seek-to opt to cast cmd (#307) [theychx]
+
 * Add remote-only subtitles to the API (#258) [Stavros Korokithakis]
 
 ### Fixes

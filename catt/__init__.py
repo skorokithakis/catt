@@ -7,4 +7,5 @@ if sys.version_info.major < 3:
 
 __author__ = "Stavros Korokithakis"
 __email__ = "hi@stavros.io"
-__version__ = "0.11.3"
+__version__ = "0.12.0"
+__codename__ = "Zaniest Zapper"
