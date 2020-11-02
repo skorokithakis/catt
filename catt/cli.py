@@ -15,6 +15,7 @@ from .controllers import CastState
 from .controllers import setup_cast
 from .controllers import StateFileError
 from .controllers import StateMode
+from .discovery import cast_device_ip_exists
 from .discovery import get_cast_devices_info
 from .error import CastError
 from .error import CattUserError
@@ -594,13 +595,15 @@ def get_device_from_settings(settings):
     device_desc = settings["selected_device"]
     if not device_desc or not settings["selected_device_is_from_cli"]:
         raise CliError("No device specified (must be explicitly specified with -d option)")
-    devices = get_cast_devices_info()
-    if is_ipaddress(device_desc):
-        found = any(d["ip"] == device_desc for d in devices.values())
+    is_ip = is_ipaddress(device_desc)
+    if is_ip:
+        found = cast_device_ip_exists(device_desc)
     else:
+        devices = get_cast_devices_info()
         found = device_desc in devices.keys()
     if not found:
-        raise CliError('Specified device "{}" not found'.format(device_desc))
+        msg = "No device found at {}" if is_ip else 'Specified device "{}" not found'
+        raise CliError(msg.format(device_desc))
     return device_desc
 
 

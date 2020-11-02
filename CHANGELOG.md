@@ -1,7 +1,7 @@
 # Changelog
 
 
-## Unreleased
+## v0.12.0 (2020-10-28)
 
 ### Features
 

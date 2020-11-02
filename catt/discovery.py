@@ -99,6 +99,19 @@ def get_cast_device_with_ip(device_ip: str, port: int = DEFAULT_PORT) -> Optiona
         return None
 
 
+def cast_device_ip_exists(device_ip: str) -> bool:
+    """
+    Get availability of specific device using its ip-address.
+
+    :param device_ip: Ip-address of device.
+    :type device_name: str
+    :returns: Availability of device.
+    :rtype: bool
+    """
+
+    return bool(get_cast_device_with_ip(device_ip))
+
+
 def get_cast_device(device_desc: Optional[str] = None) -> CastDevice:
     """
     Attempt to connect with requested device (or any device if none has been specified).
