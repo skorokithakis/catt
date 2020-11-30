@@ -39,7 +39,8 @@ class TestThings(unittest.TestCase):
     @ignore_tmr_failure
     def test_stream_info_youtube_playlist(self):
         stream = StreamInfo(
-            "https://www.youtube.com/playlist?list=PL9Z0stL3aRykWNoVQW96JFIkelka_93Sc", throw_ytdl_dl_errs=True
+            "https://www.youtube.com/playlist?list=PL9Z0stL3aRykWNoVQW96JFIkelka_93Sc",
+            throw_ytdl_dl_errs=True,
         )
         self.assertIsNone(stream.video_url)
         self.assertEqual(stream.playlist_id, "PL9Z0stL3aRykWNoVQW96JFIkelka_93Sc")
@@ -47,9 +48,9 @@ class TestThings(unittest.TestCase):
         self.assertEqual(stream.extractor, "youtube")
 
     def test_stream_info_other_video(self):
-        stream = StreamInfo("https://www.twitch.tv/forsen/clip/TangibleSpicyDogeTooSpicy")
+        stream = StreamInfo("https://www.twitch.tv/twitch/clip/MistySoftPenguinKappaPride")
         self.assertIn("https://", stream.video_url)
-        self.assertEqual(stream.video_id, "900171331")
+        self.assertEqual(stream.video_id, "944456168")
         self.assertTrue(stream.is_remote_file)
         self.assertEqual(stream.extractor, "twitch")
 

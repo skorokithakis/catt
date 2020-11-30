@@ -1,6 +1,13 @@
 # Changelog
 
 
+## Unreleased
+
+### Fixes
+
+* Don't do discovery dance when checking ip validity (#309) [theychx]
+
+
 ## v0.12.0 (2020-10-28)
 
 ### Features
