@@ -69,7 +69,7 @@ regularly to keep them all working.
 
 You can also run ``catt`` in Docker, if you prefer::
 
-    docker run -i -t python:3.7 /bin/bash -c "pip install catt; catt cast 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'"
+    docker run --net=host --rm -it python:3.7 /bin/bash -c "pip install catt; catt cast 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'"
 
 
 Configuration file
