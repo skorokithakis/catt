@@ -1,13 +1,13 @@
 # Configuration for Label Actions - https://github.com/dessant/label-actions
 
 incomplete:
-  comment: >
+  comment: |-
       This issue was marked as incomplete. Please post more information about
       the situation in which the problem is encountered, including the versions
       of the software/OS involved.
 
       We will also need a detailed list of steps that will reliably reproduce
-      this problem, as well as any reason or workaround you may have found, or
+      this problem, as well as any cause or workaround you may have found, or
       investigation you may have done.
 
       I will close the ticket now and reopen when more info is provided.
