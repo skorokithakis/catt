@@ -20,7 +20,7 @@ with open("README.rst") as readme_file:
 
 requirements = [
     "youtube-dl>=2020.9.20",
-    "PyChromecast>=7.5.0",
+    "PyChromecast>=8.0.0",
     "Click>=7.1.2,<8",
     "ifaddr>=0.1.7",
     "requests>=2.23.0",
