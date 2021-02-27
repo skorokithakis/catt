@@ -42,12 +42,14 @@ def get_cast_devices(names: Optional[List[str]] = None) -> List[CastDevice]:
     """
 
     if names:
-        services, browser = pychromecast.discovery.discover_listed_chromecasts(friendly_names=names)
+        cast_infos, browser = pychromecast.discovery.discover_listed_chromecasts(friendly_names=names)
     else:
-        services, browser = pychromecast.discovery.discover_chromecasts()
-    pychromecast.stop_discovery(browser)
+        cast_infos, browser = pychromecast.discovery.discover_chromecasts()
+    browser.stop_discovery()
 
-    devices = [CastDevice(pychromecast.get_chromecast_from_service(s, browser.zc), s[4], s[5]) for s in services]
+    devices = [
+        CastDevice(pychromecast.get_chromecast_from_cast_info(c, browser.zc), c.host, c.port) for c in cast_infos
+    ]
     devices.sort(key=lambda d: d.cast.name)
     return devices
 
