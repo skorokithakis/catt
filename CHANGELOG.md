@@ -5,6 +5,8 @@
 
 ### Fixes
 
+* Fix potential PyChromecast error by pinning to version 8. [Stavros Korokithakis]
+
 * Don't do discovery dance when checking ip validity (#309) [theychx]
 
 
