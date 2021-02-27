@@ -19,7 +19,12 @@ you to cast local files or render websites.
 Installation
 ------------
 
-You can install Cast All The Things with pip::
+You can install Cast All The Things with pipx::
+
+    pipx install catt
+
+
+Or with pip, but that's not as good::
 
     pip3 install catt
 

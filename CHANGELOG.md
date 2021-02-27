@@ -1,6 +1,13 @@
 # Changelog
 
 
+## Unreleased
+
+### Fixes
+
+* Include changelog in releases. [Stavros Korokithakis]
+
+
 ## v0.12.1 (2021-02-27)
 
 ### Fixes
