@@ -317,6 +317,7 @@ class CastController:
     @property
     def cast_info(self):
         cinfo = {"volume_level": str(int(round(self._cast.status.volume_level, 2) * 100))}
+
         if self._is_idle:
             return cinfo
 
