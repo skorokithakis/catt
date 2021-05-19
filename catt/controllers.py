@@ -87,11 +87,10 @@ def setup_cast(device_desc, video_url=None, controller=None, ytdl_options=None, 
     elif prep == "app" and stream and not stream.is_local_file:
         app = get_app(stream.extractor, cast_type, show_warning=True)
 
-    elif prep in ["control", "info"]:
-        if app_id and app_id != BACKDROP_APP_ID:
-            app = get_app(app_id, cast_type)
-        else:
+    elif prep == "control":
+        if not app_id or app_id == BACKDROP_APP_ID:
             raise CastError("Chromecast is inactive")
+        app = get_app(app_id, cast_type)
 
     else:
         app = get_app("default")
@@ -317,8 +316,12 @@ class CastController:
 
     @property
     def cast_info(self):
+        cinfo = {"volume_level": str(int(round(self._cast.status.volume_level, 2) * 100))}
+        if self._is_idle:
+            return cinfo
+
+        cinfo.update(self.media_info)
         status = self._cast.media_controller.status
-        cinfo = self.media_info
 
         if self._is_seekable:
             duration, current = status.duration, status.current_time
@@ -329,7 +332,6 @@ class CastController:
         if self._is_audiovideo:
             cinfo.update({"player_state": status.player_state})
 
-        cinfo.update({"volume_level": str(int(round(self._cast.status.volume_level, 2) * 100))})
         return cinfo
 
     @property
@@ -359,7 +361,13 @@ class CastController:
         status = self._cast.media_controller.status
         # Dashcast (and maybe others) does not support the google media namespace, and thus
         # "player_state" will be "UNKNOWN" for such apps, regardless of state.
-        return status.player_state in ["UNKNOWN", "IDLE"] and self._supports_google_media_namespace
+
+        app_id = self._cast.app_id
+        return (
+            not app_id
+            or app_id == BACKDROP_APP_ID
+            or (status.player_state in ["UNKNOWN", "IDLE"] and self._supports_google_media_namespace)
+        )
 
     def volume(self, level: float) -> None:
         self._cast.set_volume(level)
