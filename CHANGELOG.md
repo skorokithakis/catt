@@ -5,6 +5,8 @@
 
 ### Fixes
 
+* Allow use of info cmds on idle/inactive cc (#345) [theychx]
+
 * Include changelog in releases. [Stavros Korokithakis]
 
 
