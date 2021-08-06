@@ -3,14 +3,14 @@ language: python
 cache: pip
 
 python:
-  - "3.5"
   - "3.6"
   - "3.7"
   - "3.8"
+  - "3.9"
 
 install: "pip install -r requirements_dev.txt"
 
 script:
   - if [[ $TRAVIS_PYTHON_VERSION == 3.7* ]] ; then pre-commit run -a --hook-stage=manual; fi
-  - if [[ $TRAVIS_PYTHON_VERSION != 3.4* ]] ; then mypy --ignore-missing-imports --follow-imports=skip catt; fi
+  - mypy --ignore-missing-imports --follow-imports=skip catt
   - python setup.py test
