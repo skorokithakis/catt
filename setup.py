@@ -20,8 +20,11 @@ with open("README.rst") as readme_file:
 
 requirements = [
     "youtube-dl>=2020.9.20",
-    "PyChromecast>=9.0.0",
-    "Click>=7.1.2,<8",
+    "PyChromecast==9.2.0",
+    # We don't use zeroconf directly, but PyChromecast does, and they aren't great about
+    # pinning it, so we've seen breakage. We pin it here just to avoid that.
+    "zeroconf==0.31.0",
+    "Click>=7.1.2",
     "ifaddr>=0.1.7",
     "requests>=2.23.0",
     'typing;python_version<"3.5"',

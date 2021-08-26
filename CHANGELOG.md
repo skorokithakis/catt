@@ -1,9 +1,13 @@
 # Changelog
 
 
-## Unreleased
+## v0.12.2 (2021-07-11)
 
 ### Fixes
+
+* Pin PyChromecast and zeroconf (3rd-party dependency) to specific versions to avoid breakage. [Stavros Korokithakis]
+
+* Allow use of info cmds on idle/inactive cc (#345) [theychx]
 
 * Include changelog in releases. [Stavros Korokithakis]
 
