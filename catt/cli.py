@@ -107,11 +107,10 @@ def process_device(device_desc, aliases):
     :param aliases: Dictionary of device aliases and their corresponding real names.
     :type aliases: Dict[str, str]
     """
-
     if is_ipaddress(device_desc):
         return device_desc
     else:
-        return aliases.get(device_desc, device_desc)
+        return aliases.get(device_desc.lower(), device_desc)
 
 
 def fail_if_no_ip(ipaddr):

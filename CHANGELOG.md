@@ -1,6 +1,13 @@
 # Changelog
 
 
+## Unreleased
+
+### Fixes
+
+* Use yt-dlp rather than the defunct youtube-dl. [Stavros Korokithakis]
+
+
 ## v0.12.2 (2021-07-11)
 
 ### Fixes
