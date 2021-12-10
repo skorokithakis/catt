@@ -558,7 +558,7 @@ def del_default(settings):
     writeconfig(config)
 
 
-@cli.command("set_alias", short_help="Set an alias name for the selected device.")
+@cli.command("set_alias", short_help="Set an alias name for the selected device (case-insensitive).")
 @click.argument("name")
 @click.pass_obj
 def set_alias(settings, name):
