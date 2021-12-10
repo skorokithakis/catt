@@ -5,6 +5,8 @@
 
 ### Fixes
 
+* Make aliases case-insensitive (fixes #366) [Stavros Korokithakis]
+
 * Use yt-dlp rather than the defunct youtube-dl. [Stavros Korokithakis]
 
 
