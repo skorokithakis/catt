@@ -65,7 +65,7 @@ class YtdlOptParamType(click.ParamType):
 YTDL_OPT = YtdlOptParamType()
 
 
-def process_url(ctx, param, value):
+def process_url(ctx, param, value: str):
     if value == "-":
         stdin_text = click.get_text_stream("stdin")
         if not stdin_text.isatty():
@@ -110,7 +110,9 @@ def process_device(device_desc, aliases):
     if is_ipaddress(device_desc):
         return device_desc
     else:
-        return aliases.get(device_desc.lower(), device_desc)
+        if device_desc:
+            device_desc = device_desc.lower()
+        return aliases.get(device_desc, device_desc)
 
 
 def fail_if_no_ip(ipaddr):
@@ -203,15 +205,15 @@ def cli(ctx, device):
 @click.pass_obj
 def cast(
     settings,
-    video_url,
+    video_url: str,
     subtitles,
-    force_default,
-    random_play,
-    no_subs,
-    no_playlist,
+    force_default: bool,
+    random_play: bool,
+    no_subs: bool,
+    no_playlist: bool,
     ytdl_option,
-    seek_to,
-    block=False,
+    seek_to: str,
+    block: bool = False,
 ):
     controller = "default" if force_default or ytdl_option else None
     playlist_playback = False
@@ -559,7 +561,10 @@ def del_default(settings):
     writeconfig(config)
 
 
-@cli.command("set_alias", short_help="Set an alias name for the selected device (case-insensitive).")
+@cli.command(
+    "set_alias",
+    short_help="Set an alias name for the selected device (case-insensitive).",
+)
 @click.argument("name")
 @click.pass_obj
 def set_alias(settings, name):
