@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 
-from youtube_dl.utils import DownloadError
+from yt_dlp.utils import DownloadError
 
 from catt.stream_info import StreamInfo
 

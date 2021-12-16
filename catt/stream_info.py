@@ -1,7 +1,7 @@
 import random
 from pathlib import Path
 
-import youtube_dl
+import yt_dlp
 
 from .error import ExtractionError
 from .error import FormatError
@@ -38,7 +38,7 @@ class StreamInfo:
         self.port = random.randrange(45000, 47000) if device_info else None
 
         if "://" in video_url:
-            self._ydl = youtube_dl.YoutubeDL(dict(ytdl_options) if ytdl_options else DEFAULT_YTDL_OPTS)
+            self._ydl = yt_dlp.YoutubeDL(dict(ytdl_options) if ytdl_options else DEFAULT_YTDL_OPTS)
             self._preinfo = self._get_stream_preinfo(video_url)
             # Some playlist urls needs to be re-processed (such as youtube channel urls).
             if self._preinfo.get("ie_key"):
@@ -167,7 +167,7 @@ class StreamInfo:
     def _get_stream_preinfo(self, video_url):
         try:
             return self._ydl.extract_info(video_url, process=False)
-        except youtube_dl.utils.DownloadError:
+        except yt_dlp.utils.DownloadError:
             # We sometimes get CI failures when testing with YouTube videos,
             # as YouTube throttles our connections intermittently. We evaluated
             # various solutions and the one we agreed on was ignoring the specific
@@ -183,8 +183,8 @@ class StreamInfo:
     def _get_stream_info(self, preinfo):
         try:
             return self._ydl.process_ie_result(preinfo, download=False)
-        except (youtube_dl.utils.ExtractorError, youtube_dl.utils.DownloadError):
-            raise ExtractionError("Youtube-dl extractor failed")
+        except (yt_dlp.utils.ExtractorError, yt_dlp.utils.DownloadError):
+            raise ExtractionError("yt-dlp extractor failed")
 
     def _get_stream_url(self, info):
         try:

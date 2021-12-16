@@ -40,7 +40,7 @@ To use Cast All The Things, just specify a URL::
 
     catt cast "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 
-``catt`` supports any service that youtube-dl supports, which includes most online
+``catt`` supports any service that yt-dlp supports, which includes most online
 video hosting services.
 
 ``catt`` can also cast local files (if they're in a format the Chromecast supports
@@ -64,12 +64,12 @@ TTML and Line 21 subtitles, ``catt`` conveniently converts SRTs to WEBVTT for yo
 Please note that the Chromecast has a slow CPU but a reasonably recent version of Google Chrome. The display
 resolution is 1280x720.
 
-If you want to pass youtube-dl options to catt through the `-y` command-line flag, you need to use youtube-dl's
-`internal option name <https://github.com/ytdl-org/youtube-dl/blob/master/youtube_dl/__init__.py#L317>`_, rather
+If you want to pass yt-dlp options to catt through the `-y` command-line flag, you need to use yt-dlp's
+`internal option name <https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/__init__.py#L620>`_, rather
 than its command-line name.
 
-If you notice that catt stops working with video sites (YouTube, Vimeo, etc), just upgrade youtube-dl with `pip install
--U youtube-dl` and that will probably fix it. This is because sites keep changing and youtube-dl is updated very
+If you notice that catt stops working with video sites (YouTube, Vimeo, etc), just upgrade yt-dlp with `pip install
+-U yt-dlp` and that will probably fix it. This is because sites keep changing and yt-dlp is updated very
 regularly to keep them all working.
 
 You can also run ``catt`` in Docker, if you prefer::
@@ -142,7 +142,7 @@ Features
 --------
 
 * Casts videos to Chromecast
-* From `many, many online sources <http://rg3.github.io/youtube-dl/supportedsites.html>`_
+* From `many, many online sources <https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md>`_
 * Casts local files (videos, photos and music)
 * Casts any website to Chromecast
 
@@ -153,5 +153,5 @@ Thanks
 Catt would not be possible without these great projects:
 
 * `pychromecast <https://github.com/balloob/pychromecast>`_ - Library for Python 3 to communicate with the Google Chromecast
-* `youtube-dl <https://github.com/ytdl-org/youtube-dl>`_ - Command-line program to download videos from YouTube.com and other video sites
+* `yt-dlp <https://github.com/yt-dlp/yt-dlp>`_ - Command-line program to download videos from YouTube.com and other video sites
 * `casttube <https://github.com/ur1katz/casttube>`_ - YouTube Chromecast API
