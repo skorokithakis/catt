@@ -180,7 +180,6 @@ def cli(ctx, device):
 @click.option(
     "-y",
     "--ytdl-option",
-    "--ytdl-option",
     type=YTDL_OPT,
     multiple=True,
     metavar="OPT",
