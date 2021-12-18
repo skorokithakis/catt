@@ -1,7 +1,21 @@
-image: themattrix/tox
-before_script:
-  - pip install -U pip tox
+image: python:3.8
 
-catt:
+stages:
+  - test
+
+test:
+  variables:
+    PRE_COMMIT_HOME: "$CI_PROJECT_DIR/.cache/pre-commit"
+    PIP_CACHE_DIR: "${CI_PROJECT_DIR}/.cache/pip"
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .cache/pre-commit
+      - .cache/pip
+      - venv
+  stage: test
+  before_script:
+    - pip install -Ur requirements.txt
   script:
-  - tox
+    - pre-commit run -a --hook-stage manual
+    - pytest
