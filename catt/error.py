@@ -68,7 +68,7 @@ class ControllerError(CattUserError):
 
 
 class ExtractionError(CattUserError):
-    """ When the requested media cannot be found or processed by youtube-dl. """
+    """ When the requested media cannot be found or processed by yt-dlp. """
 
     pass
 

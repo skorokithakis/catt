@@ -76,7 +76,7 @@ class CattDevice:
         Initiate playback of content.
 
         :param url:          Network location of content.
-        :param resolve:      Try to resolve location of content stream with Youtube-dl.
+        :param resolve:      Try to resolve location of content stream with yt-dlp.
                              If this is not set, it is assumed that the url points directly to the stream.
         :param block:        Block until playback has stopped,
                              either by end of content being reached, or by interruption.

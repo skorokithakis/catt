@@ -183,7 +183,7 @@ def cli(ctx, device):
     type=YTDL_OPT,
     multiple=True,
     metavar="OPT",
-    help="YouTube-DL option. "
+    help="yt-dlp option. "
     "Should be passed as `-y option=value`, and can be specified multiple times (implies --force-default).",
 )
 @click.option(
