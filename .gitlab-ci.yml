@@ -15,7 +15,7 @@ test:
       - venv
   stage: test
   before_script:
-    - pip install -Ur requirements.txt
+    - pip install -Ur requirements_dev.txt
   script:
     - pre-commit run -a --hook-stage manual
     - pytest
