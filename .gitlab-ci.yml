@@ -18,4 +18,4 @@ test:
     - pip install -Ur requirements_dev.txt
   script:
     - pre-commit run -a --hook-stage manual
-    - pytest
+    - python setup.py test
