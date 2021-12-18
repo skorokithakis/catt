@@ -1,6 +1,13 @@
 # Changelog
 
 
+## Unreleased
+
+### Fixes
+
+* Fix crash while scanning (fixes #368) [Stavros Korokithakis]
+
+
 ## v0.12.3 (2021-12-10)
 
 ### Fixes
