@@ -16,6 +16,7 @@ test:
   stage: test
   before_script:
     - pip install -Ur requirements_dev.txt
+    - pip install -Ur requirements.txt
   script:
     - pre-commit run -a --hook-stage manual
     - pytest
