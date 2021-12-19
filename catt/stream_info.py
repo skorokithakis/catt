@@ -166,7 +166,7 @@ class StreamInfo:
 
     def _get_stream_preinfo(self, video_url):
         try:
-            return self._ydl.extract_info(video_url, process=False)
+            return self._ydl.sanitize_info(self._ydl.extract_info(video_url, process=False))
         except yt_dlp.utils.DownloadError:
             # We sometimes get CI failures when testing with YouTube videos,
             # as YouTube throttles our connections intermittently. We evaluated
@@ -192,6 +192,7 @@ class StreamInfo:
         except ValueError:
             raise FormatError("The specified format filter is invalid")
 
+        info.setdefault("incomplete_formats", {})
         try:
             best_format = next(format_selector(info))
         except StopIteration:
