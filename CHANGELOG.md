@@ -5,6 +5,13 @@
 
 ### Fixes
 
+* Switch to yt-dlp so YouTube and other services will work again (#369) [anthonyrocom]
+
+
+## v0.12.4 (2021-12-18)
+
+### Fixes
+
 * Fix crash while scanning (fixes #368) [Stavros Korokithakis]
 
 
