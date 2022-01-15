@@ -19,7 +19,7 @@ classifiers = [
 ]
 homepage = "https://github.com/skorokithakis/catt"
 authors = ["Stavros Korokithakis <hi@stavros.io>"]
-readme = "README.rst"
+readme = "README.md"
 
 [tool.poetry.scripts]
 catt = "catt.cli:main"
