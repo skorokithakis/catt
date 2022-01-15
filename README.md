@@ -2,9 +2,7 @@ Cast All The Things
 ===================
 
 [![image](https://img.shields.io/pypi/v/catt.svg)](https://pypi.python.org/pypi/catt)
-
 [![image](https://img.shields.io/travis/skorokithakis/catt.svg)](https://travis-ci.org/skorokithakis/catt)
-
 [![image](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/skorokithakis/catt)
 
 Cast All The Things allows you to send videos from many, many online
@@ -18,7 +16,7 @@ You can install Cast All The Things with pipx:
 
     pipx install catt
 
-Or with pip, but that\'s not as good:
+Or with pip, but that's not as good:
 
     pip3 install catt
 
@@ -36,7 +34,7 @@ To use Cast All The Things, just specify a URL:
 `catt` supports any service that yt-dlp supports, which includes most
 online video hosting services.
 
-`catt` can also cast local files (if they\'re in a format the Chromecast
+`catt` can also cast local files (if they're in a format the Chromecast
 supports natively):
 
     catt cast ./myvideo.mp4
@@ -61,7 +59,7 @@ Please note that the Chromecast has a slow CPU but a reasonably recent
 version of Google Chrome. The display resolution is 1280x720.
 
 If you want to pass yt-dlp options to catt through the [-y]{.title-ref}
-command-line flag, you need to use yt-dlp\'s [internal option
+command-line flag, you need to use yt-dlp's [internal option
 name](https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/__init__.py#L620),
 rather than its command-line name.
 
@@ -81,12 +79,14 @@ CATT can utilize a config-file stored at `~/.config/catt/catt.cfg`
 
 The format is as following:
 
-    [options]
-    device = chromecast_one
+```ini
+[options]
+device = chromecast_one
 
-    [aliases]
-    one = chromecast_one
-    two = chromecast_two
+[aliases]
+one = chromecast_one
+two = chromecast_two
+```
 
 In the `[options]` section, `device` denotes the default device that
 will be selected, when you have not selected a device via the cli.
@@ -108,7 +108,7 @@ Contributing
 ------------
 
 If you want to contribute a feature to `catt`, please open an issue (or
-comment on an existing one) first, to make sure it\'s something that the
+comment on an existing one) first, to make sure it's something that the
 maintainers are interested in. Afterwards, just clone the repository and
 hack away!
 
@@ -122,7 +122,7 @@ its hooks:
     pip install pre-commit
     pre-commit install
 
-That\'s all, now you can commit and the hooks will run. Black (which is
+That's all, now you can commit and the hooks will run. Black (which is
 used to format the code) requires Python 3.6 to run, but please make the
 effort, as our CI will yell at you if the code is not formatted, and
 nobody wants that.
@@ -137,20 +137,20 @@ Info
 Features
 --------
 
--   Casts videos to Chromecast
--   From [many, many online
-    sources](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md)
--   Casts local files (videos, photos and music)
--   Casts any website to Chromecast
+- Casts videos to Chromecast
+- From [many, many online
+  sources](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md)
+- Casts local files (videos, photos and music)
+- Casts any website to Chromecast
 
 Thanks
 ------
 
 Catt would not be possible without these great projects:
 
--   [pychromecast](https://github.com/balloob/pychromecast) - Library
-    for Python 3 to communicate with the Google Chromecast
--   [yt-dlp](https://github.com/yt-dlp/yt-dlp) - Command-line program to
-    download videos from YouTube.com and other video sites
--   [casttube](https://github.com/ur1katz/casttube) - YouTube Chromecast
-    API
+- [pychromecast](https://github.com/balloob/pychromecast) - Library
+  for Python 3 to communicate with the Google Chromecast
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) - Command-line program to
+  download videos from YouTube.com and other video sites
+- [casttube](https://github.com/ur1katz/casttube) - YouTube Chromecast
+  API
