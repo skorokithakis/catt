@@ -111,8 +111,9 @@ def process_device(device_desc, aliases):
         return device_desc
     else:
         if device_desc:
-            device_desc = device_desc.lower()
-        return aliases.get(device_desc, device_desc)
+            return aliases.get(device_desc.lower(), device_desc)
+        else:
+            return device_desc
 
 
 def fail_if_no_ip(ipaddr):
