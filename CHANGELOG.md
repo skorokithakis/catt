@@ -1,6 +1,13 @@
 # Changelog
 
 
+## Unreleased
+
+### Fixes
+
+* Fix casing issue with device names (#375) (#377) [Lee]
+
+
 ## v0.12.5 (2021-12-19)
 
 ### Fixes

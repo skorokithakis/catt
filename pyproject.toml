@@ -1,0 +1,52 @@
+[tool]
+
+[tool.poetry]
+name = "catt"
+version = "0.12.5"
+description = "Cast All The Things allows you to send videos from many, many online sources to your Chromecast."
+license = "BSD"
+keywords = ["chromecast", "cast", "catt", "cast_all_the_things"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: BSD License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+]
+homepage = "https://github.com/skorokithakis/catt"
+authors = ["Stavros Korokithakis <hi@stavros.io>"]
+readme = "README.md"
+
+[tool.poetry.scripts]
+catt = "catt.cli:main"
+
+[tool.poetry.dependencies]
+python = ">=3.7"
+click = ">=7.1.2"
+ifaddr = ">=0.1.7"
+pychromecast = "==9.2.0"
+requests = ">=2.23.0"
+yt-dlp = ">=2021.12.1"
+
+# We don't use zeroconf directly, but PyChromecast does, and they aren't great about
+# pinning it, so we've seen breakage. We pin it here just to avoid that.
+zeroconf = "==0.31.0"
+
+[tool.poetry.dev-dependencies]
+coverage = "*"
+flake8 = "*"
+gitchangelog = "*"
+isort = "*"
+mypy = "*"
+pep8-naming = "*"
+pre-commit = "*"
+pystache = "*"
+pytest = "*"
+sphinx = "==1.3.1"
+tox = ">=3.13.2"
+virtualenv = ">=20.0.8"
+wheel = "*"
