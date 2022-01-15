@@ -3,6 +3,7 @@ import configparser
 import random
 import sys
 import time
+from importlib.metadata import version
 from pathlib import Path
 from threading import Thread
 from urllib.parse import urlparse
@@ -10,7 +11,6 @@ from urllib.parse import urlparse
 import click
 
 from . import __codename__
-from . import __version__
 from .controllers import CastState
 from .controllers import setup_cast
 from .controllers import StateFileError
@@ -33,6 +33,12 @@ CONFIG_PATH = Path(CONFIG_DIR, "catt.cfg")
 STATE_PATH = Path(CONFIG_DIR, "state.json")
 
 WAIT_PLAY_TIMEOUT = 30
+
+PROGRAM_NAME = "catt"
+try:
+    VERSION = version(PROGRAM_NAME)
+except Exception:
+    VERSION = "0.0.0u"
 
 
 class CattTimeParamType(click.ParamType):
@@ -134,8 +140,8 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 @click.group(context_settings=CONTEXT_SETTINGS)
 @click.option("-d", "--device", metavar="NAME_OR_IP", help="Select Chromecast device.")
 @click.version_option(
-    version=__version__,
-    prog_name="catt",
+    version=VERSION,
+    prog_name=PROGRAM_NAME,
     message="%(prog)s v%(version)s, " + __codename__ + ".",
 )
 @click.pass_context

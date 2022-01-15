@@ -1,7 +1,8 @@
-image: python:3.7
+image: python:3.8
 
 stages:
-  - test
+  - build
+  - release
 
 test:
   variables:
@@ -13,10 +14,27 @@ test:
       - .cache/pre-commit
       - .cache/pip
       - venv
-  stage: test
+  stage: build
   before_script:
-    - pip install -Ur requirements_dev.txt
-    - python setup.py install
+    - pip install virtualenv poetry pre-commit
+    - virtualenv venv
+    - source venv/bin/activate
+    - poetry config virtualenvs.create false
+    - poetry install --no-root
   script:
     - pre-commit run -a --hook-stage manual
     - pytest
+
+pypi:
+  variables:
+    TWINE_USERNAME: "__token__"
+  stage: release
+  needs: [test]
+  rules:
+  - if: $CI_COMMIT_TAG =~ /^v\d+.\d+.\d+$/
+    when: on_success
+  script:
+      - pip install -U twine gitchangelog pystache poetry
+      - gitchangelog
+      - poetry build
+      - twine upload dist/*
