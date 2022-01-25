@@ -5,6 +5,13 @@
 
 ### Fixes
 
+* Fix importlib error on Python 3.8 and older (#382) [Emil Oppeln-Bronikowski]
+
+
+## v0.12.6 (2022-01-15)
+
+### Fixes
+
 * Fix casing issue with device names (#375) (#377) [Lee]
 
 
