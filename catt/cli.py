@@ -3,7 +3,11 @@ import configparser
 import random
 import sys
 import time
-from importlib.metadata import version
+try:
+    from importlib.metadata import version
+except ImportError:
+    # We're running a Python < 3.8
+    from importlib_metadata import version
 from pathlib import Path
 from threading import Thread
 from urllib.parse import urlparse
