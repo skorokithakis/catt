@@ -71,7 +71,7 @@ class CattDevice:
             self._create_controller()
         return self._cast_controller
 
-    def play_url(self, url: str, resolve: bool = False, block: bool = False, subtitle_url: str = None) -> None:
+    def play_url(self, url: str, resolve: bool = False, block: bool = False, subtitle_url: str = None, **kwargs) -> None:
         """
         Initiate playback of content.
 
@@ -88,7 +88,7 @@ class CattDevice:
             stream = StreamInfo(url)
             url = stream.video_url
         self.controller.prep_app()
-        self.controller.play_media_url(url, subtitles=subtitle_url)
+        self.controller.play_media_url(url, subtitles=subtitle_url, **kwargs)
 
         if self.controller.wait_for(["PLAYING"], timeout=10):
             if block:
