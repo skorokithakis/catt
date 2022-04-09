@@ -1,7 +1,7 @@
 # Changelog
 
 
-## Unreleased
+## v0.12.7 (2022-01-27)
 
 ### Fixes
 
