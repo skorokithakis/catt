@@ -57,7 +57,7 @@ class CattTimeParamType(click.ParamType):
             self.fail("{} is not a valid time description.".format(value))
 
         tdesc.reverse()
-        return sum(tdesc[p] * 60 ** p for p in range(tlen))
+        return sum(tdesc[p] * 60**p for p in range(tlen))
 
 
 CATT_TIME = CattTimeParamType()

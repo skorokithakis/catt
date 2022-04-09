@@ -19,6 +19,7 @@ repos:
   hooks:
   - id: mypy
     args: ["--ignore-missing-imports"]
+    additional_dependencies: ["types-requests"]
 - repo: local
   hooks:
   - id: gitchangelog

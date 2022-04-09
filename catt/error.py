@@ -1,5 +1,5 @@
 class CattError(Exception):
-    """ Base exception for catt. """
+    """Base exception for catt."""
 
     pass
 
@@ -14,25 +14,25 @@ class CattUserError(CattError):
 
 
 class StateFileError(CattError):
-    """ When a requested state file contains invalid data or nothing. """
+    """When a requested state file contains invalid data or nothing."""
 
     pass
 
 
 class ListenerError(CattError):
-    """ When invalid data is passed to a listener class initializer. """
+    """When invalid data is passed to a listener class initializer."""
 
     pass
 
 
 class AppSelectionError(CattError):
-    """ When invalid data is passed to the app selection mechanism. """
+    """When invalid data is passed to the app selection mechanism."""
 
     pass
 
 
 class PlaylistError(CattError):
-    """ When playlist specific operations are attempted with non-playlist info. """
+    """When playlist specific operations are attempted with non-playlist info."""
 
     pass
 
@@ -44,36 +44,36 @@ class APIError(CattError):
 
 
 class SubtitlesError(CattUserError):
-    """ When a specified subtitles file cannot be found or its encoding cannot be determined. """
+    """When a specified subtitles file cannot be found or its encoding cannot be determined."""
 
     pass
 
 
 class CliError(CattUserError):
-    """ When the cli user passes invalid commands/options/arguments to catt. """
+    """When the cli user passes invalid commands/options/arguments to catt."""
 
     pass
 
 
 class CastError(CattUserError):
-    """ When operations are attempted with non-existent or inactive devices. """
+    """When operations are attempted with non-existent or inactive devices."""
 
     pass
 
 
 class ControllerError(CattUserError):
-    """ When a controller is incapable of the requested action. """
+    """When a controller is incapable of the requested action."""
 
     pass
 
 
 class ExtractionError(CattUserError):
-    """ When the requested media cannot be found or processed by yt-dlp. """
+    """When the requested media cannot be found or processed by yt-dlp."""
 
     pass
 
 
 class FormatError(CattUserError):
-    """ When the supplied format filter is invalid or excludes all available formats. """
+    """When the supplied format filter is invalid or excludes all available formats."""
 
     pass

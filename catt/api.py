@@ -71,7 +71,9 @@ class CattDevice:
             self._create_controller()
         return self._cast_controller
 
-    def play_url(self, url: str, resolve: bool = False, block: bool = False, subtitle_url: str = None, **kwargs) -> None:
+    def play_url(
+        self, url: str, resolve: bool = False, block: bool = False, subtitle_url: str = None, **kwargs
+    ) -> None:
         """
         Initiate playback of content.
 
