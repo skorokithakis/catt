@@ -31,6 +31,7 @@ ifaddr = ">=0.1.7"
 pychromecast = "==9.2.0"
 requests = ">=2.23.0"
 yt-dlp = ">=2021.12.1"
+protobuf = "<4"
 
 # We don't use zeroconf directly, but PyChromecast does, and they aren't great about
 # pinning it, so we've seen breakage. We pin it here just to avoid that.
