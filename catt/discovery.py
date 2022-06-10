@@ -141,5 +141,4 @@ def get_cast_device(device_desc: Optional[str] = None) -> CastDevice:
             msg = 'Specified device "{}" not found'.format(device_desc) if device_desc else "No devices found"
             raise CastError(msg)
 
-    cast_device.cast.wait()
     return cast_device
