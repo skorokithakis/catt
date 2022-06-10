@@ -293,7 +293,7 @@ class CastController:
 
     @property
     def cc_name(self):
-        return self._cast.device.friendly_name
+        return self._cast.cast_info.friendly_name
 
     @property
     def info(self):

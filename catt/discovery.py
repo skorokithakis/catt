@@ -22,7 +22,7 @@ class CastDevice:
         return {
             "ip": self.ip,
             "port": self.port,
-            "manufacturer": self.cast.device.manufacturer,
+            "manufacturer": self.cast.cast_info.manufacturer,
             "model_name": self.cast.model_name,
             "uuid": self.cast.uuid,
             "cast_type": self.cast.cast_type,
@@ -45,11 +45,15 @@ def get_cast_devices(names: Optional[List[str]] = None) -> List[CastDevice]:
         cast_infos, browser = pychromecast.discovery.discover_listed_chromecasts(friendly_names=names)
     else:
         cast_infos, browser = pychromecast.discovery.discover_chromecasts()
-    browser.stop_discovery()
 
     devices = [
         CastDevice(pychromecast.get_chromecast_from_cast_info(c, browser.zc), c.host, c.port) for c in cast_infos
     ]
+
+    for device in devices:
+        device.cast.wait()
+
+    browser.stop_discovery()
     devices.sort(key=lambda d: d.cast.name)
     return devices
 
