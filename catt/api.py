@@ -1,21 +1,15 @@
+from typing import List
 from typing import Optional
 
 from .controllers import CastController
 from .controllers import get_app
 from .controllers import get_controller
-from .discovery import CastDevice
-from .discovery import get_cast_device_with_ip
-from .discovery import get_cast_device_with_name
-from .discovery import get_cast_devices
+from .discovery import get_cast_with_ip
+from .discovery import get_cast_with_name
+from .discovery import get_casts
 from .error import APIError
 from .error import CastError
 from .stream_info import StreamInfo
-
-
-def discover() -> list:
-    """Perform discovery of devices present on local network, and return result."""
-
-    return [CattDevice(ip_addr=d.ip) for d in get_cast_devices()]
 
 
 class CattDevice:
@@ -38,9 +32,8 @@ class CattDevice:
         self.ip_addr = ip_addr
         self.uuid = None
 
-        self._cast_device = None  # type: Optional[CastDevice]
-        # Type comment for compatibility with Py3.5-.
-        self._cast_controller = None  # type: Optional[CastController]
+        self._cast = None
+        self._cast_controller = None
         if not lazy:
             self._create_cast()
 
@@ -48,24 +41,21 @@ class CattDevice:
         return "<CattDevice: {}>".format(self.name or self.ip_addr)
 
     def _create_cast(self) -> None:
-        self._cast_device = (
-            get_cast_device_with_ip(self.ip_addr) if self.ip_addr else get_cast_device_with_name(self.name)
+        self._cast = (
+            get_cast_with_ip(self.ip_addr) if self.ip_addr else get_cast_with_name(self.name)
         )
-        if not self._cast_device:
+        if not self._cast:
             raise CastError("Device could not be found")
-        self._cast = self._cast_device.cast
-        self.name = self._cast.name
-        self.ip_addr = self._cast_device.ip
-        self.uuid = self._cast.uuid
-
-        self._cast.wait()
+        self.name = self._cast.cast_info.friendly_name
+        self.ip_addr = self._cast.cast_info.host
+        self.uuid = self._cast.cast_info.uuid
 
     def _create_controller(self) -> None:
         self._cast_controller = get_controller(self._cast, get_app("default"))
 
     @property
     def controller(self):
-        if not self._cast_device:
+        if not self._cast:
             self._create_cast()
         if not self._cast_controller:
             self._create_controller()
@@ -169,3 +159,9 @@ class CattDevice:
         """
 
         self.controller.volumedown(delta)
+
+
+def discover() -> List[CattDevice]:
+    """Perform discovery of devices present on local network, and return result."""
+
+    return [CattDevice(ip_addr=c.ip) for c in get_casts()]

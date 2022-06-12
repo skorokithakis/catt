@@ -13,7 +13,7 @@ from pychromecast.config import APP_YOUTUBE as YOUTUBE_APP_ID
 from pychromecast.controllers.dashcast import DashCastController as PyChromecastDashCastController
 from pychromecast.controllers.youtube import YouTubeController
 
-from .discovery import get_cast_device
+from .discovery import get_cast
 from .error import AppSelectionError
 from .error import CastError
 from .error import ControllerError
@@ -75,11 +75,10 @@ def get_controller(cast, app, action=None, prep=None) -> "CastController":
 
 
 def setup_cast(device_desc, video_url=None, controller=None, ytdl_options=None, action=None, prep=None):
-    cast_device = get_cast_device(device_desc)
-    cast = cast_device.cast
+    cast = get_cast(device_desc)
     cast_type = cast.cast_type
     app_id = cast.app_id
-    stream = StreamInfo(video_url, device_info=cast_device.info, ytdl_options=ytdl_options) if video_url else None
+    stream = StreamInfo(video_url, cast_info=cast.cast_info, ytdl_options=ytdl_options) if video_url else None
 
     if controller:
         app = get_app(controller, cast_type, strict=True)
