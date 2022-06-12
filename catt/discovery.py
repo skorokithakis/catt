@@ -1,4 +1,3 @@
-from email.headerregistry import ContentTransferEncodingHeader
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -19,8 +18,8 @@ def get_casts(names: Optional[List[str]] = None) -> List[pychromecast.Chromecast
 
     :param names: Optional list of device names.
     :type names: List[str]
-    :returns: List of CastDevice wrapper objects containing cast object and additional ip/port info.
-    :rtype: List[CastDevice]
+    :returns: List of Chromecast objects.
+    :rtype: List[pychromecast.Chromecast]
     """
 
     if names:
@@ -34,7 +33,7 @@ def get_casts(names: Optional[List[str]] = None) -> List[pychromecast.Chromecast
         cast.wait()
 
     browser.stop_discovery()
-    casts.sort(key=lambda d: d.name)
+    casts.sort(key=lambda c: c.cast_info.friendly_name)
     return casts
 
 
@@ -42,8 +41,8 @@ def get_cast_infos() -> List[pychromecast.CastInfo]:
     """
     Discover all available devices, and collect info from them.
 
-    :returns: Various device info, packed in dict w. device names as keys.
-    :rtype: Dict
+    :returns: Various device info, packed in CastInfo namedtuple.
+    :rtype: pychromecast.CastInfo
     """
 
     return [c.cast_info for c in get_casts()]
@@ -56,8 +55,8 @@ def get_cast_with_name(cast_name: Union[str, None]) -> Optional[pychromecast.Chr
 
     :param device_name: Name of device.
     :type device_name: str
-    :returns: CastDevice wrapper object containing cast object and additional ip/port info.
-    :rtype: CastDevice
+    :returns: Chromecast object.
+    :rtype: pychromecast.Chromecast
     """
 
     casts = get_casts([cast_name]) if cast_name else get_casts()
@@ -71,8 +70,8 @@ def get_cast_with_ip(cast_ip: str, port: int = DEFAULT_PORT) -> Optional[pychrom
     :param device_ip: Ip-address of device.
     :type device_name: str
     :param port: Optional port number of device.
-    :returns: CastDevice wrapper object containing cast object and additional ip/port info.
-    :rtype: CastDevice
+    :returns: Chromecast object.
+    :rtype: pychromecast.Chromecast
     """
 
     try:
