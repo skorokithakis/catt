@@ -1,6 +1,8 @@
 from typing import List
 from typing import Optional
 
+from pychromecast import Chromecast
+
 from .controllers import CastController
 from .controllers import get_app
 from .controllers import get_controller
@@ -32,8 +34,8 @@ class CattDevice:
         self.ip_addr = ip_addr
         self.uuid = None
 
-        self._cast = None
-        self._cast_controller = None
+        self._cast = None  # type: Optional[Chromecast]
+        self._cast_controller = None  # type: Optional[CastController]
         if not lazy:
             self._create_cast()
 
