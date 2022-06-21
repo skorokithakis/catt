@@ -20,8 +20,8 @@ from .controllers import CastState
 from .controllers import setup_cast
 from .controllers import StateFileError
 from .controllers import StateMode
-from .discovery import cast_device_ip_exists
-from .discovery import get_cast_devices_info
+from .discovery import cast_ip_exists
+from .discovery import get_cast_infos
 from .error import CastError
 from .error import CattUserError
 from .error import CliError
@@ -493,15 +493,15 @@ def info(settings, json_output):
 def scan(json_output):
     if not json_output:
         click.echo("Scanning Chromecasts...")
-    devices = get_cast_devices_info()
+    devices = get_cast_infos()
 
     if json_output:
-        echo_json(devices)
+        echo_json({d.friendly_name: d._asdict() for d in devices})
     else:
         if not devices:
             raise CastError("No devices found")
-        for device in devices.keys():
-            click.echo("{ip} - {device} - {manufacturer} {model_name}".format(device=device, **devices[device]))
+        for device in devices:
+            click.echo(f"{device.host} - {device.friendly_name} - {device.manufacturer} {device.model_name}")
 
 
 @cli.command(short_help="Save the current state of the Chromecast for later use.")
@@ -613,10 +613,9 @@ def get_device_from_settings(settings):
         raise CliError("No device specified (must be explicitly specified with -d option)")
     is_ip = is_ipaddress(device_desc)
     if is_ip:
-        found = cast_device_ip_exists(device_desc)
+        found = cast_ip_exists(device_desc)
     else:
-        devices = get_cast_devices_info()
-        found = device_desc in devices.keys()
+        found = device_desc in [d.friendly_name for d in get_cast_infos()]
     if not found:
         msg = "No device found at {}" if is_ip else 'Specified device "{}" not found'
         raise CliError(msg.format(device_desc))
