@@ -28,10 +28,9 @@ catt = "catt.cli:main"
 python = ">=3.7"
 click = ">=7.1.2"
 ifaddr = ">=0.1.7"
-pychromecast = ">=12.1.3, <13"
+pychromecast = ">=12.1.4, <13"
 requests = ">=2.23.0"
 yt-dlp = ">=2021.12.1"
-protobuf = "<4"
 
 [tool.poetry.dev-dependencies]
 coverage = "*"
