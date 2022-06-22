@@ -1,6 +1,15 @@
 # Changelog
 
 
+## Unreleased
+
+### Fixes
+
+* Fix issues with recent pychromecast / zeroconf (#398) [theychx]
+
+* Pin Protobuf to <4 to reduce incompatibilities (fixes #394) [Stavros Korokithakis]
+
+
 ## v0.12.7 (2022-01-27)
 
 ### Fixes
