@@ -171,12 +171,12 @@ DEFAULT_CTRL_TESTS = [
 YOUTUBE_CTRL_TESTS = [
     CattTest(
         "cast video from youtube",
-        ["cast", "https://www.youtube.com/watch?v=Rl4GiVtnLE4"],
-        check_data=("content_id", "Rl4GiVtnLE4"),
+        ["cast", "https://www.youtube.com/watch?v=mwPSIb3kt_4"],
+        check_data=("content_id", "mwPSIb3kt_4"),
     ),
     CattTest(
         "cast video from youtube, start at 2:02",
-        ["cast", "-t", "2:02", "https://www.youtube.com/watch?v=Rl4GiVtnLE4"],
+        ["cast", "-t", "2:02", "https://www.youtube.com/watch?v=mwPSIb3kt_4"],
         sleep=5,
         time_test=True,
         check_data=("current_time", "122"),
@@ -234,7 +234,7 @@ AUDIO_ONLY_TESTS = [
         'cast "wav" format audio content from bandcamp (testing format hack)',
         ["cast", "https://physicallysick.bandcamp.com/track/freak-is-out"],
         substring=True,
-        check_data=("content_id", "track?enc=wav"),
+        check_data=("content_id", "track?enc=flac"),
     ),
 ]
 
