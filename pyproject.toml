@@ -30,7 +30,7 @@ click = ">=7.1.2"
 ifaddr = ">=0.1.7"
 pychromecast = ">=12.1.4, <13"
 requests = ">=2.23.0"
-yt-dlp = ">=2021.12.1"
+yt-dlp = ">=2022.6.22.1"
 
 [tool.poetry.dev-dependencies]
 coverage = "*"
