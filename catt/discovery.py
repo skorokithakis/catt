@@ -40,8 +40,8 @@ def get_cast_infos() -> List[pychromecast.CastInfo]:
     """
     Discover all available devices, and collect info from them.
 
-    :returns: Various device info, packed in CastInfo namedtuple.
-    :rtype: pychromecast.CastInfo
+    :returns: List of CastInfo namedtuples.
+    :rtype: List[pychromecast.CastInfo]
     """
 
     return [c.cast_info for c in get_casts()]
@@ -73,13 +73,14 @@ def get_cast_with_ip(cast_ip: str, port: int = DEFAULT_PORT) -> Optional[pychrom
     :rtype: pychromecast.Chromecast
     """
 
-    try:
-        # tries = 1 is necessary in order to stop pychromecast engaging
-        # in a retry behaviour when ip is correct, but port is wrong.
-        cast = pychromecast.Chromecast(cast_ip, port=port, tries=1)
-        return cast
-    except pychromecast.error.ChromecastConnectionError:
+    device_info = pychromecast.discovery.get_device_info(cast_ip)
+    if not device_info:
         return None
+
+    host = (cast_ip, DEFAULT_PORT, device_info.uuid, device_info.model_name, device_info.friendly_name)
+    cast = pychromecast.get_chromecast_from_host(host)
+    cast.wait()
+    return cast
 
 
 def cast_ip_exists(cast_ip: str) -> bool:
@@ -108,7 +109,7 @@ def get_cast(cast_desc: Optional[str] = None) -> pychromecast.Chromecast:
     cast = None
 
     if cast_desc and is_ipaddress(cast_desc):
-        cast = get_cast_with_ip(cast_desc, DEFAULT_PORT)
+        cast = get_cast_with_ip(cast_desc)
         if not cast:
             msg = "No device found at {}".format(cast_desc)
             raise CastError(msg)
