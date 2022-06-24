@@ -5,6 +5,13 @@
 
 ### Fixes
 
+* Rework broken get_cast_with_ip (#403) [theychx]
+
+
+## v0.12.8 (2022-06-22)
+
+### Fixes
+
 * Fix issues with recent pychromecast / zeroconf (#398) [theychx]
 
 * Pin Protobuf to <4 to reduce incompatibilities (fixes #394) [Stavros Korokithakis]
