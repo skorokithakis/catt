@@ -164,4 +164,4 @@ class CattDevice:
 def discover() -> List[CattDevice]:
     """Perform discovery of devices present on local network, and return result."""
 
-    return [CattDevice(ip_addr=c.ip) for c in get_casts()]
+    return [CattDevice(ip_addr=c.socket_client.host) for c in get_casts()]
