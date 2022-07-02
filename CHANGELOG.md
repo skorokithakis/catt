@@ -1,6 +1,13 @@
 # Changelog
 
 
+## Unreleased
+
+### Fixes
+
+* Fix discovery function in the API (#406) [Scott Moreau]
+
+
 ## v0.12.9 (2022-06-24)
 
 ### Fixes
