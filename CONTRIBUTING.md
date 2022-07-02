@@ -64,13 +64,12 @@ development.
     ```
 
 3.  Install your local copy into a virtualenv. Assuming you have
-    virtualenvwrapper installed, this is how you set up your fork for
+    poetry installed, this is how you set up your fork for
     local development:
 
     ``` {.shell}
-    $ mkvirtualenv catt
-    $ cd catt/
-    $ python setup.py develop
+    $ poetry shell
+    $ poetry install --no-root
     ```
 
 4.  Create a branch for local development:
@@ -87,8 +86,7 @@ development.
 
     ``` {.shell}
     $ flake8 catt tests
-    $ python setup.py test
-    $ tox
+    $ pytest
     ```
 
     To get flake8 and tox, just pip install them into your virtualenv.
@@ -112,8 +110,8 @@ Before you submit a pull request, check that it meets these guidelines:
 2.  If the pull request adds functionality, the docs should be updated.
     Put your new functionality into a function with a docstring, and add
     the feature to the list in README.md.
-3.  The pull request should work for Python 2.7, 3.3, 3.4 and 3.5. Check
-    <https://travis-ci.org/skorokithakis/catt/pull_requests> and make
+3.  The pull request should work for all Python versions after 3.7. Check
+    <https://gitlab.com/stavros/catt/-/pipelines> and make
     sure that the tests pass for all supported Python versions.
 
 Tips
