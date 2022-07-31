@@ -9,6 +9,8 @@
 
 ### Fixes
 
+* Change DashCast app ID. [Stavros Korokithakis]
+
 * Fix discovery function in the API (#406) [Scott Moreau]
 
 

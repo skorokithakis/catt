@@ -41,7 +41,7 @@
         color: #555;
         font-weight: bold;
         height: 1.2em;
-        text-align: center; 
+        text-align: center;
         padding: 10px;
         background: rgba(32, 27, 37, 0.9);
         z-index: 10;
@@ -50,7 +50,7 @@
       #status.empty {
         opacity: 0;
       }
-    
+
       iframe {
         position: absolute;
         left: 0; top: 0; right: 0; bottom: 0;
@@ -68,7 +68,7 @@
     </style>
   </head>
   <body id="dcast">
-	 
+
     <div id="main" class="fade">
       <iframe id="if1"></iframe>
       <iframe id="if2"></iframe>
@@ -87,7 +87,7 @@
         const loadRequestData = new cast.framework.messages.LoadRequestData();
         loadRequestData.autoplay = true;
         loadRequestData.media = new cast.framework.messages.MediaInformation();
-        loadRequestData.media.contentId = "https://swiergot.github.io/dashcast/loading.png";
+        loadRequestData.media.contentId = "https://catt.stavros.io/loading.png";
         loadRequestData.media.contentType = "image/jpeg";
         loadRequestData.media.streamType = cast.framework.messages.StreamType.NONE;
         const metadata = new cast.framework.messages.GenericMediaMetadata();
@@ -137,7 +137,7 @@
 
         if2.onload = if1.onload = function(e){
           var the_if = this;
-          if (the_if.src.indexOf("dashcast_is_error_page_zz") > 0) { 
+          if (the_if.src.indexOf("dashcast_is_error_page_zz") > 0) {
             the_if.src = the_if.getAttribute("target-src");
             return;
           }
@@ -211,7 +211,7 @@
         // initialize the CastReceiverContext with options
         window.castReceiverContext.start(options);
       };
-    
+
     </script>
   </body>
 </html>
