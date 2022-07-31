@@ -3,6 +3,10 @@
 
 ## Unreleased
 
+### Features
+
+* Add swiergot's custom receiver. [Stavros Korokithakis]
+
 ### Fixes
 
 * Fix discovery function in the API (#406) [Scott Moreau]
