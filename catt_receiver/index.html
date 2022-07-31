@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>DashCast</title>
+<link href='http://fonts.googleapis.com/css?family=Roboto:400,700,300' rel='stylesheet' type='text/css'>
+<style>
+  html{
+    height: 100%;
+    width: 100%;
+  }
+
+  body{
+    font-family: 'Roboto', sans-serif;
+    height:100%;
+    width: 100%;
+    text-align:center;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: black;
+  }
+
+  input{
+    font-family: 'Roboto', sans-serif;
+    font-size: inherit;
+  }
+
+  input[type=number]{
+    width: 3em;
+    padding: 1px;
+    background: black;
+    border: 2px solid #888;
+    color: white;
+  }
+
+  .url {
+    padding: 5px;
+    text-align: center;
+    font-size: 30px;
+    display: block;
+    width: 100%;
+    border: 0 transparent;
+    outline: none;
+  }
+  input:focus{
+    outline: 3px solid #7c6991;
+  }
+
+img{
+  margin-bottom: -20px;
+}
+
+.step{
+  font-size: 30px;
+  color: white;
+  margin: 10px;
+  margin-top: 20px;
+  font-weight: 300;
+}
+
+.go{
+  border: 2px solid #7c6991;
+  margin-top: 30px;
+  padding: 10px;
+  cursor: pointer;
+}
+.go:hover{
+  background: #7c6991;
+}
+.go:hover em{
+  background: black;
+  text-shadow: 1px 1px #7c6991;
+}
+
+em{
+  font-style: normal;
+  display: inline-block;
+  border-radius: 1em;
+  heigth: 1.3em;
+  line-height: 1.3em;
+  width: 1.3em;
+  text-align: center;
+  font-weight: normal;
+  background: #7c6991;
+  text-shadow: 1px 1px #231e29;
+}
+
+.opt{
+  font-size: 25px;
+  color: white;
+  font-weight: bold;
+  margin: 10px;
+}
+
+.opt em{
+  font-size: 17px;
+  cursor: pointer;
+  position: relative;
+}
+.opt em .info{
+  display: none;
+  text-shadow: none;
+}
+.opt em:hover .info{
+  display: block;
+  position: absolute;
+  border: 1px solid white;
+  padding: 5px;
+  background: black;
+  margin-top: 10px;
+  left:0;
+  font-size: 13px;
+  width: 15em;
+}
+
+  #main{
+    display: inline-block;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+  }
+
+  input[disabled]{
+    color: #aaa;
+  }
+
+  .slider{
+    cursor: pointer;
+    display: inline-block;
+    width: 60px;
+    font-size: 16px;
+    line-height: 23px;
+    text-align: center;
+    font-weight: normal;
+    height: 25px;
+    border-radius: 25px;
+    background: #aaa;
+    padding: 1px;
+    position: relative;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    vertical-align: middle;
+    margin-bottom: 4px;
+    margin-left: 10px;
+  }
+  .slider.disabled{
+    cursor: default;
+  }
+  .slider .inx{
+    position: relative;
+    overflow: hidden;
+    height: 25px;
+    width: 60px;
+    border-radius: 25px;
+  }
+  .slider .in{
+    transition: left 0.2s ease-out, right 0.2s ease-out;
+    border-radius: 25px;
+    width: 39px;
+    position: absolute;
+    height: 25px;
+    top: 0;
+  }
+  .slider .in1{
+    background: #81bd2c;
+    background: linear-gradient(top, #547b1d 0%, #81bd2c 100%);
+    background: -moz-linear-gradient(top, #547b1d 0%, #81bd2c 100%);
+    background: -webkit-linear-gradient(top, #547b1d 0%, #81bd2c 100%);
+    padding-right: 21px;
+    left: -35px;
+  }
+  .slider.disabled .in{
+    background: #aaa;
+    text-shadow: -1px -1px #888;
+  }
+  .slider .in2{
+    background: #bd302c;
+    background: linear-gradient(top, #611917 0%, #bd302c 100%);
+    background: -moz-linear-gradient(top, #611917 0%, #bd302c 100%);
+    background: -webkit-linear-gradient(top, #611917 0%, #bd302c 100%);
+    padding-left: 21px;
+    right: 0;
+  }
+  .slider .mark{
+    left: -1px;
+    border: 1px solid #aaa;
+    width: 25px;
+    height: 25px;
+    background: #ccc;
+    background: linear-gradient(top, #eee 0%, #aaa 100%);
+    background: -webkit-linear-gradient(top, #eee 0%, #aaa 100%);
+  }
+
+  .slider.true .mark{
+    left: 35px;
+  }
+  .slider.true .in1{
+    left: 0;
+  }
+  .slider.true .in2{
+    right: -35px;
+  }
+
+</style>
+<script type="text/javascript" src="//www.gstatic.com/cv/js/sender/v1/cast_sender.js"></script>
+<script type="text/javascript">
+var applicationID = '5C517DAC';
+var namespace = 'urn:x-cast:es.offd.dashcast';
+var session = null;
+
+function init() {
+  if (!chrome.cast || !chrome.cast.isAvailable) { window.setTimeout(init, 100); return; }
+  var sessionRequest = new chrome.cast.SessionRequest(applicationID);
+  var apiConfig = new chrome.cast.ApiConfig(sessionRequest, sessionListener, function() {});
+  chrome.cast.initialize(apiConfig, onInitSuccess, onError);
+}
+
+init();
+
+function onInitSuccess() {}
+function onError(message) {}
+
+function sessionListener(e) { session = e; }
+function sessionUpdateListener(isAlive) {if (!isAlive) { session = null; }};
+
+function sendMessage(message) {
+  if (session!=null) {
+    session.sendMessage(namespace, message);
+  }
+  else {
+    chrome.cast.requestSession(function(e) {
+        session = e;
+        session.sendMessage(namespace, message);
+      }, onError);
+  }
+}
+</script>
+</head>
+<body>
+  <div id="main">
+    <img src="loading.png"/>
+    <div class="step"><em>1</em> Enter address to show</div>
+    <input id="input" class="url" placeholder="http://..."/>
+    <div class="step"><em>2</em> Options</div>
+    <div class="opt">
+      Force display?  <div id="force" class="slider"><div class="inx"><div class="in in1">Yes</div> <div class="in in2">No</div></div><div class="in mark"></div></div>
+      <em>?
+        <span class="info">
+        Some sites forbid loading using the default method.  Use this option to force them to load.  Doing so makes DashCast loose control of the chromecast
+        </span>
+      </em>
+    </div>
+    <div class="opt">
+      Reload  <div id="reload" class="slider"><div class="inx"><div class="in in1">Yes</div> <div class="in in2">No</div></div><div class="in mark"></div></div>
+      every <input id="reload-time" type="number" min="1" value="50"> seconds
+    </div>
+
+    <div id="go-button" class="step go">
+    <em>3</em> GO
+    </div>
+
+  </div>
+    <script type="text/javascript">
+      var reload_slider = document.getElementById("reload");
+      var force_slider = document.getElementById("force");
+      var reload_time = document.getElementById("reload-time");
+      var go_button = document.getElementById("go-button")
+      var scheme_re = /^https?:\/\//;
+      var input = document.getElementById("input");
+
+      go_button.onclick = function(e) {
+        var value = input.value;
+        if (!scheme_re.test(value)) {
+          value = "http://" + value;
+        }
+        var force = force_slider.classList.contains("true");
+        var reload = reload_slider.classList.contains("true");
+        var reload_secs = reload_time.value;
+        sendMessage({
+          url: value,
+          force: force,
+          reload: reload,
+          reload_time: (parseInt(reload_secs, 10) || 0) * 1000
+        });
+      }
+
+      function updateEnabled() {
+        var is_forced = force_slider.classList.contains("true");
+        if (is_forced) {
+          reload_time.classList.add("disabled");
+          reload_time.setAttribute("disabled", true);
+          reload_slider.classList.add("disabled");
+        } else {
+          var is_reload = reload_slider.classList.contains("true");
+          if (is_reload) {
+            reload_time.classList.remove("disabled");
+            reload_time.removeAttribute("disabled");
+          } else {
+            reload_time.classList.add("disabled");
+            reload_time.setAttribute("disabled", true);
+          }
+          reload_slider.classList.remove("disabled");
+        }
+      }
+
+      function sliderClicked(){
+        var s = this;
+        if (this.classList.contains("disabled")){ return; }
+        var new_val = !(s.classList.contains("true"));
+        if (new_val) {
+          s.classList.add("true");
+        } else {
+          s.classList.remove("true");
+        }
+        updateEnabled();
+      }
+
+      var sliders = document.getElementsByClassName("slider");
+      [].forEach.call(sliders, function(s) {
+        s.onclick = sliderClicked;
+      }); 
+      input.focus();
+      updateEnabled();
+    </script>
+</body>
+</html>

@@ -1,3 +1,217 @@
+<!DOCTYPE html>
 <html>
-    <body>This is a dummy receiver.</body>
+  <head>
+  <title>DashCast</title>
+    <style type="text/css">
+      html {
+        height: 100%;
+        padding: 0;
+        width: 100%;
+      }
+
+      body {
+        overflow: hidden;
+        height: 100%;
+        padding: 0;
+        margin: 0;
+        background: black url("loading.png") no-repeat 50% 50%;
+      }
+
+      #main {
+        height: 100%;
+        background: black url("bg1.png") no-repeat 50% 50%;
+        opacity: 0;
+        transition: opacity 4s ease;
+      }
+
+      #main, iframe {
+        background: black url("bg1.png") no-repeat 50% 50%;
+      }
+
+      #main.show {
+        opacity: 1;
+      }
+
+      #status {
+        transition: opacity 1s;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        color: #555;
+        font-weight: bold;
+        height: 1.2em;
+        text-align: center; 
+        padding: 10px;
+        background: rgba(32, 27, 37, 0.9);
+        z-index: 10;
+      }
+
+      #status.empty {
+        opacity: 0;
+      }
+    
+      iframe {
+        position: absolute;
+        left: 0; top: 0; right: 0; bottom: 0;
+        opacity: 0;
+        transition: opacity 0;
+        width: 100%;
+        height: 100%;
+        border: 0 transparent;
+      }
+
+      iframe.show {
+        transition: opacity 1s;
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body id="dcast">
+	 
+    <div id="main" class="fade">
+      <iframe id="if1"></iframe>
+      <iframe id="if2"></iframe>
+    </div>
+    <div id="status" class="empty">
+    </div>
+
+    <script type="text/javascript" src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
+    <script type="text/javascript">
+
+      var reload_time = 0;
+      var timer_id = null;
+
+      // Taken from: https://github.com/home-assistant/frontend/blob/dev/cast/src/receiver/entrypoint.ts
+      function playDummyMedia() {
+        const loadRequestData = new cast.framework.messages.LoadRequestData();
+        loadRequestData.autoplay = true;
+        loadRequestData.media = new cast.framework.messages.MediaInformation();
+        loadRequestData.media.contentId = "https://swiergot.github.io/dashcast/loading.png";
+        loadRequestData.media.contentType = "image/jpeg";
+        loadRequestData.media.streamType = cast.framework.messages.StreamType.NONE;
+        const metadata = new cast.framework.messages.GenericMediaMetadata();
+        metadata.title = "Dummy " + (new Date().toTimeString());
+        loadRequestData.media.metadata = metadata;
+        loadRequestData.requestId = 0;
+        window.playerManager.load(loadRequestData);
+        window.setTimeout(playDummyMedia, 60 * 9 * 1000);
+      }
+
+      function removeTouchControls() {
+        var controls = document.body.querySelector("touch-controls");
+        if (controls) {
+          controls.remove();
+        }
+      }
+
+      function setupMutationObserver() {
+        // This is to allow the touch display to work
+        const observer = new MutationObserver(removeTouchControls);
+        observer.observe(document.body, { childList: true, subtree: true });
+      }
+
+      function createMediaPlayer() {
+        const mediaPlayer = document.createElement("cast-media-player");
+        mediaPlayer.style.display = "none";
+        document.body.append(mediaPlayer);
+        setupMutationObserver();
+      }
+
+      window.onload = function() {
+        var main = document.getElementById("main");
+        var status = document.getElementById("status");
+
+        var if1 = document.getElementById("if1");
+        var if2 = document.getElementById("if2");
+        var current = if2;
+        var candidate = if1;
+
+        main.classList.add("show");
+
+        function setStatus(msg) {
+          if (msg){ status.classList.remove("empty");}
+          else { status.classList.add("empty"); }
+          status.textContent = msg;
+        }
+
+        if2.onload = if1.onload = function(e){
+          var the_if = this;
+          if (the_if.src.indexOf("dashcast_is_error_page_zz") > 0) { 
+            the_if.src = the_if.getAttribute("target-src");
+            return;
+          }
+          if (the_if === candidate) {
+            if(timer_id) { window.clearTimeout(timer_id); }
+            setStatus("");
+            current.style.zIndex = 2;
+            candidate.style.zIndex = 3;
+            candidate.classList.add("show");
+            var temp = current;
+            current = candidate;
+            candidate = temp;
+            if (reload_time) {
+              console.log("GOT RELOAD", reload_time)
+              timer_id = setTimeout(function() {
+                console.log("RELOADING");
+                loadFrame(the_if.src, reload_time);
+              }, reload_time);
+            }
+          }
+        }
+
+        function loadFrame(url, reload_time) {
+          setStatus("Loading: " + url);
+          window.reload_time = reload_time;
+          candidate.src="error.html?dashcast_is_error_page_zz";
+          candidate.setAttribute("target-src", url);
+          candidate.classList.remove("show");
+          //candidate.src = url;
+        }
+
+        function loadPage(url) {
+          setStatus("Force loading: " + url);
+          window.setTimeout(function() { window.location = url; }, 1000);
+        }
+
+        createMediaPlayer();
+
+        window.castReceiverContext = cast.framework.CastReceiverContext.getInstance();
+        window.castReceiverContext.setLoggerLevel(cast.framework.LoggerLevel.DEBUG);
+        window.castReceiverContext.addEventListener(cast.framework.system.EventType.READY, function(event) {
+          window.castReceiverContext.setApplicationState("Application ready");
+          setStatus("Waiting for address")
+        });
+
+        window.playerManager = window.castReceiverContext.getPlayerManager();
+
+        const options = new cast.framework.CastReceiverOptions();
+        const customNS = "urn:x-cast:es.offd.dashcast";
+
+        options.customNamespaces = {};
+        options.customNamespaces[customNS] = cast.framework.system.MessageType.JSON;
+
+        window.castReceiverContext.addCustomMessageListener(customNS, function(event) {
+          var msg = event.data;
+          if (msg.force) {
+            return loadPage(msg.url);
+          }
+
+          playDummyMedia();
+
+          loadFrame(msg.url, (msg.reload) ? parseInt(msg.reload_time, 10) : 0);
+          // inform all senders on the message bus of the incoming message event
+          // sender message listener will be invoked
+          window.castReceiverContext.sendCustomMessage(customNS, event.senderId, event.data);
+        });
+
+        options.statusText = "Application is starting";
+        options.disableIdleTimeout = true;
+
+        // initialize the CastReceiverContext with options
+        window.castReceiverContext.start(options);
+      };
+    
+    </script>
+  </body>
 </html>
