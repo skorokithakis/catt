@@ -7,7 +7,6 @@ from typing import Optional
 
 import pychromecast
 from pychromecast.config import APP_BACKDROP as BACKDROP_APP_ID
-from pychromecast.config import APP_DASHCAST as DASHCAST_APP_ID
 from pychromecast.config import APP_MEDIA_RECEIVER as MEDIA_RECEIVER_APP_ID
 from pychromecast.config import APP_YOUTUBE as YOUTUBE_APP_ID
 from pychromecast.controllers.dashcast import DashCastController as PyChromecastDashCastController
@@ -25,6 +24,9 @@ from .util import echo_warning
 GOOGLE_MEDIA_NAMESPACE = "urn:x-cast:com.google.cast.media"
 VALID_STATE_EVENTS = ["UNKNOWN", "IDLE", "BUFFERING", "PLAYING", "PAUSED"]
 CLOUD_APP_ID = "38579375"
+
+DASHCAST_NAMESPACE = "urn:x-cast:es.offd.dashcast"
+DASHCAST_APP_ID = "5C517DAC"
 
 
 class App:
@@ -496,11 +498,11 @@ class DefaultCastController(CastController, MediaControllerMixin, PlaybackBaseMi
 
 class DashCastController(CastController):
     def __init__(self, cast, app, prep=None):
-        self._controller = PyChromecastDashCastController()
+        self._controller = PyChromecastDashCastController(appNamespace=DASHCAST_NAMESPACE, appId=DASHCAST_APP_ID)
         super(DashCastController, self).__init__(cast, app, prep=prep)
 
-    def load_url(self, url, **kwargs):
-        self._controller.load_url(url, force=True)
+    def load_url(self, url, force=True, **kwargs):
+        self._controller.load_url(url, force=force)
 
     def prep_app(self):
         """Make sure desired chromecast app is running."""
