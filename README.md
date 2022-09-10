@@ -75,7 +75,7 @@ You can also run `catt` in Docker, if you prefer:
 ### Configuration file
 
 CATT can utilize a config-file stored at `~/.config/catt/catt.cfg`
-(`%APPDATA%\catt\catt.cfg` on Windows).
+(`%APPDATA%\catt\catt.cfg` on Windows, `~/Library/Application Support/catt/catt.cfg` on macOS).
 
 The format is as following:
 
