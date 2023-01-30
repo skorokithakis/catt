@@ -50,7 +50,7 @@ class TestThings(unittest.TestCase):
     def test_stream_info_other_video(self):
         stream = StreamInfo("https://www.twitch.tv/twitch/clip/MistySoftPenguinKappaPride")
         self.assertIn("https://", stream.video_url)
-        self.assertEqual(stream.video_id, "944456168")
+        self.assertEqual(stream.video_id, "492743767")
         self.assertTrue(stream.is_remote_file)
         self.assertEqual(stream.extractor, "twitch")
 
