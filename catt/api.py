@@ -162,7 +162,7 @@ class CattDevice:
 
     def volumemute(self, muted: bool) -> None:
         """
-        Enable mute on supported devices. Added by @neurodiv-eric
+        Enable mute on supported devices.
 
         :param muted: Whether to mute the device. (valid values: true or false).
         """
