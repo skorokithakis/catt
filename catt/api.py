@@ -160,6 +160,15 @@ class CattDevice:
 
         self.controller.volumedown(delta)
 
+    def volumemute(self, muted: bool) -> None:
+        """
+        Enable mute on supported devices. Added by @neurodiv-eric
+
+        :param muted: Whether to mute the device. (valid values: true or false).
+        """
+
+        self.controller.volumemute(muted)
+
 
 def discover() -> List[CattDevice]:
     """Perform discovery of devices present on local network, and return result."""
