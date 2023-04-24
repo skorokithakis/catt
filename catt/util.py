@@ -39,7 +39,7 @@ def echo_status(status):
         click.echo("Volume: {}".format(status["volume_level"]))
 
     if status.get("volume_muted"):
-        click.echo("Volume Muted: {}".format(status["is_volume_muted"]))
+        click.echo("Volume muted: {}".format(status["is_volume_muted"]))
 
 
 def guess_mime(path):
