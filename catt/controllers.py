@@ -378,6 +378,9 @@ class CastController:
     def volumedown(self, delta: float) -> None:
         self._cast.volume_down(delta)
 
+    def volumemute(self, muted: bool) -> None:
+        self._cast.set_volume_muted(muted)
+
     def kill(self, idle_only=False, force=False):
         """
         Kills current Chromecast session.

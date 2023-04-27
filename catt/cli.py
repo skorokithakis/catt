@@ -460,6 +460,14 @@ def volumedown(settings, delta):
     cst.volumedown(delta / 100.0)
 
 
+@cli.command(short_help="Enable or disable mute on supported devices.")
+@click.argument("muted", type=click.BOOL, required=False, default=True, metavar="MUTED")
+@click.pass_obj
+def volumemute(settings, muted):
+    cst = setup_cast(settings["selected_device"])
+    cst.volumemute(muted)
+
+
 @cli.command(short_help="Show some information about the currently-playing video.")
 @click.pass_obj
 def status(settings):
