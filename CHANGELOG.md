@@ -1,6 +1,13 @@
 # Changelog
 
 
+## Unreleased
+
+### Features
+
+* Add volumemute command (#427) [neurodiv-eric]
+
+
 ## v0.12.10 (2023-01-30)
 
 ### Features
