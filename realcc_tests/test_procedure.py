@@ -122,8 +122,8 @@ DEFAULT_CTRL_TESTS = [
     CattTest("set volume to 100", ["volume", "100"], sleep=2, check_data=("volume_level", 1.0)),
     CattTest("lower volume by 50 ", ["volumedown", "50"], sleep=2, check_data=("volume_level", 0.5)),
     CattTest("raise volume by 50", ["volumeup", "50"], sleep=2, check_data=("volume_level", 1.0)),
-    CattTest("mute the media volume", ["volumemute", "True"], sleep=2, check_data=("is_volume_muted", True)),
-    CattTest("unmute the media volume", ["volumemute", "False"], sleep=2, check_data=("is_volume_muted", False)),
+    CattTest("mute the media volume", ["volumemute", "True"], sleep=2, check_data=("volume_muted", True)),
+    CattTest("unmute the media volume", ["volumemute", "False"], sleep=2, check_data=("volume_muted", False)),
     CattTest(
         "cast h264 320x184 / aac content from dailymotion",
         ["cast", "-y", "format=http-240-1", "http://www.dailymotion.com/video/x6fotne"],
