@@ -58,4 +58,4 @@ class TestThings(unittest.TestCase):
 if __name__ == "__main__":
     import sys
 
-    sys.exit(unittest.main())
+    sys.exit(unittest.main())  # type: ignore

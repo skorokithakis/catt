@@ -15,8 +15,8 @@ BYTE_RANGE_RE = re.compile(r"bytes=(\d+)-(\d+)?$")
 def copy_byte_range(
     infile: io.BufferedIOBase,
     outfile: io.BufferedIOBase,
-    start: int = None,
-    stop: int = None,
+    start: Optional[int] = None,
+    stop: Optional[int] = None,
     bufsize: int = 16 * 1024,
 ):
     """Like shutil.copyfileobj, but only copy a range of the streams.

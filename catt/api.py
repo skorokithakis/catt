@@ -34,8 +34,8 @@ class CattDevice:
         self.ip_addr = ip_addr
         self.uuid = None
 
-        self._cast = None  # type: Optional[Chromecast]
-        self._cast_controller = None  # type: Optional[CastController]
+        self._cast: Optional[Chromecast] = None
+        self._cast_controller: Optional[CastController] = None
         if not lazy:
             self._create_cast()
 
@@ -62,7 +62,12 @@ class CattDevice:
         return self._cast_controller
 
     def play_url(
-        self, url: str, resolve: bool = False, block: bool = False, subtitle_url: str = None, **kwargs
+        self,
+        url: str,
+        resolve: bool = False,
+        block: bool = False,
+        subtitle_url: Optional[str] = None,
+        **kwargs,
     ) -> None:
         """
         Initiate playback of content.

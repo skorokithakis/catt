@@ -492,7 +492,7 @@ def info(settings, json_output):
     if json_output:
         echo_json(info)
     else:
-        for (key, value) in info.items():
+        for key, value in info.items():
             click.echo("{}: {}".format(key, value))
 
 

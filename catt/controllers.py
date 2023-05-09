@@ -412,8 +412,8 @@ class CastController:
 
 
 class MediaControllerMixin:
-    _is_seekable = None  # type: Any
-    _cast = None  # type: pychromecast.Chromecast
+    _is_seekable: Any = None
+    _cast: pychromecast.Chromecast = None
 
     def play(self):
         self._cast.media_controller.play()

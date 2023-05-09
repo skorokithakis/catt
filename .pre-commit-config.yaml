@@ -8,12 +8,10 @@ repos:
   rev: v3.9.0
   hooks:
   -   id: reorder-python-imports
-- repo: https://github.com/PyCQA/flake8
-  rev: '6.0.0'
+- repo: https://github.com/charliermarsh/ruff-pre-commit
+  rev: 'v0.0.265'
   hooks:
-  - id: flake8
-    args: ["--config=setup.cfg"]
-    language_version: python3
+    - id: ruff
 - repo: https://github.com/pre-commit/mirrors-mypy
   rev: v1.2.0
   hooks:
