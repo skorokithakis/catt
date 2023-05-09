@@ -7,6 +7,10 @@
 
 * Add volumemute command (#427) [neurodiv-eric]
 
+### Fixes
+
+* Update pychromecast requirement plus fixes (#429) [theychx]
+
 
 ## v0.12.10 (2023-01-30)
 
