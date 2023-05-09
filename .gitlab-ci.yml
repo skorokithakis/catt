@@ -16,7 +16,7 @@ test:
       - venv
   stage: build
   before_script:
-    - pip install virtualenv poetry pre-commit
+    - pip install virtualenv poetry pre-commit urllib3==1.26.15
     - virtualenv venv
     - source venv/bin/activate
     - poetry config virtualenvs.create false
