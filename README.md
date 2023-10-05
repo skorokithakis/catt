@@ -104,6 +104,11 @@ You can write an alias name for a device to `catt.cfg` by doing:
 
     catt -d <name_of_chromecast> set_alias <alias>
 
+Firewall
+--------
+
+For the casting of local files to work you need to allow in the port range 45000-47000 over tcp.
+
 Contributing
 ------------
 
