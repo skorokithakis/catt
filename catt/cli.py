@@ -522,7 +522,7 @@ def save(settings, path):
     elif cst.save_capability == "partial":
         echo_warning("Please be advised that playlist data will not be saved")
 
-    echo_status(cst.media_info)
+    echo_status(cst.cast_info)
     if path and path.is_file():
         click.confirm("File already exists. Overwrite?", abort=True)
     click.echo("Saving...")
@@ -532,7 +532,7 @@ def save(settings, path):
     else:
         state = CastState(STATE_PATH, StateMode.CONF)
         cc_name = cst.cc_name
-    state.set_data(cc_name, {"controller": cst.name, "data": cst.media_info})
+    state.set_data(cc_name, {"controller": cst.name, "data": cst.cast_info})
 
 
 @cli.command(short_help="Return Chromecast to saved state.")
