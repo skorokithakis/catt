@@ -1,6 +1,13 @@
 # Changelog
 
 
+## Unreleased
+
+### Fixes
+
+* Set Poetry as the build-backend explicitly (#433) [Martin Weinelt]
+
+
 ## v0.12.11 (2023-05-09)
 
 ### Features

@@ -6,7 +6,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "catt"
-version = "0.12.11"
+version = "0.12.12"
 description = "Cast All The Things allows you to send videos from many, many online sources to your Chromecast."
 license = "BSD"
 keywords = ["chromecast", "cast", "catt", "cast_all_the_things"]
