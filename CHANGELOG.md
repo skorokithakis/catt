@@ -1,7 +1,7 @@
 # Changelog
 
 
-## Unreleased
+## v0.12.12 (2024-01-28)
 
 ### Fixes
 
