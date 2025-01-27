@@ -1,18 +1,21 @@
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool]
-
-[tool.poetry]
+[project]
 name = "catt"
 version = "0.12.13"
 description = "Cast All The Things allows you to send videos from many, many online sources to your Chromecast."
-license = "BSD"
+license = "BSD-2-Clause"
+requires-python = ">=3.7"
+readme = "README.md"
+authors = [
+    { name = "Stavros Korokithakis", email = "hi@stavros.io" }
+]
 keywords = ["chromecast", "cast", "catt", "cast_all_the_things"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
-    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: End Users/Desktop", 
     "License :: OSI Approved :: BSD License",
     "Natural Language :: English",
     "Programming Language :: Python :: 3",
@@ -21,35 +24,40 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
 ]
-homepage = "https://github.com/skorokithakis/catt"
-authors = ["Stavros Korokithakis <hi@stavros.io>"]
-readme = "README.md"
+dependencies = [
+    "click>=7.1.2",
+    "ifaddr>=0.1.7",
+    "pychromecast>=14.0.1,<15",
+    "requests>=2.23.0",
+    "yt-dlp>=2023.3.4",
+]
 
-[tool.poetry.scripts]
+[project.optional-dependencies]
+dev = [
+    "coverage",
+    "flake8",
+    "gitchangelog",
+    "isort",
+    "mypy",
+    "pep8-naming",
+    "pre-commit",
+    "pystache",
+    "pytest",
+    "sphinx==1.3.1",
+    "tox>=3.13.2",
+    "virtualenv>=20.0.8",
+    "wheel",
+]
+
+[project.scripts]
 catt = "catt.cli:main"
 
-[tool.poetry.dependencies]
-python = ">=3.7"
-click = ">=7.1.2"
-ifaddr = ">=0.1.7"
-pychromecast = ">=14.0.1, <15"
-requests = ">=2.23.0"
-yt-dlp = ">=2023.3.4"
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
-[tool.poetry.dev-dependencies]
-coverage = "*"
-flake8 = "*"
-gitchangelog = "*"
-isort = "*"
-mypy = "*"
-pep8-naming = "*"
-pre-commit = "*"
-pystache = "*"
-pytest = "*"
-sphinx = "==1.3.1"
-tox = ">=3.13.2"
-virtualenv = ">=20.0.8"
-wheel = "*"
+[tool.isort]
+profile = "black"
+multi_line_output = 3
 
-[tool.ruff]
-ignore = ["F403", "E501", "N802", "N803", "N806", "C901", "D100", "D102", "D102", "D10"]
+[tool.coverage.run]
+source = ["catt"]

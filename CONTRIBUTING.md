@@ -64,12 +64,12 @@ development.
     ```
 
 3.  Install your local copy into a virtualenv. Assuming you have
-    poetry installed, this is how you set up your fork for
+    uv installed, this is how you set up your fork for
     local development:
 
     ``` {.shell}
-    $ poetry shell
-    $ poetry install --no-root
+    $ uv pip install -r requirements-dev.txt
+    $ uv pip install -e .
     ```
 
 4.  Create a branch for local development:
