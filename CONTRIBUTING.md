@@ -68,8 +68,7 @@ development.
     local development:
 
     ``` {.shell}
-    $ uv pip install -r requirements-dev.txt
-    $ uv pip install -e .
+    $ uv pip install ".[dev]"
     ```
 
 4.  Create a branch for local development:

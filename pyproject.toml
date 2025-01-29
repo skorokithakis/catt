@@ -59,5 +59,8 @@ testpaths = ["tests"]
 profile = "black"
 multi_line_output = 3
 
+[tool.ruff]
+ignore = ["F403", "E501", "N802", "N803", "N806", "C901", "D100", "D102", "D102", "D10"]
+
 [tool.coverage.run]
 source = ["catt"]
