@@ -16,11 +16,10 @@ test:
       - venv
   stage: build
   before_script:
-    - pip install virtualenv poetry pre-commit urllib3==1.26.15
-    - virtualenv venv
+    - pip install uv
+    - python -m venv venv
     - source venv/bin/activate
-    - poetry config virtualenvs.create false
-    - poetry install --no-root
+    - uv pip install ".[dev]" pre-commit urllib3==1.26.15
   script:
     - pre-commit run -a --hook-stage manual
     - pytest
@@ -31,10 +30,14 @@ pypi:
   stage: release
   needs: [test]
   rules:
-  - if: $CI_COMMIT_TAG =~ /^v\d+.\d+.\d+$/
-    when: on_success
+    - if: $CI_COMMIT_TAG =~ /^v\d+.\d+.\d+$/
+      when: on_success
+  before_script:
+    - pip install uv
+    - python -m venv venv
+    - source venv/bin/activate
+    - uv pip install "." twine gitchangelog pystache
   script:
-      - pip install -U twine gitchangelog pystache poetry
-      - gitchangelog
-      - poetry build
-      - twine upload dist/*
+    - gitchangelog
+    - uv pip wheel .
+    - twine upload dist/*
