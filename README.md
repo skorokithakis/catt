@@ -107,6 +107,8 @@ You can write an alias name for a device to `catt.cfg` by doing:
 Firewall
 --------
 
+Catt depends on `pychromecast` which relies on mDNS to discover and cast devices. Generally mDNS service discovery on Linux is done through Avahi. You will need to open up the multicast UDP port (5353) to be able to find devices on your local area network.
+
 For the casting of local files to work you need to allow in the port range 45000-47000 over tcp.
 
 Contributing
