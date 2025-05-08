@@ -300,7 +300,7 @@ class CastController:
         # Values in media_controller.status for the keys "volume_level" and "volume_muted"
         # are always the same, regardless of actual state, so we discard those by
         # overwriting them with the values from system status.
-        status.update(self._cast.status._asdict())
+        status.update(self._cast.status.__dict__)
         return status
 
     @property
