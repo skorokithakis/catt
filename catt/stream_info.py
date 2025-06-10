@@ -35,9 +35,10 @@ DEFAULT_YTDL_OPTS = {"quiet": True, "no_warnings": True}
 
 class StreamInfo:
     def __init__(
-        self, video_url, cast_info=None, ytdl_options=None, throw_ytdl_dl_errs=False
+        self, video_url, cast_info=None, ytdl_options=None, throw_ytdl_dl_errs=False, stream_type=None
     ):
         self._throw_ytdl_dl_errs = throw_ytdl_dl_errs
+        self.stream_type = stream_type
         self.local_ip = get_local_ip(cast_info.host) if cast_info else None
         self.port = random.randrange(45000, 47000) if cast_info else None
 

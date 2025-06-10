@@ -107,7 +107,7 @@ def setup_cast(
     cast_type = cast.cast_type
     app_id = cast.app_id
     stream = (
-        StreamInfo(video_url, cast_info=cast.cast_info, ytdl_options=ytdl_options)
+        StreamInfo(video_url, cast_info=cast.cast_info, ytdl_options=ytdl_options, stream_type=stream_type)
         if video_url
         else None
     )
@@ -545,6 +545,7 @@ class DefaultCastController(CastController, MediaControllerMixin, PlaybackBaseMi
             title=kwargs.get("title"),
             thumb=kwargs.get("thumb"),
             subtitles=kwargs.get("subtitles"),
+            stream_type=kwargs.get("stream_type"),
         )
         self._controller.block_until_active()
 
