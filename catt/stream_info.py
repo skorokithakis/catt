@@ -51,6 +51,11 @@ class StreamInfo:
             if self._preinfo.get("ie_key"):
                 self._preinfo = self._get_stream_preinfo(self._preinfo["url"])
             self.is_local_file = False
+            if self.stream_type is None and "duration" in self._preinfo:
+                if self._preinfo["duration"] is None:
+                    self.stream_type = "LIVE"
+                else:
+                    self.stream_type = "BUFFERED"
 
             model = (
                 (cast_info.manufacturer, cast_info.model_name) if cast_info else None
