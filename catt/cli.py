@@ -133,7 +133,9 @@ def fail_if_no_ip(ipaddr):
 
 
 def create_server_thread(filename, address, port, content_type, single_req=False):
-    thr = Thread(target=serve_file, args=(filename, address, port, content_type, single_req))
+    thr = Thread(
+        target=serve_file, args=(filename, address, port, content_type, single_req)
+    )
     thr.setDaemon(True)
     thr.start()
     return thr
@@ -152,7 +154,9 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 @click.pass_context
 def cli(ctx, device):
     device_from_config = ctx.obj["options"].get("device")
-    ctx.obj["selected_device"] = process_device(device or device_from_config, ctx.obj["aliases"])
+    ctx.obj["selected_device"] = process_device(
+        device or device_from_config, ctx.obj["aliases"]
+    )
     ctx.obj["selected_device_is_from_cli"] = bool(device)
 
 
@@ -337,8 +341,12 @@ def cast_site(settings, url):
 )
 @click.pass_obj
 def add(settings, video_url, play_next):
-    cst, stream = setup_cast(settings["selected_device"], video_url=video_url, action="add", prep="control")
-    if cst.name != stream.extractor or not (stream.is_remote_file or stream.is_playlist_with_active_entry):
+    cst, stream = setup_cast(
+        settings["selected_device"], video_url=video_url, action="add", prep="control"
+    )
+    if cst.name != stream.extractor or not (
+        stream.is_remote_file or stream.is_playlist_with_active_entry
+    ):
         raise CliError("This url cannot be added to the queue")
     click.echo('Adding video id "{}" to the queue.'.format(stream.video_id))
     if play_next:
@@ -406,7 +414,9 @@ def stop(settings, force):
 
 
 @cli.command(short_help="Rewind a video by TIME duration.")
-@click.argument("timedesc", type=CATT_TIME, required=False, default="30", metavar="TIME")
+@click.argument(
+    "timedesc", type=CATT_TIME, required=False, default="30", metavar="TIME"
+)
 @click.pass_obj
 def rewind(settings, timedesc):
     cst = setup_cast(settings["selected_device"], action="rewind", prep="control")
@@ -414,7 +424,9 @@ def rewind(settings, timedesc):
 
 
 @cli.command(short_help="Fastforward a video by TIME duration.")
-@click.argument("timedesc", type=CATT_TIME, required=False, default="30", metavar="TIME")
+@click.argument(
+    "timedesc", type=CATT_TIME, required=False, default="30", metavar="TIME"
+)
 @click.pass_obj
 def ffwd(settings, timedesc):
     cst = setup_cast(settings["selected_device"], action="ffwd", prep="control")
@@ -445,7 +457,9 @@ def volume(settings, level):
 
 
 @cli.command(short_help="Turn up volume by a DELTA increment.")
-@click.argument("delta", type=click.IntRange(1, 100), required=False, default=10, metavar="DELTA")
+@click.argument(
+    "delta", type=click.IntRange(1, 100), required=False, default=10, metavar="DELTA"
+)
 @click.pass_obj
 def volumeup(settings, delta):
     cst = setup_cast(settings["selected_device"])
@@ -453,7 +467,9 @@ def volumeup(settings, delta):
 
 
 @cli.command(short_help="Turn down volume by a DELTA increment.")
-@click.argument("delta", type=click.IntRange(1, 100), required=False, default=10, metavar="DELTA")
+@click.argument(
+    "delta", type=click.IntRange(1, 100), required=False, default=10, metavar="DELTA"
+)
 @click.pass_obj
 def volumedown(settings, delta):
     cst = setup_cast(settings["selected_device"])
@@ -496,7 +512,9 @@ def info(settings, json_output):
             click.echo("{}: {}".format(key, value))
 
 
-@cli.command(short_help="Scan the local network and show all Chromecasts and their IPs.")
+@cli.command(
+    short_help="Scan the local network and show all Chromecasts and their IPs."
+)
 @click.option("-j", "--json-output", is_flag=True, help="Output scan result as json.")
 def scan(json_output):
     if not json_output:
@@ -509,11 +527,15 @@ def scan(json_output):
         if not devices:
             raise CastError("No devices found")
         for device in devices:
-            click.echo(f"{device.host} - {device.friendly_name} - {device.manufacturer} {device.model_name}")
+            click.echo(
+                f"{device.host} - {device.friendly_name} - {device.manufacturer} {device.model_name}"
+            )
 
 
 @cli.command(short_help="Save the current state of the Chromecast for later use.")
-@click.argument("path", type=click.Path(writable=True), callback=process_path, required=False)
+@click.argument(
+    "path", type=click.Path(writable=True), callback=process_path, required=False
+)
 @click.pass_obj
 def save(settings, path):
     cst = setup_cast(settings["selected_device"], prep="control")
@@ -536,7 +558,9 @@ def save(settings, path):
 
 
 @cli.command(short_help="Return Chromecast to saved state.")
-@click.argument("path", type=click.Path(exists=True), callback=process_path, required=False)
+@click.argument(
+    "path", type=click.Path(exists=True), callback=process_path, required=False
+)
 @click.pass_obj
 def restore(settings, path):
     if not path and not STATE_PATH.is_file():
@@ -552,7 +576,9 @@ def restore(settings, path):
 
     echo_status(data["data"])
     click.echo("Restoring...")
-    cst = setup_cast(settings["selected_device"], prep="app", controller=data["controller"])
+    cst = setup_cast(
+        settings["selected_device"], prep="app", controller=data["controller"]
+    )
     cst.restore(data["data"])
 
 
@@ -618,7 +644,9 @@ def get_alias_from_config(config, device):
 def get_device_from_settings(settings):
     device_desc = settings["selected_device"]
     if not device_desc or not settings["selected_device_is_from_cli"]:
-        raise CliError("No device specified (must be explicitly specified with -d option)")
+        raise CliError(
+            "No device specified (must be explicitly specified with -d option)"
+        )
     is_ip = is_ipaddress(device_desc)
     if is_ip:
         found = cast_ip_exists(device_desc)

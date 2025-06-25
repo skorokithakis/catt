@@ -22,11 +22,15 @@ def get_casts(names: Optional[List[str]] = None) -> List[pychromecast.Chromecast
     """
 
     if names:
-        cast_infos, browser = pychromecast.discovery.discover_listed_chromecasts(friendly_names=names)
+        cast_infos, browser = pychromecast.discovery.discover_listed_chromecasts(
+            friendly_names=names
+        )
     else:
         cast_infos, browser = pychromecast.discovery.discover_chromecasts()
 
-    casts = [pychromecast.get_chromecast_from_cast_info(c, browser.zc) for c in cast_infos]
+    casts = [
+        pychromecast.get_chromecast_from_cast_info(c, browser.zc) for c in cast_infos
+    ]
 
     for cast in casts:
         cast.wait()
@@ -47,7 +51,9 @@ def get_cast_infos() -> List[pychromecast.CastInfo]:
     return [c.cast_info for c in get_casts()]
 
 
-def get_cast_with_name(cast_name: Union[str, None]) -> Optional[pychromecast.Chromecast]:
+def get_cast_with_name(
+    cast_name: Union[str, None],
+) -> Optional[pychromecast.Chromecast]:
     """
     Get specific device if supplied name is not None,
     otherwise the device with the name that has the lowest alphabetical value.
@@ -62,7 +68,9 @@ def get_cast_with_name(cast_name: Union[str, None]) -> Optional[pychromecast.Chr
     return casts[0] if casts else None
 
 
-def get_cast_with_ip(cast_ip: str, port: int = DEFAULT_PORT) -> Optional[pychromecast.Chromecast]:
+def get_cast_with_ip(
+    cast_ip: str, port: int = DEFAULT_PORT
+) -> Optional[pychromecast.Chromecast]:
     """
     Get specific device using its ip-address (and optionally port).
 
@@ -77,7 +85,13 @@ def get_cast_with_ip(cast_ip: str, port: int = DEFAULT_PORT) -> Optional[pychrom
     if not device_info:
         return None
 
-    host = (cast_ip, DEFAULT_PORT, device_info.uuid, device_info.model_name, device_info.friendly_name)
+    host = (
+        cast_ip,
+        DEFAULT_PORT,
+        device_info.uuid,
+        device_info.model_name,
+        device_info.friendly_name,
+    )
     cast = pychromecast.get_chromecast_from_host(host)
     cast.wait()
     return cast
@@ -116,7 +130,11 @@ def get_cast(cast_desc: Optional[str] = None) -> pychromecast.Chromecast:
     else:
         cast = get_cast_with_name(cast_desc)
         if not cast:
-            msg = 'Specified device "{}" not found'.format(cast_desc) if cast_desc else "No devices found"
+            msg = (
+                'Specified device "{}" not found'.format(cast_desc)
+                if cast_desc
+                else "No devices found"
+            )
             raise CastError(msg)
 
     return cast

@@ -102,7 +102,9 @@ def serve_file(
                 self.send_header("Access-Control-Allow-Origin", "*")
                 self.send_header(
                     "Last-Modified",
-                    time.strftime("%a %d %b %Y %H:%M:%S GMT", time.localtime(stats.st_mtime)),
+                    time.strftime(
+                        "%a %d %b %Y %H:%M:%S GMT", time.localtime(stats.st_mtime)
+                    ),
                 )
                 self.end_headers()
 
