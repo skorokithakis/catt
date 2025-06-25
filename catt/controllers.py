@@ -10,7 +10,9 @@ from pychromecast.config import APP_BACKDROP as BACKDROP_APP_ID
 from pychromecast.config import APP_DASHCAST as DASHCAST_APP_ID
 from pychromecast.config import APP_MEDIA_RECEIVER as MEDIA_RECEIVER_APP_ID
 from pychromecast.config import APP_YOUTUBE as YOUTUBE_APP_ID
-from pychromecast.controllers.dashcast import DashCastController as PyChromecastDashCastController
+from pychromecast.controllers.dashcast import (
+    DashCastController as PyChromecastDashCastController,
+)
 from pychromecast.controllers.youtube import YouTubeController
 
 from .discovery import get_cast
@@ -34,15 +36,28 @@ class App:
         self.supported_device_types = supported_device_types
 
 
-DEFAULT_APP = App(app_name="default", app_id=MEDIA_RECEIVER_APP_ID, supported_device_types=["cast", "audio", "group"])
+DEFAULT_APP = App(
+    app_name="default",
+    app_id=MEDIA_RECEIVER_APP_ID,
+    supported_device_types=["cast", "audio", "group"],
+)
 APPS = [
     DEFAULT_APP,
     App(app_name="youtube", app_id=YOUTUBE_APP_ID, supported_device_types=["cast"]),
-    App(app_name="dashcast", app_id=DASHCAST_APP_ID, supported_device_types=["cast", "audio"]),
+    App(
+        app_name="dashcast",
+        app_id=DASHCAST_APP_ID,
+        supported_device_types=["cast", "audio"],
+    ),
 ]
 
 
-def get_app(id_or_name: str, cast_type: Optional[str] = None, strict: bool = False, show_warning: bool = False) -> App:
+def get_app(
+    id_or_name: str,
+    cast_type: Optional[str] = None,
+    strict: bool = False,
+    show_warning: bool = False,
+) -> App:
     try:
         app = next(a for a in APPS if id_or_name in [a.id, a.name])
     except StopIteration:
@@ -57,7 +72,9 @@ def get_app(id_or_name: str, cast_type: Optional[str] = None, strict: bool = Fal
     if not cast_type:
         raise AppSelectionError("Cast type is needed for app selection")
     elif cast_type not in app.supported_device_types:
-        msg = "The {} app is not available for this device".format(app.name.capitalize())
+        msg = "The {} app is not available for this device".format(
+            app.name.capitalize()
+        )
         if strict:
             raise AppSelectionError("{} (strict is set)".format(msg))
         elif show_warning:
@@ -68,17 +85,32 @@ def get_app(id_or_name: str, cast_type: Optional[str] = None, strict: bool = Fal
 
 
 def get_controller(cast, app, action=None, prep=None) -> "CastController":
-    controller = {"youtube": YoutubeCastController, "dashcast": DashCastController}.get(app.name, DefaultCastController)
+    controller = {"youtube": YoutubeCastController, "dashcast": DashCastController}.get(
+        app.name, DefaultCastController
+    )
     if action and action not in dir(controller):
-        raise ControllerError("This action is not supported by the {} controller".format(app.name))
+        raise ControllerError(
+            "This action is not supported by the {} controller".format(app.name)
+        )
     return controller(cast, app, prep=prep)
 
 
-def setup_cast(device_desc, video_url=None, controller=None, ytdl_options=None, action=None, prep=None):
+def setup_cast(
+    device_desc,
+    video_url=None,
+    controller=None,
+    ytdl_options=None,
+    action=None,
+    prep=None,
+):
     cast = get_cast(device_desc)
     cast_type = cast.cast_type
     app_id = cast.app_id
-    stream = StreamInfo(video_url, cast_info=cast.cast_info, ytdl_options=ytdl_options) if video_url else None
+    stream = (
+        StreamInfo(video_url, cast_info=cast.cast_info, ytdl_options=ytdl_options)
+        if video_url
+        else None
+    )
 
     if controller:
         app = get_app(controller, cast_type, strict=True)
@@ -151,7 +183,12 @@ class CastState(CattStore):
             data = self._read_store()
             if set(next(iter(data.values())).keys()) != set(["controller", "data"]):
                 raise ValueError
-        except (json.decoder.JSONDecodeError, ValueError, StopIteration, AttributeError):
+        except (
+            json.decoder.JSONDecodeError,
+            ValueError,
+            StopIteration,
+            AttributeError,
+        ):
             raise StateFileError
         if name:
             return data.get(name)
@@ -232,7 +269,9 @@ class SimpleListener:
 
 
 class CastController:
-    def __init__(self, cast: pychromecast.Chromecast, app: App, prep: Optional[str] = None) -> None:
+    def __init__(
+        self, cast: pychromecast.Chromecast, app: App, prep: Optional[str] = None
+    ) -> None:
         self._cast = cast
         self.name = app.name
         self.info_type = None
@@ -330,7 +369,9 @@ class CastController:
             duration, current = status.duration, status.current_time
             remaining = duration - current
             progress = int((1.0 * current / duration) * 100)
-            cinfo.update({"duration": duration, "remaining": remaining, "progress": progress})
+            cinfo.update(
+                {"duration": duration, "remaining": remaining, "progress": progress}
+            )
 
         if self._is_audiovideo:
             cinfo.update({"player_state": status.player_state})
@@ -354,7 +395,9 @@ class CastController:
     @property
     def _is_audiovideo(self):
         status = self._cast.media_controller.status
-        content_type = status.content_type.split("/")[0] if status.content_type else None
+        content_type = (
+            status.content_type.split("/")[0] if status.content_type else None
+        )
         # We can't check against valid types, as some custom apps employ
         # a different scheme (like "application/dash+xml").
         return content_type != "image" if content_type else False
@@ -369,7 +412,10 @@ class CastController:
         return (
             not app_id
             or app_id == BACKDROP_APP_ID
-            or (status.player_state in ["UNKNOWN", "IDLE"] and self._supports_google_media_namespace)
+            or (
+                status.player_state in ["UNKNOWN", "IDLE"]
+                and self._supports_google_media_namespace
+            )
         )
 
     def volume(self, level: float) -> None:
@@ -463,8 +509,12 @@ class PlaybackBaseMixin:
     def play_playlist(self, playlist_id: str, video_id: str) -> None:
         raise NotImplementedError
 
-    def wait_for(self, states: list, invert: bool = False, timeout: Optional[int] = None) -> bool:
-        media_listener = MediaStatusListener(self._cast.media_controller.status.player_state, states, invert=invert)
+    def wait_for(
+        self, states: list, invert: bool = False, timeout: Optional[int] = None
+    ) -> bool:
+        media_listener = MediaStatusListener(
+            self._cast.media_controller.status.player_state, states, invert=invert
+        )
         self._cast.media_controller.register_status_listener(media_listener)
 
         try:
@@ -480,7 +530,11 @@ class DefaultCastController(CastController, MediaControllerMixin, PlaybackBaseMi
     def __init__(self, cast, app, prep=None):
         super(DefaultCastController, self).__init__(cast, app, prep=prep)
         self.info_type = "url"
-        self.save_capability = "complete" if (self._is_seekable and self._cast.app_id == DEFAULT_APP.id) else None
+        self.save_capability = (
+            "complete"
+            if (self._is_seekable and self._cast.app_id == DEFAULT_APP.id)
+            else None
+        )
 
     def play_media_url(self, video_url, **kwargs):
         content_type = kwargs.get("content_type") or "video/mp4"
@@ -496,7 +550,10 @@ class DefaultCastController(CastController, MediaControllerMixin, PlaybackBaseMi
 
     def restore(self, data):
         self.play_media_url(
-            data["content_id"], current_time=data["current_time"], title=data["title"], thumb=data["thumb"]
+            data["content_id"],
+            current_time=data["current_time"],
+            title=data["title"],
+            thumb=data["thumb"],
         )
 
 

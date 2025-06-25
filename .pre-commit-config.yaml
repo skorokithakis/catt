@@ -1,23 +1,16 @@
 repos:
-- repo: https://github.com/ambv/black
-  rev: 23.3.0
-  hooks:
-  - id: black
-    args: [--line-length=120]
-- repo: https://github.com/asottile/reorder_python_imports
-  rev: v3.9.0
-  hooks:
-  -   id: reorder-python-imports
-- repo: https://github.com/charliermarsh/ruff-pre-commit
-  rev: 'v0.0.265'
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: v0.12.0
   hooks:
     - id: ruff
+      args: [ --fix ]
+    - id: ruff-format
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: v1.2.0
+  rev: v1.16.1
   hooks:
   - id: mypy
-    args: ["--ignore-missing-imports"]
-    additional_dependencies: ["types-requests"]
+    name: Run MyPy typing checks.
+    args: ["--ignore-missing-imports", "--install-types", "--non-interactive"]
 - repo: local
   hooks:
   - id: gitchangelog

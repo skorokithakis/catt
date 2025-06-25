@@ -27,7 +27,9 @@ def echo_status(status):
         if status.get("duration"):
             duration = human_time(status["duration"])
             remaining = human_time(status["remaining"])
-            click.echo("Time: {} / {} ({}%)".format(current, duration, status["progress"]))
+            click.echo(
+                "Time: {} / {} ({}%)".format(current, duration, status["progress"])
+            )
             click.echo("Remaining time: {}".format(remaining))
         else:
             click.echo("Time: {}".format(current))
@@ -67,7 +69,9 @@ def hunt_subtitles(video):
     for entry_path in video_path.parent.iterdir():
         if entry_path.is_dir():
             continue
-        if entry_path.stem.lower().startswith(video_path_stem_lower) and entry_path.suffix.lower() in [".vtt", ".srt"]:
+        if entry_path.stem.lower().startswith(
+            video_path_stem_lower
+        ) and entry_path.suffix.lower() in [".vtt", ".srt"]:
             return str(entry_path.resolve())
     return None
 
@@ -94,14 +98,18 @@ def get_local_ip(host):
     host_ipversion = type(ipaddress.ip_address(host))
     for adapter in ifaddr.get_adapters():
         for adapter_ip in adapter.ips:
-            aip = adapter_ip.ip[0] if isinstance(adapter_ip.ip, tuple) else adapter_ip.ip
+            aip = (
+                adapter_ip.ip[0] if isinstance(adapter_ip.ip, tuple) else adapter_ip.ip
+            )
             try:
                 if not isinstance(ipaddress.ip_address(aip), host_ipversion):
                     continue
             except ValueError:
                 continue
             ipt = [(ip, adapter_ip.network_prefix) for ip in (aip, host)]
-            catt_net, cc_net = [ipaddress.ip_network("{0}/{1}".format(*ip), strict=False) for ip in ipt]
+            catt_net, cc_net = [
+                ipaddress.ip_network("{0}/{1}".format(*ip), strict=False) for ip in ipt
+            ]
             if catt_net == cc_net:
                 return aip
             else:

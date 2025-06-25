@@ -30,7 +30,9 @@ def ignore_tmr_failure(func):
 class TestThings(unittest.TestCase):
     @ignore_tmr_failure
     def test_stream_info_youtube_video(self):
-        stream = StreamInfo("https://www.youtube.com/watch?v=VZMfhtKa-wo", throw_ytdl_dl_errs=True)
+        stream = StreamInfo(
+            "https://www.youtube.com/watch?v=VZMfhtKa-wo", throw_ytdl_dl_errs=True
+        )
         self.assertIn("https://", stream.video_url)
         self.assertEqual(stream.video_id, "VZMfhtKa-wo")
         self.assertTrue(stream.is_remote_file)
@@ -48,7 +50,9 @@ class TestThings(unittest.TestCase):
         self.assertEqual(stream.extractor, "youtube")
 
     def test_stream_info_other_video(self):
-        stream = StreamInfo("https://www.twitch.tv/twitch/clip/MistySoftPenguinKappaPride")
+        stream = StreamInfo(
+            "https://www.twitch.tv/twitch/clip/MistySoftPenguinKappaPride"
+        )
         self.assertIn("https://", stream.video_url)
         self.assertEqual(stream.video_id, "492743767")
         self.assertTrue(stream.is_remote_file)

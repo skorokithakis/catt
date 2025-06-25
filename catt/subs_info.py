@@ -36,7 +36,12 @@ class SubsInfo:
             return self._read_local_subs(subs_url)
 
     def _convert_srt_to_webvtt(self, content: str) -> str:
-        content = re.sub(r"^(.*? \-\-\> .*?)$", lambda m: m.group(1).replace(",", "."), content, flags=re.MULTILINE)
+        content = re.sub(
+            r"^(.*? \-\-\> .*?)$",
+            lambda m: m.group(1).replace(",", "."),
+            content,
+            flags=re.MULTILINE,
+        )
         return "WEBVTT\n\n" + content
 
     def _read_local_subs(self, filename: str) -> str:
@@ -47,7 +52,11 @@ class SubsInfo:
                     return content
             except UnicodeDecodeError:
                 pass
-        raise SubtitlesError("Could not find the proper encoding of {}. Please convert it to utf-8".format(filename))
+        raise SubtitlesError(
+            "Could not find the proper encoding of {}. Please convert it to utf-8".format(
+                filename
+            )
+        )
 
     def _fetch_remote_subs(self, url: str) -> str:
         response = requests.get(url)

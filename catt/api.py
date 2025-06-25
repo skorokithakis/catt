@@ -43,7 +43,11 @@ class CattDevice:
         return "<CattDevice: {}>".format(self.name or self.ip_addr)
 
     def _create_cast(self) -> None:
-        self._cast = get_cast_with_ip(self.ip_addr) if self.ip_addr else get_cast_with_name(self.name)
+        self._cast = (
+            get_cast_with_ip(self.ip_addr)
+            if self.ip_addr
+            else get_cast_with_name(self.name)
+        )
         if not self._cast:
             raise CastError("Device could not be found")
         self.name = self._cast.cast_info.friendly_name
