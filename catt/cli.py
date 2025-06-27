@@ -219,7 +219,11 @@ def cli(ctx, device):
     "Only useful when casting remote files, as catt is already running a server when casting local files. "
     "Currently exits after playback of single media, so not useful with playlists yet.",
 )
-@click.option("--stream-type", type=STREAM_TYPE, help="Treat as a live stream or fixed-length video (for debugging).")
+@click.option(
+    "--stream-type",
+    type=STREAM_TYPE,
+    help="Treat as a live stream or fixed-length video (for debugging).",
+)
 @click.pass_obj
 def cast(
     settings,

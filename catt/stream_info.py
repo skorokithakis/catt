@@ -35,7 +35,12 @@ DEFAULT_YTDL_OPTS = {"quiet": True, "no_warnings": True}
 
 class StreamInfo:
     def __init__(
-        self, video_url, cast_info=None, ytdl_options=None, throw_ytdl_dl_errs=False, stream_type=None
+        self,
+        video_url,
+        cast_info=None,
+        ytdl_options=None,
+        throw_ytdl_dl_errs=False,
+        stream_type=None,
     ):
         self._throw_ytdl_dl_errs = throw_ytdl_dl_errs
         self.stream_type = stream_type

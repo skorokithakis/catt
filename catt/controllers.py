@@ -102,12 +102,18 @@ def setup_cast(
     ytdl_options=None,
     action=None,
     prep=None,
+    stream_type=None,
 ):
     cast = get_cast(device_desc)
     cast_type = cast.cast_type
     app_id = cast.app_id
     stream = (
-        StreamInfo(video_url, cast_info=cast.cast_info, ytdl_options=ytdl_options, stream_type=stream_type)
+        StreamInfo(
+            video_url,
+            cast_info=cast.cast_info,
+            ytdl_options=ytdl_options,
+            stream_type=stream_type,
+        )
         if video_url
         else None
     )
