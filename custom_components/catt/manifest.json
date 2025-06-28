@@ -1,0 +1,10 @@
+{
+  "domain": "catt",
+  "name": "Cast All The Things",
+  "documentation": "https://github.com/skorokithakis/catt",
+  "issue_tracker": "https://github.com/skorokithakis/catt/issues",
+  "codeowners": ["@skorokithakis"],
+  "version": "0.12.0",
+  "iot_class": "local_polling",
+  "requirements": ["catt==0.12.0"]
+}
