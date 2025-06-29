@@ -75,6 +75,8 @@ class YtdlOptParamType(click.ParamType):
 
 YTDL_OPT = YtdlOptParamType()
 
+STREAM_TYPE = click.Choice(["NONE", "BUFFERED", "LIVE"], case_sensitive=False)
+
 
 def process_url(ctx, param, value: str):
     if value == "-":
@@ -217,6 +219,11 @@ def cli(ctx, device):
     "Only useful when casting remote files, as catt is already running a server when casting local files. "
     "Currently exits after playback of single media, so not useful with playlists yet.",
 )
+@click.option(
+    "--stream-type",
+    type=STREAM_TYPE,
+    help="Treat as a live stream or fixed-length video (for debugging).",
+)
 @click.pass_obj
 def cast(
     settings,
@@ -228,6 +235,7 @@ def cast(
     no_playlist: bool,
     ytdl_option,
     seek_to: str,
+    stream_type: str,
     block: bool = False,
 ):
     controller = "default" if force_default or ytdl_option else None
@@ -239,6 +247,7 @@ def cast(
         prep="app",
         controller=controller,
         ytdl_options=ytdl_option,
+        stream_type=stream_type,
     )
     media_is_image = stream.guessed_content_category == "image"
     local_or_remote = "local" if stream.is_local_file else "remote"
@@ -300,6 +309,7 @@ def cast(
                 subtitles=subs.url if subs else None,
                 thumb=stream.video_thumbnail,
                 current_time=seek_to,
+                stream_type=stream.stream_type,
             )
         elif cst.info_type == "id":
             cst.play_media_id(stream.video_id, current_time=seek_to)

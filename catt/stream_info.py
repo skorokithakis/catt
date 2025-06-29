@@ -35,9 +35,15 @@ DEFAULT_YTDL_OPTS = {"quiet": True, "no_warnings": True}
 
 class StreamInfo:
     def __init__(
-        self, video_url, cast_info=None, ytdl_options=None, throw_ytdl_dl_errs=False
+        self,
+        video_url,
+        cast_info=None,
+        ytdl_options=None,
+        throw_ytdl_dl_errs=False,
+        stream_type=None,
     ):
         self._throw_ytdl_dl_errs = throw_ytdl_dl_errs
+        self.stream_type = stream_type
         self.local_ip = get_local_ip(cast_info.host) if cast_info else None
         self.port = random.randrange(45000, 47000) if cast_info else None
 
@@ -50,6 +56,11 @@ class StreamInfo:
             if self._preinfo.get("ie_key"):
                 self._preinfo = self._get_stream_preinfo(self._preinfo["url"])
             self.is_local_file = False
+            if self.stream_type is None and "duration" in self._preinfo:
+                if self._preinfo["duration"] is None:
+                    self.stream_type = "LIVE"
+                else:
+                    self.stream_type = "BUFFERED"
 
             model = (
                 (cast_info.manufacturer, cast_info.model_name) if cast_info else None
