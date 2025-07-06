@@ -30,6 +30,7 @@ from .subs_info import SubsInfo
 from .util import echo_json
 from .util import echo_status
 from .util import echo_warning
+from .util import guess_mime
 from .util import hunt_subtitles
 from .util import is_ipaddress
 
@@ -104,8 +105,11 @@ def process_subtitles(ctx, param, value):
     if not value:
         return None
     pval = urlparse(value).path if "://" in value else value
-    if not pval.lower().endswith((".srt", ".vtt")):
-        raise CliError("Invalid subtitles format, only srt and vtt are supported")
+    if not pval.lower().endswith((".srt", ".vtt", ".ttml")):
+        raise CliError(
+            "Invalid subtitles format. Only srt, vtt, and ttml are supported.\n"
+            "(Timing, bold/italics, and positioning are honored; other styling is dropped.)"
+        )
     if "://" not in value and not Path(value).is_file():
         raise CliError("Subtitles file [{}] does not exist".format(value))
     return value
@@ -283,15 +287,16 @@ def cast(
         if not subtitles and not no_subs and stream.is_local_file:
             subtitles = hunt_subtitles(video_url)
         if subtitles:
-            fail_if_no_ip(stream.local_ip)
             subs = SubsInfo(subtitles, stream.local_ip, stream.port + 1)
-            su_thr = create_server_thread(
-                subs.file,
-                subs.local_ip,
-                subs.port,
-                "text/vtt;charset=utf-8",
-                single_req=True,
-            )
+            if subs.local_subs:
+                fail_if_no_ip(stream.local_ip)
+                su_thr = create_server_thread(
+                    subs.file,
+                    subs.local_ip,
+                    subs.port,
+                    guess_mime(subs.file) + ";charset=utf-8",
+                    single_req=True,
+                )
 
         click.echo("Casting {} file {}...".format(local_or_remote, video_url))
         click.echo(
@@ -316,7 +321,7 @@ def cast(
         else:
             raise ValueError("Invalid or undefined info type")
 
-    if stream.is_local_file or subs:
+    if stream.is_local_file or (subs is not None and subs.local_subs):
         click.echo("Serving local file(s).")
     if not media_is_image and (stream.is_local_file or block):
         if not cst.wait_for(["PLAYING"], timeout=WAIT_PLAY_TIMEOUT):

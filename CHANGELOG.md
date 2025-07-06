@@ -1,6 +1,13 @@
 # Changelog
 
 
+## Unreleased
+
+### Features
+
+* Tell apart live videos from buffered videos (#464) [medape]
+
+
 ## v0.12.12 (2024-01-28)
 
 ### Fixes

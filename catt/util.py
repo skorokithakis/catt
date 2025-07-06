@@ -57,6 +57,9 @@ def guess_mime(path):
         ".gif": "image/gif",
         ".png": "image/png",
         ".webp": "image/web",
+        ".srt": "application/x-subrip",
+        ".ttml": "application/ttml+xml",
+        ".vtt": "text/vtt",
     }
     return extensions.get(extension, "video/mp4")
 
@@ -71,7 +74,7 @@ def hunt_subtitles(video):
             continue
         if entry_path.stem.lower().startswith(
             video_path_stem_lower
-        ) and entry_path.suffix.lower() in [".vtt", ".srt"]:
+        ) and entry_path.suffix.lower() in [".vtt", ".srt", ".ttml"]:
             return str(entry_path.resolve())
     return None
 
