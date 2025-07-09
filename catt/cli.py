@@ -30,7 +30,6 @@ from .subs_info import SubsInfo
 from .util import echo_json
 from .util import echo_status
 from .util import echo_warning
-from .util import guess_mime
 from .util import hunt_subtitles
 from .util import is_ipaddress
 
@@ -138,7 +137,7 @@ def fail_if_no_ip(ipaddr):
         raise CliError("Local IP-address could not be determined")
 
 
-def create_server_thread(filename, address, port, content_type, single_req=False):
+def create_server_thread(filename, address, port, content_type=None, single_req=False):
     thr = Thread(
         target=serve_file, args=(filename, address, port, content_type, single_req)
     )
@@ -294,7 +293,6 @@ def cast(
                     subs.file,
                     subs.local_ip,
                     subs.port,
-                    guess_mime(subs.file) + ";charset=utf-8",
                     single_req=True,
                 )
 

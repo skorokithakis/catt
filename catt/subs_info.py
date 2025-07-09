@@ -4,6 +4,7 @@ import requests
 
 from .error import SubtitlesError
 from .util import create_temp_file
+from .util import guess_mime
 
 
 class SubsInfo:
@@ -33,8 +34,7 @@ class SubsInfo:
         self.port = port
         subs, self.local_subs = self._read_subs(subs_url)
         self.file = self._subs_url
-        ext = subs_url.lower().split(".")[-1]
-        if ext == "srt":
+        if guess_mime(subs_url) == "application/x-subrip":
             subs = self._convert_srt_to_webvtt(subs)
             self.file = create_temp_file(subs)
             self.local_subs = True
