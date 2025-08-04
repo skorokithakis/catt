@@ -32,9 +32,14 @@ class SubsInfo:
         self._subs_url = subs_url
         self.local_ip = local_ip
         self.port = port
-        subs, self.local_subs = self._read_subs(subs_url)
+        subs, self.mimetype = self._read_subs(subs_url)
+        if self.mimetype == "":
+            self.local_subs = True
+            self.mimetype = guess_mime(subs_url)
+        else:
+            self.local_subs = False
         self.file = self._subs_url
-        if guess_mime(subs_url) == "application/x-subrip":
+        if "application/x-subrip" in self.mimetype:
             subs = self._convert_srt_to_webvtt(subs)
             self.file = create_temp_file(subs)
             self.local_subs = True
@@ -46,7 +51,7 @@ class SubsInfo:
         else:
             return self._subs_url
 
-    def _read_subs(self, subs_url: str) -> tuple[str, bool]:
+    def _read_subs(self, subs_url: str) -> tuple[str, str]:
         """
         Returns:
             - a str with the url where have ChromeCast will fetch the file from
@@ -54,9 +59,9 @@ class SubsInfo:
             this computer, and False otherwise
         """
         if "://" in subs_url:
-            return self._fetch_remote_subs(subs_url), False
+            return self._fetch_remote_subs(subs_url)
         else:
-            return self._read_local_subs(subs_url), True
+            return self._read_local_subs(subs_url)
 
     def _convert_srt_to_webvtt(self, content: str) -> str:
         content = re.sub(
@@ -67,12 +72,12 @@ class SubsInfo:
         )
         return "WEBVTT\n\n" + content
 
-    def _read_local_subs(self, filename: str) -> str:
+    def _read_local_subs(self, filename: str) -> tuple[str, str]:
         for possible_encoding in ["utf-8", "iso-8859-15"]:
             try:
                 with open(filename, "r", encoding=possible_encoding) as srtfile:
                     content = srtfile.read()
-                    return content
+                    return content, ""
             except UnicodeDecodeError:
                 pass
         raise SubtitlesError(
@@ -81,8 +86,8 @@ class SubsInfo:
             )
         )
 
-    def _fetch_remote_subs(self, url: str) -> str:
+    def _fetch_remote_subs(self, url: str) -> tuple[str, str]:
         response = requests.get(url)
         if not response:
             raise SubtitlesError("Remote subtitles file not found")
-        return response.text
+        return response.text, response.headers["content-type"]
