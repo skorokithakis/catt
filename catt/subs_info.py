@@ -14,18 +14,32 @@ class SubsInfo:
     holding the subtitles, ready to be served.
     An url to the (expected to be) served file is also exposed.
 
-    For local subtitle files, the url points to this computer. The variable
-    self.local_subs will be True; CATT will detect this and start a web
-    server so that ChromeCast can fetch it. Only devices in the same network
-    can access this file.
-    local_ip and port params are used for this purpose.
+    This class accepts the following input:
+        - subs_url: a string with the location of the subtitles.
+        - local_ip: a string with the IP for this computer (to be used only if
+          the subtitles file is in this computer, and not on the internet)
+        - port: an integer with the port where a web server will be opened
+          (again, if and only if the subtitles file is in this computer)
 
-    If a tempfile was generated to convert it to WebVTT, this tempfile will
-    be served to the ChromeCast in the same way, and self.local_subs will be
-    set to True.
+    Three variables are defined after the subtitles file is retrieved:
+        - mimetype: a string with the MIME type of the subtitles.
+        - local_subs: a Boolean that is True if the subtitles file is in this
+          computer, False otherwise.
+        - file: a variable representing the subtitles file itself.
 
-    If the subtitle file is remote and doesn't need to be converted, the
-    url exposed will be the original url, and self.local_subs will be False.
+    For local subtitle files, _read_subs() returns a blank MIME type.
+    local_subs is then set to True, and the MIME type is inferred from the file
+    extension. Then, after checking the value of local_subs, CATT will start a
+    web server in this computer so that ChromeCast can fetch the subtitles.
+    Only devices in the same network can access this file.
+
+    Subtitle files in SubRip format (.SRT application/x-subrip) will be
+    converted locally to WebVTT format. This converted file will be served to
+    the ChromeCast, and treated like any local file.
+
+    If the subtitle file is remote and doesn't need to be converted, subs_url
+    will be the original url, local_subs will be False, and the MIME type will
+    be retrieved directly from the web server.
     """
 
     def __init__(self, subs_url: str, local_ip: str, port: int) -> None:
@@ -45,7 +59,7 @@ class SubsInfo:
             self.local_subs = True
 
     @property
-    def url(self):
+    def url(self) -> str:
         if self.local_subs:
             return "http://{}:{}/{}".format(self.local_ip, self.port, self.file)
         else:
