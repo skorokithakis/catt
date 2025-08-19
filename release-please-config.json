@@ -2,8 +2,8 @@
   "packages": {
     ".": {
       "release-type": "python",
-      "bump-minor-pre-major": false,
-      "bump-patch-for-minor-pre-major": false,
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
       "changelog-sections": [
         { "type": "feat", "section": "Features", "hidden": false },
         { "type": "fix", "section": "Bug Fixes", "hidden": false },
