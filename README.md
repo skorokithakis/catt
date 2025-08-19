@@ -18,9 +18,8 @@ Or with pip, but that's not as good:
 
     pip3 install catt
 
-`catt` is only compatible with Python 3. If you need a Python
-2-compatible version, please install `0.5.6`, the last py2-compatible
-release.
+`catt` requires Python 3.11 or higher. For older Python versions,
+you can install `catt` version 0.12.x which supports Python 3.7+.
 
 Usage
 -----
