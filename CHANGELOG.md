@@ -8,6 +8,44 @@
 * Tell apart live videos from buffered videos (#464) [medape]
 
 
+## [0.13.0](https://github.com/skorokithakis/catt/compare/v0.12.0...v0.13.0) (2025-08-19)
+
+
+### Features
+
+* Add swiergot's custom receiver ([b69af2f](https://github.com/skorokithakis/catt/commit/b69af2f3917182600b4174a938c9f3a14800645d))
+* Add volumemute command ([#427](https://github.com/skorokithakis/catt/issues/427)) ([585b8d2](https://github.com/skorokithakis/catt/commit/585b8d2252475d94b0e693f1e45290815a251047))
+* Tell apart live videos from buffered videos ([#464](https://github.com/skorokithakis/catt/issues/464)) ([7573736](https://github.com/skorokithakis/catt/commit/7573736dda091a425ae6f5daac43c33eac1b2154))
+
+
+### Bug Fixes
+
+* Allow use of info cmds on idle/inactive cc ([#345](https://github.com/skorokithakis/catt/issues/345)) ([cb9cf00](https://github.com/skorokithakis/catt/commit/cb9cf00e21a696cd6f3c916a0108e5dcfbda6562))
+* Change DashCast app ID ([740a622](https://github.com/skorokithakis/catt/commit/740a62240a58c4b25770d3de79401376caa4c9ae))
+* Don't do discovery dance when checking ip validity ([#309](https://github.com/skorokithakis/catt/issues/309)) ([5aa9467](https://github.com/skorokithakis/catt/commit/5aa9467ea6e2bd21ef0c5e4872e42bed0a8054fd))
+* Fix casing issue with device names ([#375](https://github.com/skorokithakis/catt/issues/375)) ([#377](https://github.com/skorokithakis/catt/issues/377)) ([8a4103f](https://github.com/skorokithakis/catt/commit/8a4103f56f07af136db89426ade6a2315693f4ed))
+* Fix crash while scanning (fixes [#368](https://github.com/skorokithakis/catt/issues/368)) ([fba58ad](https://github.com/skorokithakis/catt/commit/fba58ada7607d03f8d8ae2585c27e3e96c5e1f7a))
+* Fix discovery function in the API ([#406](https://github.com/skorokithakis/catt/issues/406)) ([9cc0b09](https://github.com/skorokithakis/catt/commit/9cc0b09cb3d3048c757d14be3efb848e04638bdb)), closes [#405](https://github.com/skorokithakis/catt/issues/405)
+* Fix importlib error on Python 3.8 and older ([#382](https://github.com/skorokithakis/catt/issues/382)) ([3ab2b8d](https://github.com/skorokithakis/catt/commit/3ab2b8d4c6608905467fef69feb782c5ba27a428))
+* Fix issues with recent pychromecast / zeroconf ([#398](https://github.com/skorokithakis/catt/issues/398)) ([6c55414](https://github.com/skorokithakis/catt/commit/6c55414ebbdd0becfd69985c6df2745e4f19095b))
+* Fix potential PyChromecast error by pinning to version 8 ([2cd4552](https://github.com/skorokithakis/catt/commit/2cd45525347258e52a89abec87d1a21cdb60f445))
+* Include changelog in releases ([274df71](https://github.com/skorokithakis/catt/commit/274df718554943df6fb4657898a0a5a39924d70a))
+* Make aliases case-insensitive (fixes [#366](https://github.com/skorokithakis/catt/issues/366)) ([e52394d](https://github.com/skorokithakis/catt/commit/e52394d0db42e5a6a5bb8e0e8d50cdbdf03ac23c))
+* Pin Protobuf to &lt;4 to reduce incompatibilities (fixes [#394](https://github.com/skorokithakis/catt/issues/394)) ([0856a57](https://github.com/skorokithakis/catt/commit/0856a574f6b06f02e918ce0250f9ab8db79eba66))
+* Pin PyChromecast and zeroconf (3rd-party dependency) to specific versions to avoid breakage ([1b31842](https://github.com/skorokithakis/catt/commit/1b3184262851f8e39f01ae3e6e94cc39d37c2b6c))
+* Rework broken get_cast_with_ip ([#403](https://github.com/skorokithakis/catt/issues/403)) ([789ee2c](https://github.com/skorokithakis/catt/commit/789ee2cc70ff280a81d494e5e4a12086b06324e1))
+* **save:** Replace cst.media_info with cst.cast_info in save function ([#441](https://github.com/skorokithakis/catt/issues/441)) ([a13b0fa](https://github.com/skorokithakis/catt/commit/a13b0faa6f442ab963c02f8db2b2ad51aeba9024))
+* Set Poetry as the build-backend explicitly ([#433](https://github.com/skorokithakis/catt/issues/433)) ([0ff86b5](https://github.com/skorokithakis/catt/commit/0ff86b5f61a46134ea85e7fda615d585e303ca2a))
+* Support PyChromecst 9 ([#325](https://github.com/skorokithakis/catt/issues/325)) ([31ba8ed](https://github.com/skorokithakis/catt/commit/31ba8edc8dba667a0ba2233c4aab5dad2ac18615))
+* Switch to yt-dlp so YouTube and other services will work again ([#369](https://github.com/skorokithakis/catt/issues/369)) ([2955b5a](https://github.com/skorokithakis/catt/commit/2955b5ae3200f9fa6d14d85f97851ee0700ba29c))
+* Update pychromecast requirement plus fixes ([#429](https://github.com/skorokithakis/catt/issues/429)) ([f335c13](https://github.com/skorokithakis/catt/commit/f335c130061103bbfc429adbc7b8c08af97bea45))
+* Use yt-dlp rather than the defunct youtube-dl ([fe90975](https://github.com/skorokithakis/catt/commit/fe9097565767e255b146b5ad35f5a7486c5fa922))
+
+
+### Documentation
+
+* Add a note about firewalls to the readme ([#435](https://github.com/skorokithakis/catt/issues/435)) ([ef35ed3](https://github.com/skorokithakis/catt/commit/ef35ed34e1078d929377b71b4689f89eb7146370))
+
 ## v0.12.12 (2024-01-28)
 
 ### Fixes
@@ -556,5 +594,3 @@
 * Make temporary directory finding cross-platform. [Stavros Korokithakis]
 
 * Remove unused import. [Stavros Korokithakis]
-
-
