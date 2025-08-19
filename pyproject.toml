@@ -36,7 +36,7 @@ pychromecast = ">=14.0.1, <15"
 requests = ">=2.23.0"
 yt-dlp = ">=2023.3.4"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 coverage = "*"
 flake8 = "*"
 gitchangelog = "*"
