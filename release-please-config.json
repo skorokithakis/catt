@@ -2,7 +2,6 @@
   "versioning-strategy": "always-bump-patch",
   "bump-minor-pre-major": true,
   "bump-patch-for-minor-pre-major": true,
-  "debug": true,
   "packages": {
     ".": {
       "release-type": "python",
