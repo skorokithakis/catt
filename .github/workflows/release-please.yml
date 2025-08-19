@@ -12,11 +12,13 @@ permissions:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    env:
+      DEBUG: release-please:*
+      LOG_LEVEL: debug
+      ACTIONS_STEP_DEBUG: true
     steps:
       - name: release-please-action
         uses: googleapis/release-please-action@v4.2.0
-        env:
-          DEBUG: release-please:*
         with:
           release-type: python
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
