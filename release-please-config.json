@@ -4,6 +4,7 @@
       "release-type": "python",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
+      "versioning-strategy": "always-bump-patch",
       "changelog-sections": [
         { "type": "feat", "section": "Features", "hidden": false },
         { "type": "fix", "section": "Bug Fixes", "hidden": false },
