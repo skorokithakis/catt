@@ -1,22 +1,13 @@
 repos:
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.12.0
+  rev: v0.12.9
   hooks:
     - id: ruff
       args: [ --fix ]
     - id: ruff-format
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: v1.16.1
+  rev: v1.17.1
   hooks:
   - id: mypy
     name: Run MyPy typing checks.
     args: ["--ignore-missing-imports", "--install-types", "--non-interactive"]
-- repo: local
-  hooks:
-  - id: gitchangelog
-    language: system
-    always_run: true
-    pass_filenames: false
-    name: Generate changelog
-    entry: bash -c "gitchangelog > CHANGELOG.md"
-    stages: [commit]
