@@ -106,7 +106,7 @@ def process_subtitles(ctx, param, value):
     pval = urlparse(value).path if "://" in value else value
     if "://" not in value and not pval.lower().endswith((".srt", ".vtt", ".ttml")):
         raise CliError(
-            "Invalid subtitles format. Only srt, vtt, and ttml are supported.\n"
+            "Invalid subtitle format. Only srt, vtt, and ttml are supported.\n"
             "(Timing, bold/italics, and positioning are honored; other styling is dropped.)"
         )
     if "://" not in value and not Path(value).is_file():
