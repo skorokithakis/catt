@@ -502,6 +502,12 @@ class MediaControllerMixin:
         else:
             raise CastError("Stream is not skippable")
 
+    def enable_subtitle(self, track_id: int) -> None:
+        self._cast.media_controller.enable_subtitle(track_id)
+
+    def disable_subtitle(self) -> None:
+        self._cast.media_controller.disable_subtitle()
+
 
 class PlaybackBaseMixin:
     _cast = None  # type: pychromecast.Chromecast
@@ -552,6 +558,7 @@ class DefaultCastController(CastController, MediaControllerMixin, PlaybackBaseMi
             thumb=kwargs.get("thumb"),
             subtitles=kwargs.get("subtitles"),
             stream_type=kwargs.get("stream_type"),
+            media_info=kwargs.get("media_info"),
         )
         self._controller.block_until_active()
 
