@@ -74,9 +74,14 @@ class StreamInfo:
                     # Pick the best format, as decided by SUBTITLE_PRIORITY
                     # Incomptible subtitles have no entry in that dict,
                     # and get zero priority by default.
+                    # If the subtitle has no defined format, assume VTT.
                     best = max(
-                        formats, key=lambda f: SUBTITLE_PRIORITY.get(f["ext"], 0)
+                        formats,
+                        key=lambda f: SUBTITLE_PRIORITY.get(f.get("ext", "vtt"), 0),
                     )
+                    best.setdefault("ext", "vtt")
+                    # Add a blank name if there is none:
+                    best.setdefault("name", "")
                     # Only add the subtitle if compatible
                     # (subtitles with zero priority are discarded)
                     if SUBTITLE_PRIORITY.get(best["ext"], 0) > 0:
