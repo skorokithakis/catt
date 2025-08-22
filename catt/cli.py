@@ -329,16 +329,22 @@ def cast(
 
 @cli.command("cast_site", short_help="Cast any website to a Chromecast.")
 @click.argument("url", callback=process_url)
+@click.option(
+    "-i",
+    "--iframe",
+    is_flag=True,
+    help="Load website into an iframe to avoid timeout (requires HTTPS).",
+)
 @click.pass_obj
-def cast_site(settings, url):
+def cast_site(settings, url, iframe):
     cst = setup_cast(
         settings["selected_device"],
         controller="dashcast",
         action="load_url",
         prep="app",
     )
-    click.echo('Casting {} on "{}"...'.format(url, cst.cc_name))
-    cst.load_url(url)
+    click.echo('Casting {} on "{}" (iframe={})...'.format(url, cst.cc_name, iframe))
+    cst.load_url(url, force=not iframe)
 
 
 @cli.command(short_help="Add a video to the queue (YouTube only).")
