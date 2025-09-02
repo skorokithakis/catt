@@ -12,7 +12,7 @@ Installation
 
 You can run Cast All The Things with uv without installing:
 
-    uxv catt
+    uvx catt
 
 You can install Cast All The Things with pipx:
 
