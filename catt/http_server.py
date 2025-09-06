@@ -8,6 +8,7 @@ from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from typing import Optional
 from typing import Tuple
+from .util import guess_mime
 
 BYTE_RANGE_RE = re.compile(r"bytes=(\d+)-(\d+)?$")
 
@@ -124,7 +125,7 @@ def serve_file(
             mediafile.close()
 
     if content_type is None:
-        content_type = "video/mp4"
+        content_type = guess_mime(filename)
 
     mediapath = Path(filename)
     stats = mediapath.stat()

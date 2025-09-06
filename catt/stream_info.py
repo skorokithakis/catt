@@ -32,6 +32,8 @@ STANDARD_FORMAT = BEST_MAX_2K + MAX_50FPS + TWITCH_NO_60FPS + BANDCAMP_NO_AIFF_A
 
 DEFAULT_YTDL_OPTS = {"quiet": True, "no_warnings": True}
 
+SUBTITLE_PRIORITY = {"vtt": 30, "ttml": 20, "srt": 10}
+
 
 class StreamInfo:
     def __init__(
@@ -46,6 +48,7 @@ class StreamInfo:
         self.stream_type = stream_type
         self.local_ip = get_local_ip(cast_info.host) if cast_info else None
         self.port = random.randrange(45000, 47000) if cast_info else None
+        self.media_info = None
 
         if "://" in video_url:
             self._ydl = yt_dlp.YoutubeDL(
@@ -61,6 +64,40 @@ class StreamInfo:
                     self.stream_type = "LIVE"
                 else:
                     self.stream_type = "BUFFERED"
+            subs = self._preinfo.get("subtitles")
+            if subs:
+                self.media_info = {"tracks": []}
+                # YouTube (and other platforms) serves subtitles for
+                # a single language in multiple formats
+                # This code traverses the raw information from yt-dlp.
+                for i, (lang, formats) in enumerate(subs.items(), 1):
+                    # Pick the best format, as decided by SUBTITLE_PRIORITY
+                    # Incomptible subtitles have no entry in that dict,
+                    # and get zero priority by default.
+                    # If the subtitle has no defined format, assume VTT.
+                    best = max(
+                        formats,
+                        key=lambda f: SUBTITLE_PRIORITY.get(f.get("ext", "vtt"), 0),
+                    )
+                    best.setdefault("ext", "vtt")
+                    # Add a blank name if there is none:
+                    best.setdefault("name", "")
+                    # Only add the subtitle if compatible
+                    # (subtitles with zero priority are discarded)
+                    if SUBTITLE_PRIORITY.get(best["ext"], 0) > 0:
+                        self.media_info["tracks"].append(
+                            {
+                                "trackId": i,
+                                "trackContentId": best["url"],
+                                "language": lang,
+                                "subtype": "SUBTITLES",
+                                "type": "TEXT",
+                                "trackContentType": guess_mime(
+                                    "subtitles." + best["ext"]
+                                ),
+                                "name": f"[{lang}] " + best["name"],
+                            }
+                        )
 
             model = (
                 (cast_info.manufacturer, cast_info.model_name) if cast_info else None

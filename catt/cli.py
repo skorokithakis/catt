@@ -104,8 +104,11 @@ def process_subtitles(ctx, param, value):
     if not value:
         return None
     pval = urlparse(value).path if "://" in value else value
-    if not pval.lower().endswith((".srt", ".vtt")):
-        raise CliError("Invalid subtitles format, only srt and vtt are supported")
+    if "://" not in value and not pval.lower().endswith((".srt", ".vtt", ".ttml")):
+        raise CliError(
+            "Invalid subtitle format. Only srt, vtt, and ttml are supported.\n"
+            "(Timing, bold/italics, and positioning are honored; other styling is dropped.)"
+        )
     if "://" not in value and not Path(value).is_file():
         raise CliError("Subtitles file [{}] does not exist".format(value))
     return value
@@ -134,7 +137,7 @@ def fail_if_no_ip(ipaddr):
         raise CliError("Local IP-address could not be determined")
 
 
-def create_server_thread(filename, address, port, content_type, single_req=False):
+def create_server_thread(filename, address, port, content_type=None, single_req=False):
     thr = Thread(
         target=serve_file, args=(filename, address, port, content_type, single_req)
     )
@@ -283,15 +286,15 @@ def cast(
         if not subtitles and not no_subs and stream.is_local_file:
             subtitles = hunt_subtitles(video_url)
         if subtitles:
-            fail_if_no_ip(stream.local_ip)
             subs = SubsInfo(subtitles, stream.local_ip, stream.port + 1)
-            su_thr = create_server_thread(
-                subs.file,
-                subs.local_ip,
-                subs.port,
-                "text/vtt;charset=utf-8",
-                single_req=True,
-            )
+            if subs.local_subs:
+                fail_if_no_ip(stream.local_ip)
+                su_thr = create_server_thread(
+                    subs.file,
+                    subs.local_ip,
+                    subs.port,
+                    single_req=True,
+                )
 
         click.echo("Casting {} file {}...".format(local_or_remote, video_url))
         click.echo(
@@ -310,13 +313,14 @@ def cast(
                 thumb=stream.video_thumbnail,
                 current_time=seek_to,
                 stream_type=stream.stream_type,
+                media_info=stream.media_info,
             )
         elif cst.info_type == "id":
             cst.play_media_id(stream.video_id, current_time=seek_to)
         else:
             raise ValueError("Invalid or undefined info type")
 
-    if stream.is_local_file or subs:
+    if stream.is_local_file or (subs is not None and subs.local_subs):
         click.echo("Serving local file(s).")
     if not media_is_image and (stream.is_local_file or block):
         if not cst.wait_for(["PLAYING"], timeout=WAIT_PLAY_TIMEOUT):
@@ -325,6 +329,34 @@ def cast(
     elif (stream.is_local_file and media_is_image) or subs:
         while (st_thr and st_thr.is_alive()) or (su_thr and su_thr.is_alive()):
             time.sleep(1)
+
+
+@cli.command(short_help="List and toggle captions (does not work in the YouTube app).")
+@click.argument("track_id", required=False, type=int)
+@click.option("-n", "--off", is_flag=True, help="Hides all subtitles")
+@click.option("-l", "--list", "list_subs", is_flag=True, help="Lists all subtitles")
+@click.pass_obj
+def subs(settings, track_id, off, list_subs):
+    if not off and not track_id and not list_subs:
+        click.echo("Try 'catt subs --help' for help.")
+        return
+    if off:
+        cst = setup_cast(
+            settings["selected_device"], action="disable_subtitle", prep="control"
+        )
+        cst.disable_subtitle()
+    if list_subs:
+        cst = setup_cast(settings["selected_device"], prep="info")
+        for track in cst.info["subtitle_tracks"]:
+            if track.get("type") == "TEXT":
+                trackId = track["trackId"]
+                name = track["name"]
+                click.echo(f"{trackId}\t{name}")
+    if track_id:
+        cst = setup_cast(
+            settings["selected_device"], action="enable_subtitle", prep="control"
+        )
+        cst.enable_subtitle(track_id)
 
 
 @cli.command("cast_site", short_help="Cast any website to a Chromecast.")
