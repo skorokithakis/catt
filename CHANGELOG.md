@@ -8,6 +8,14 @@
 * Tell apart live videos from buffered videos (#464) [medape]
 
 
+## [0.13.1](https://github.com/skorokithakis/catt/compare/v0.13.0...v0.13.1) (2025-09-06)
+
+
+### Features
+
+* Drop support for Python before 3.11, as that's what PyChromecast requires ([a815de7](https://github.com/skorokithakis/catt/commit/a815de7c46585454e33a351e79a733d2e56d3596))
+* More control over subtitles ([#467](https://github.com/skorokithakis/catt/issues/467)) ([7bd7788](https://github.com/skorokithakis/catt/commit/7bd7788754e19883fe5fa9692a5e5cda7f2cfca8))
+
 ## [0.13.0](https://github.com/skorokithakis/catt/compare/v0.12.0...v0.13.0) (2025-08-19)
 
 
@@ -1159,5 +1167,3 @@
 * Make temporary directory finding cross-platform. [Stavros Korokithakis]
 
 * Remove unused import. [Stavros Korokithakis]
-
-
