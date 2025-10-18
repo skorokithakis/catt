@@ -245,7 +245,7 @@ def cast(
     playlist_playback = False
     st_thr = su_thr = subs = None
     cst, stream = setup_cast(
-        settings["selected_device"],
+        settings,
         video_url=video_url,
         prep="app",
         controller=controller,
@@ -341,21 +341,17 @@ def subs(settings, track_id, off, list_subs):
         click.echo("Try 'catt subs --help' for help.")
         return
     if off:
-        cst = setup_cast(
-            settings["selected_device"], action="disable_subtitle", prep="control"
-        )
+        cst = setup_cast(settings, action="disable_subtitle", prep="control")
         cst.disable_subtitle()
     if list_subs:
-        cst = setup_cast(settings["selected_device"], prep="info")
+        cst = setup_cast(settings, prep="info")
         for track in cst.info["subtitle_tracks"]:
             if track.get("type") == "TEXT":
                 trackId = track["trackId"]
                 name = track["name"]
                 click.echo(f"{trackId}\t{name}")
     if track_id:
-        cst = setup_cast(
-            settings["selected_device"], action="enable_subtitle", prep="control"
-        )
+        cst = setup_cast(settings, action="enable_subtitle", prep="control")
         cst.enable_subtitle(track_id)
 
 
@@ -364,7 +360,7 @@ def subs(settings, track_id, off, list_subs):
 @click.pass_obj
 def cast_site(settings, url):
     cst = setup_cast(
-        settings["selected_device"],
+        settings,
         controller="dashcast",
         action="load_url",
         prep="app",
@@ -384,7 +380,7 @@ def cast_site(settings, url):
 @click.pass_obj
 def add(settings, video_url, play_next):
     cst, stream = setup_cast(
-        settings["selected_device"], video_url=video_url, action="add", prep="control"
+        settings, video_url=video_url, action="add", prep="control"
     )
     if cst.name != stream.extractor or not (
         stream.is_remote_file or stream.is_playlist_with_active_entry
@@ -402,7 +398,7 @@ def add(settings, video_url, play_next):
 @click.pass_obj
 def remove(settings, video_url):
     cst, stream = setup_cast(
-        settings["selected_device"],
+        settings,
         video_url=video_url,
         action="remove",
         prep="control",
@@ -416,28 +412,28 @@ def remove(settings, video_url):
 @cli.command(short_help="Clear the queue (YouTube only).")
 @click.pass_obj
 def clear(settings):
-    cst = setup_cast(settings["selected_device"], action="clear", prep="control")
+    cst = setup_cast(settings, action="clear", prep="control")
     cst.clear()
 
 
 @cli.command(short_help="Pause a video.")
 @click.pass_obj
 def pause(settings):
-    cst = setup_cast(settings["selected_device"], action="pause", prep="control")
+    cst = setup_cast(settings, action="pause", prep="control")
     cst.pause()
 
 
 @cli.command(short_help="Resume a video after it has been paused.")
 @click.pass_obj
 def play(settings):
-    cst = setup_cast(settings["selected_device"], action="play", prep="control")
+    cst = setup_cast(settings, action="play", prep="control")
     cst.play()
 
 
 @cli.command("play_toggle", short_help="Toggle between playing and paused state.")
 @click.pass_obj
 def play_toggle(settings):
-    cst = setup_cast(settings["selected_device"], action="play_toggle", prep="control")
+    cst = setup_cast(settings, action="play_toggle", prep="control")
     cst.play_toggle()
 
 
@@ -451,7 +447,7 @@ def play_toggle(settings):
 )
 @click.pass_obj
 def stop(settings, force):
-    cst = setup_cast(settings["selected_device"])
+    cst = setup_cast(settings)
     cst.kill(force=force)
 
 
@@ -461,7 +457,7 @@ def stop(settings, force):
 )
 @click.pass_obj
 def rewind(settings, timedesc):
-    cst = setup_cast(settings["selected_device"], action="rewind", prep="control")
+    cst = setup_cast(settings, action="rewind", prep="control")
     cst.rewind(timedesc)
 
 
@@ -471,7 +467,7 @@ def rewind(settings, timedesc):
 )
 @click.pass_obj
 def ffwd(settings, timedesc):
-    cst = setup_cast(settings["selected_device"], action="ffwd", prep="control")
+    cst = setup_cast(settings, action="ffwd", prep="control")
     cst.ffwd(timedesc)
 
 
@@ -479,14 +475,14 @@ def ffwd(settings, timedesc):
 @click.argument("timedesc", type=CATT_TIME, metavar="TIME")
 @click.pass_obj
 def seek(settings, timedesc):
-    cst = setup_cast(settings["selected_device"], action="seek", prep="control")
+    cst = setup_cast(settings, action="seek", prep="control")
     cst.seek(timedesc)
 
 
 @cli.command(short_help="Skip to end of content.")
 @click.pass_obj
 def skip(settings):
-    cst = setup_cast(settings["selected_device"], action="skip", prep="control")
+    cst = setup_cast(settings, action="skip", prep="control")
     cst.skip()
 
 
@@ -494,7 +490,7 @@ def skip(settings):
 @click.argument("level", type=click.IntRange(0, 100), metavar="LVL")
 @click.pass_obj
 def volume(settings, level):
-    cst = setup_cast(settings["selected_device"])
+    cst = setup_cast(settings)
     cst.volume(level / 100.0)
 
 
@@ -504,7 +500,7 @@ def volume(settings, level):
 )
 @click.pass_obj
 def volumeup(settings, delta):
-    cst = setup_cast(settings["selected_device"])
+    cst = setup_cast(settings)
     cst.volumeup(delta / 100.0)
 
 
@@ -514,7 +510,7 @@ def volumeup(settings, delta):
 )
 @click.pass_obj
 def volumedown(settings, delta):
-    cst = setup_cast(settings["selected_device"])
+    cst = setup_cast(settings)
     cst.volumedown(delta / 100.0)
 
 
@@ -522,14 +518,14 @@ def volumedown(settings, delta):
 @click.argument("muted", type=click.BOOL, required=False, default=True, metavar="MUTED")
 @click.pass_obj
 def volumemute(settings, muted):
-    cst = setup_cast(settings["selected_device"])
+    cst = setup_cast(settings)
     cst.volumemute(muted)
 
 
 @cli.command(short_help="Show some information about the currently-playing video.")
 @click.pass_obj
 def status(settings):
-    cst = setup_cast(settings["selected_device"], prep="info")
+    cst = setup_cast(settings, prep="info")
     echo_status(cst.cast_info)
 
 
@@ -538,7 +534,7 @@ def status(settings):
 @click.pass_obj
 def info(settings, json_output):
     try:
-        cst = setup_cast(settings["selected_device"], prep="info")
+        cst = setup_cast(settings, prep="info")
     except CastError:
         if json_output:
             info = {}
@@ -580,7 +576,7 @@ def scan(json_output):
 )
 @click.pass_obj
 def save(settings, path):
-    cst = setup_cast(settings["selected_device"], prep="control")
+    cst = setup_cast(settings, prep="control")
     if not cst.save_capability or cst.is_streaming_local_file:
         raise CliError("Saving state of this kind of content is not supported")
     elif cst.save_capability == "partial":
@@ -607,7 +603,7 @@ def save(settings, path):
 def restore(settings, path):
     if not path and not STATE_PATH.is_file():
         raise CliError("Save file in config dir has not been created")
-    cst = setup_cast(settings["selected_device"])
+    cst = setup_cast(settings)
     state = CastState(path or STATE_PATH, StateMode.READ)
     try:
         data = state.get_data(cst.cc_name if not path else None)
@@ -618,9 +614,7 @@ def restore(settings, path):
 
     echo_status(data["data"])
     click.echo("Restoring...")
-    cst = setup_cast(
-        settings["selected_device"], prep="app", controller=data["controller"]
-    )
+    cst = setup_cast(settings, prep="app", controller=data["controller"])
     cst.restore(data["data"])
 
 

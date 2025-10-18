@@ -39,11 +39,12 @@ class StreamInfo:
     def __init__(
         self,
         video_url,
-        cast_info=None,
+        settings={},
         ytdl_options=None,
         throw_ytdl_dl_errs=False,
         stream_type=None,
     ):
+        cast_info = settings.get("cast_info")
         self._throw_ytdl_dl_errs = throw_ytdl_dl_errs
         self.stream_type = stream_type
         self.local_ip = get_local_ip(cast_info.host) if cast_info else None

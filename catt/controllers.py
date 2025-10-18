@@ -96,7 +96,7 @@ def get_controller(cast, app, action=None, prep=None) -> "CastController":
 
 
 def setup_cast(
-    device_desc,
+    settings,
     video_url=None,
     controller=None,
     ytdl_options=None,
@@ -104,13 +104,14 @@ def setup_cast(
     prep=None,
     stream_type=None,
 ):
-    cast = get_cast(device_desc)
+    cast = get_cast(settings["selected_device"])
+    settings["cast_info"] = cast.cast_info
     cast_type = cast.cast_type
     app_id = cast.app_id
     stream = (
         StreamInfo(
             video_url,
-            cast_info=cast.cast_info,
+            settings,
             ytdl_options=ytdl_options,
             stream_type=stream_type,
         )
