@@ -74,6 +74,7 @@ def serve_file(
             return super(FileHandler, self).log_message(format, *args, **kwargs)
 
         def do_GET(self):  # noqa
+            mediafile = None
             if "Range" not in self.headers:
                 first, last = 0, stats.st_size
             else:
@@ -98,7 +99,7 @@ def serve_file(
                     )
 
                 self.send_header("Accept-Ranges", "bytes")
-                self.send_header("Content-type", content_type)
+                self.send_header("Content-Type", content_type)
                 self.send_header("Content-Length", str(response_length))
                 self.send_header("Access-Control-Allow-Origin", "*")
                 self.send_header(
@@ -121,8 +122,9 @@ def serve_file(
                 )
             except:  # noqa
                 traceback.print_exc()
-
-            mediafile.close()
+            finally:
+                if mediafile:
+                    mediafile.close()
 
     if content_type is None:
         content_type = guess_mime(filename)

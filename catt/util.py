@@ -89,6 +89,9 @@ def guess_mime(path):
         ".srt": "application/x-subrip",
         ".ttml": "application/ttml+xml",
         ".vtt": "text/vtt",
+        ".ts": "video/mp2t",
+        ".m3u8": "application/vnd.apple.mpegurl",
+        ".mpd": "application/dash+xml",
     }
     return extensions.get(extension, "video/mp4")
 

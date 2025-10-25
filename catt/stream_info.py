@@ -10,6 +10,7 @@ from .util import get_local_ip
 from .util import guess_mime
 from .util import echo_debug
 from .util import echo_trace
+from .util import echo_warning
 from .util import echo_verbose
 
 AUDIO_DEVICE_TYPES = ["audio", "group"]
@@ -61,6 +62,7 @@ class StreamInfo:
         self.local_ip = get_local_ip(cast_info.host) if cast_info else None
         self.port = random.randrange(45000, 47000) if cast_info else None
         self.media_info = None
+        self.guessed_content_type = None
 
         if "://" in video_url:
             self._ydl = yt_dlp.YoutubeDL(
@@ -104,26 +106,24 @@ class StreamInfo:
                     # Only add the subtitle if compatible
                     # (subtitles with zero priority are discarded)
                     if SUBTITLE_PRIORITY.get(best["ext"], 0) > 0:
-                        self.media_info["tracks"].append(
-                            {
-                                "trackId": i,
-                                "trackContentId": best["url"],
-                                "language": lang,
-                                "subtype": "SUBTITLES",
-                                "type": "TEXT",
-                                "trackContentType": guess_mime(
-                                    "subtitles." + best["ext"]
-                                ),
-                                "name": f"[{lang}] " + best["name"],
-                            }
-                        )
-                        echo_debug(
+                        echo_verbose(
                             'Adding subtitle "{}" in {} language and {} format'.format(
                                 best["name"],
                                 lang,
                                 best["ext"],
                             ),
                         )
+                        newtrack = {
+                            "trackId": i,
+                            "trackContentId": best["url"],
+                            "language": lang,
+                            "subtype": "SUBTITLES",
+                            "type": "TEXT",
+                            "trackContentType": guess_mime("subtitles." + best["ext"]),
+                            "name": f"[{lang}] " + best["name"],
+                        }
+                        echo_verbose(newtrack)
+                        self.media_info["tracks"].append(newtrack)
                     else:
                         echo_debug("Discarding subtitle")
 
@@ -131,10 +131,21 @@ class StreamInfo:
                 (cast_info.manufacturer, cast_info.model_name) if cast_info else None
             )
             cast_type = cast_info.cast_type if cast_info else None
+            # If a `format` was input, CATT will assume it is valid and
+            # compatible with the current ChromeCast, but will ask the user to
+            # manually check if it is the case.
+            # If no `format` was provided, CATT will select a default according
+            # to the ChromeCast.
             if "format" in self._ydl.params:
-                # We pop the "format" item, as it will make get_stream_info fail,
-                # if it holds an invalid value.
-                self._best_format = self._ydl.params.pop("format")
+                echo_warning(
+                    "A format was provided manually. CATT will not check if the format is compatible with your device.\n"
+                    + "To see the list of compatible formats and codecs, please check your device version at:\n"
+                    + "\n"
+                    + "https://developers.google.com/cast/docs/media\n"
+                    + "\n"
+                    + "CATT will select the best format for your specific device if none is provided"
+                )
+                self._best_format = self._ydl.params["format"]
             elif cast_type and cast_type in AUDIO_DEVICE_TYPES:
                 echo_verbose("Casting audio")
                 self._best_format = AUDIO_FORMAT
@@ -162,9 +173,27 @@ class StreamInfo:
             else:
                 echo_verbose("Target is not playlist")
                 self._info = self._get_stream_info(self._preinfo)
+            ext = self._info.get("ext")
+            echo_debug(f"yt-dlp reports extension as {ext}")
+            self.guessed_content_type = guess_mime("a." + ext) if ext else None
         else:
             self._local_file = video_url
             self.is_local_file = True
+            self.guessed_content_type = guess_mime(video_url)
+            if self.stream_type is None:
+                if (self.guessed_content_type.split("/"))[0] == "application":
+                    echo_warning(
+                        "Setting stream type to BUFFERED (not a live stream).\n"
+                        + "\n"
+                        + "This is a safe choice for the vast majority of cases.\n"
+                        + "However, it is not adequate if the file is a streaming manifest pointing to a live stream.\n"
+                        + "If that is the case, please run CATT with the flag `--stream-type BUFFERED`"
+                    )
+                else:
+                    echo_verbose(
+                        "Stream type set automatically to BUFFERED (not a live stream)",
+                    )
+                self.stream_type = "BUFFERED"
         echo_verbose("guessed_content_type set to {}".format(self.guessed_content_type))
 
     @property
@@ -224,15 +253,6 @@ class StreamInfo:
             if self.is_remote_file or self.is_playlist_with_active_entry
             else None
         )
-
-    @property
-    def guessed_content_type(self):
-        if self.is_local_file:
-            return guess_mime(Path(self._local_file).name)
-        elif self._is_direct_link:
-            return guess_mime(self._info["webpage_url_basename"])
-        else:
-            return None
 
     @property
     def guessed_content_category(self):
