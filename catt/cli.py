@@ -32,6 +32,7 @@ from .util import echo_status
 from .util import echo_warning
 from .util import hunt_subtitles
 from .util import is_ipaddress
+from .util import set_verbosity
 
 CONFIG_DIR = Path(click.get_app_dir("catt"))
 CONFIG_PATH = Path(CONFIG_DIR, "catt.cfg")
@@ -44,6 +45,8 @@ try:
     VERSION = version(PROGRAM_NAME)
 except Exception:
     VERSION = "0.0.0u"
+
+MAX_VERBOSITY = 4
 
 
 class CattTimeParamType(click.ParamType):
@@ -151,18 +154,31 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 @click.group(context_settings=CONTEXT_SETTINGS)
 @click.option("-d", "--device", metavar="NAME_OR_IP", help="Select Chromecast device.")
+@click.option(
+    "-v",
+    "--verbose",
+    count=True,
+    help="Outputs extra information (for debugging; may stack, up to -"
+    + ("v" * MAX_VERBOSITY)
+    + ")",
+)
 @click.version_option(
     version=VERSION,
     prog_name=PROGRAM_NAME,
     message="%(prog)s v%(version)s, " + __codename__ + ".",
 )
 @click.pass_context
-def cli(ctx, device):
+def cli(ctx, device, verbose):
     device_from_config = ctx.obj["options"].get("device")
     ctx.obj["selected_device"] = process_device(
         device or device_from_config, ctx.obj["aliases"]
     )
     ctx.obj["selected_device_is_from_cli"] = bool(device)
+    if verbose > MAX_VERBOSITY:
+        print("Add the flag -{} for maximum verbosity.".format("v" * MAX_VERBOSITY))
+        verbose = MAX_VERBOSITY
+    ctx.obj["verbosity"] = verbose
+    set_verbosity(verbose)
 
 
 @cli.command(short_help="Send a video to a Chromecast for playing.")
@@ -305,16 +321,16 @@ def cast(
             )
         )
         if cst.info_type == "url":
-            cst.play_media_url(
-                stream.video_url,
-                title=stream.video_title,
-                content_type=stream.guessed_content_type,
-                subtitles=subs.url if subs else None,
-                thumb=stream.video_thumbnail,
-                current_time=seek_to,
-                stream_type=stream.stream_type,
-                media_info=stream.media_info,
-            )
+            kwargs = {
+                "title": stream.video_title,
+                "content_type": stream.guessed_content_type,
+                "subtitles": subs.url if subs else None,
+                "thumb": stream.video_thumbnail,
+                "current_time": seek_to,
+                "stream_type": stream.stream_type,
+                "media_info": stream.media_info,
+            }
+            cst.play_media_url(stream.video_url, **kwargs)
         elif cst.info_type == "id":
             cst.play_media_id(stream.video_id, current_time=seek_to)
         else:

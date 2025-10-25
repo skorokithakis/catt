@@ -8,6 +8,9 @@ from .error import FormatError
 from .error import PlaylistError
 from .util import get_local_ip
 from .util import guess_mime
+from .util import echo_debug
+from .util import echo_trace
+from .util import echo_verbose
 
 AUDIO_DEVICE_TYPES = ["audio", "group"]
 # The manufacturer field is currently unavailable for Google products.
@@ -30,7 +33,14 @@ AUDIO_FORMAT = (
 ULTRA_FORMAT = BEST_MAX_4K + BANDCAMP_NO_AIFF_ALAC
 STANDARD_FORMAT = BEST_MAX_2K + MAX_50FPS + TWITCH_NO_60FPS + BANDCAMP_NO_AIFF_ALAC
 
-DEFAULT_YTDL_OPTS = {"quiet": True, "no_warnings": True}
+# DEFAULT_YTDL_OPTS depends on verbosity:
+DEFAULT_YTDL_OPTS = {
+    0: {"quiet": True, "no_warnings": True},
+    1: {"quiet": True},
+    2: {},
+    3: {"verbose": True},
+    4: {"verbose": True, "print_traffic": True},
+}
 
 SUBTITLE_PRIORITY = {"vtt": 30, "ttml": 20, "srt": 10}
 
@@ -45,6 +55,7 @@ class StreamInfo:
         stream_type=None,
     ):
         cast_info = settings.get("cast_info")
+        verbosity = settings.get("verbosity", 0)
         self._throw_ytdl_dl_errs = throw_ytdl_dl_errs
         self.stream_type = stream_type
         self.local_ip = get_local_ip(cast_info.host) if cast_info else None
@@ -53,11 +64,12 @@ class StreamInfo:
 
         if "://" in video_url:
             self._ydl = yt_dlp.YoutubeDL(
-                dict(ytdl_options) if ytdl_options else DEFAULT_YTDL_OPTS
+                dict(ytdl_options) or DEFAULT_YTDL_OPTS[verbosity]
             )
             self._preinfo = self._get_stream_preinfo(video_url)
             # Some playlist urls needs to be re-processed (such as youtube channel urls).
             if self._preinfo.get("ie_key"):
+                echo_verbose("Got playlist, reprocessing")
                 self._preinfo = self._get_stream_preinfo(self._preinfo["url"])
             self.is_local_file = False
             if self.stream_type is None and "duration" in self._preinfo:
@@ -65,6 +77,11 @@ class StreamInfo:
                     self.stream_type = "LIVE"
                 else:
                     self.stream_type = "BUFFERED"
+                echo_verbose("Autoselected stream_type {}".format(self.stream_type))
+            else:
+                echo_verbose(
+                    "Manually selected stream_type {}".format(self.stream_type)
+                )
             subs = self._preinfo.get("subtitles")
             if subs:
                 self.media_info = {"tracks": []}
@@ -80,6 +97,7 @@ class StreamInfo:
                         formats,
                         key=lambda f: SUBTITLE_PRIORITY.get(f.get("ext", "vtt"), 0),
                     )
+                    echo_debug(f"Found potential subtitles: {best}")
                     best.setdefault("ext", "vtt")
                     # Add a blank name if there is none:
                     best.setdefault("name", "")
@@ -99,6 +117,15 @@ class StreamInfo:
                                 "name": f"[{lang}] " + best["name"],
                             }
                         )
+                        echo_debug(
+                            'Adding subtitle "{}" in {} language and {} format'.format(
+                                best["name"],
+                                lang,
+                                best["ext"],
+                            ),
+                        )
+                    else:
+                        echo_debug("Discarding subtitle")
 
             model = (
                 (cast_info.manufacturer, cast_info.model_name) if cast_info else None
@@ -109,13 +136,18 @@ class StreamInfo:
                 # if it holds an invalid value.
                 self._best_format = self._ydl.params.pop("format")
             elif cast_type and cast_type in AUDIO_DEVICE_TYPES:
+                echo_verbose("Casting audio")
                 self._best_format = AUDIO_FORMAT
             elif model and model in ULTRA_MODELS:
+                echo_verbose("Not casting audio. Ultra model")
                 self._best_format = ULTRA_FORMAT
             else:
+                echo_verbose("Not casting audio. Not an ultra model")
                 self._best_format = STANDARD_FORMAT
+            echo_verbose('Format selector: "{}"'.format(self._best_format))
 
             if self.is_playlist:
+                echo_verbose("Playlist detected")
                 self._entries = list(self._preinfo["entries"])
                 # There appears to be no way to extract both a YouTube video id,
                 # and ditto playlist id in one go (in the case of an url containing both),
@@ -128,10 +160,12 @@ class StreamInfo:
                     else None
                 )
             else:
+                echo_verbose("Target is not playlist")
                 self._info = self._get_stream_info(self._preinfo)
         else:
             self._local_file = video_url
             self.is_local_file = True
+        echo_verbose("guessed_content_type set to {}".format(self.guessed_content_type))
 
     @property
     def is_remote_file(self):
@@ -237,7 +271,10 @@ class StreamInfo:
 
     def _get_stream_preinfo(self, video_url):
         try:
-            return self._ydl.extract_info(video_url, process=False)
+            data = self._ydl.extract_info(video_url, process=False)
+            echo_verbose("Running yt_dlp.extract_info()")
+            echo_trace(data)
+            return data
         except yt_dlp.utils.DownloadError:
             # We sometimes get CI failures when testing with YouTube videos,
             # as YouTube throttles our connections intermittently. We evaluated
@@ -258,6 +295,7 @@ class StreamInfo:
             raise ExtractionError("yt-dlp extractor failed")
 
     def _get_stream_url(self, info):
+        echo_debug("Entering _get_stream_url()")
         try:
             format_selector = self._ydl.build_format_selector(self._best_format)
         except ValueError:
@@ -272,4 +310,5 @@ class StreamInfo:
         except KeyError:
             best_format = info
 
+        echo_debug(f'best_format = "{best_format}"')
         return best_format["url"]

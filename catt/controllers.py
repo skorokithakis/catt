@@ -22,7 +22,11 @@ from .error import ControllerError
 from .error import ListenerError
 from .error import StateFileError
 from .stream_info import StreamInfo
+from .util import echo_debug
 from .util import echo_warning
+from .util import echo_verbose
+
+global verbosity
 
 GOOGLE_MEDIA_NAMESPACE = "urn:x-cast:com.google.cast.media"
 VALID_STATE_EVENTS = ["UNKNOWN", "IDLE", "BUFFERING", "PLAYING", "PAUSED"]
@@ -104,9 +108,11 @@ def setup_cast(
     prep=None,
     stream_type=None,
 ):
+    echo_verbose("Setting up casting")
     cast = get_cast(settings["selected_device"])
     settings["cast_info"] = cast.cast_info
     cast_type = cast.cast_type
+    echo_debug(cast)
     app_id = cast.app_id
     stream = (
         StreamInfo(
@@ -133,7 +139,10 @@ def setup_cast(
     else:
         app = get_app("default")
 
+    echo_verbose(f"App: {app}")
+
     cast_controller = get_controller(cast, app, action=action, prep=prep)
+    echo_debug(f"Cast controller: {cast_controller}")
     return (cast_controller, stream) if stream else cast_controller
 
 

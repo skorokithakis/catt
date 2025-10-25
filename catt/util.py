@@ -8,10 +8,39 @@ from pathlib import Path
 import click
 import ifaddr
 
+global verbosity
+verbosity: int = 0
+
+
+def set_verbosity(_: int):
+    global verbosity
+    verbosity = _
+
+
+def _echo(msg: str, prefix: str, color: str, display):
+    if display:
+        click.secho(prefix, fg=color, nl=False, err=True)
+        click.echo("{}.".format(msg), err=True)
+
 
 def echo_warning(msg):
-    click.secho("Warning: ", fg="red", nl=False, err=True)
-    click.echo("{}.".format(msg), err=True)
+    _echo(msg, "Warning: ", "yellow", True)
+
+
+def echo_info(msg):
+    _echo(msg, "", "white", verbosity >= 1)
+
+
+def echo_verbose(msg):
+    _echo(msg, "[CATT verbose] ", "magenta", verbosity >= 2)
+
+
+def echo_debug(msg):
+    _echo(msg, "[CATT debug] ", "green", verbosity >= 3)
+
+
+def echo_trace(msg):
+    _echo(msg, "[CATT trace] ", "blue", verbosity >= 4)
 
 
 def echo_json(data_dict):
