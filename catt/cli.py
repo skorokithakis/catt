@@ -359,16 +359,20 @@ def subs(settings, track_id, off, list_subs):
     if off:
         cst = setup_cast(settings, action="disable_subtitle", prep="control")
         cst.disable_subtitle()
-    if list_subs:
-        cst = setup_cast(settings, prep="info")
-        for track in cst.info["subtitle_tracks"]:
-            if track.get("type") == "TEXT":
-                trackId = track["trackId"]
-                name = track["name"]
-                click.echo(f"{trackId}\t{name}")
     if track_id:
         cst = setup_cast(settings, action="enable_subtitle", prep="control")
         cst.enable_subtitle(track_id)
+    if list_subs:
+        cst = setup_cast(settings, prep="info")
+        current_subtitle_tracks = cst.info["current_subtitle_tracks"]
+        for track in cst.info["subtitle_tracks"]:
+            trackId = track["trackId"]
+            name = track.get("name")
+            type = track.get("type")
+            language = track.get("language")
+            current_subtitle_tracks = cst.info["current_subtitle_tracks"]
+            enabled = "✓" if trackId in current_subtitle_tracks else " "
+            click.echo(f"{enabled}\t{trackId} [{type}]\t[{language}] {name}")
 
 
 @cli.command("cast_site", short_help="Cast any website to a Chromecast.")
