@@ -20,7 +20,7 @@ AUDIO_DEVICE_TYPES = ["audio", "group"]
 # See https://github.com/balloob/pychromecast/pull/197
 ULTRA_MODELS = [("Xiaomi", "MIBOX3"), ("Unknown manufacturer", "Chromecast Ultra")]
 
-BEST_MAX_2K = "best[width <=? 1920][height <=? 1080]"
+BEST_MAX_2K = "best[width <=? 1920][height <=? 1080][vcodec!^=av1][vcodec!^=av01][vcodec!^=vp9][vcodec!^=h265]"
 BEST_MAX_4K = "best[width <=? 3840][height <=? 2160]"
 BEST_ONLY_AUDIO = "bestaudio"
 BEST_FALLBACK = "/best"
@@ -61,7 +61,7 @@ class StreamInfo:
         self.stream_type = stream_type
         self.local_ip = get_local_ip(cast_info.host) if cast_info else None
         self.port = random.randrange(45000, 47000) if cast_info else None
-        self.media_info = None
+        self.media_info = {}
         self.guessed_content_type = None
 
         if "://" in video_url:
@@ -86,11 +86,10 @@ class StreamInfo:
                 )
             subs = self._preinfo.get("subtitles")
             if subs:
-                self.media_info = {"tracks": []}
                 # YouTube (and other platforms) serves subtitles for
                 # a single language in multiple formats
                 # This code traverses the raw information from yt-dlp.
-                for i, (lang, formats) in enumerate(subs.items(), 1):
+                for lang, formats in subs.items():
                     # Pick the best format, as decided by SUBTITLE_PRIORITY
                     # Incomptible subtitles have no entry in that dict,
                     # and get zero priority by default.
@@ -113,17 +112,18 @@ class StreamInfo:
                                 best["ext"],
                             ),
                         )
-                        newtrack = {
-                            "trackId": i,
-                            "trackContentId": best["url"],
-                            "language": lang,
-                            "subtype": "SUBTITLES",
-                            "type": "TEXT",
-                            "trackContentType": guess_mime("subtitles." + best["ext"]),
-                            "name": f"[{lang}] " + best["name"],
-                        }
-                        echo_verbose(newtrack)
-                        self.media_info["tracks"].append(newtrack)
+                        self._add_track_to_stream(
+                            {
+                                "trackContentId": best["url"],
+                                "language": lang,
+                                "subtype": "SUBTITLES",
+                                "type": "TEXT",
+                                "trackContentType": guess_mime(
+                                    "subtitles." + best["ext"]
+                                ),
+                                "name": f"[{lang}] " + best["name"],
+                            }
+                        )
                     else:
                         echo_debug("Discarding subtitle")
 
@@ -332,3 +332,13 @@ class StreamInfo:
 
         echo_debug(f'best_format = "{best_format}"')
         return best_format["url"]
+
+    def _add_track_to_stream(self, track):
+        if self.media_info.get("tracks") is None:
+            echo_debug("Initializing list of extra tracks to cast")
+            self.media_info["tracks"] = []
+        if track.get("trackId") is None:
+            track["trackId"] = len(self.media_info["tracks"]) + 1
+        echo_verbose('Adding new track to self.media_info["tracks"]')
+        echo_debug(track)
+        self.media_info["tracks"].append(track)
