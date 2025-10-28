@@ -20,14 +20,14 @@ AUDIO_DEVICE_TYPES = ["audio", "group"]
 # See https://github.com/balloob/pychromecast/pull/197
 ULTRA_MODELS = [("Xiaomi", "MIBOX3"), ("Unknown manufacturer", "Chromecast Ultra")]
 
-BEST_MAX_2K = "best[width <=? 1920][height <=? 1080][vcodec!^=av1][vcodec!^=av01][vcodec!^=vp9][vcodec!^=h265]"
+BEST_MAX_2K = "best[width <=? 1920][height <=? 1080][vcodec!^=?av1][vcodec!^=?av01][vcodec!^=?vp9][vcodec!^=?h265]"
 BEST_MAX_4K = "best[width <=? 3840][height <=? 2160]"
 BEST_ONLY_AUDIO = "bestaudio"
 BEST_FALLBACK = "/best"
 MAX_50FPS = "[fps <=? 50]"
-TWITCH_NO_60FPS = "[format_id != 1080p60__source_][format_id != 720p60]"
-MIXCLOUD_NO_DASH_HLS = "[format_id != dash-a1-x3][format_id !*= hls-6]"
-BANDCAMP_NO_AIFF_ALAC = "[format_id != aiff-lossless][format_id != alac]"
+TWITCH_NO_60FPS = "[format_id !=? 1080p60__source_][format_id !=? 720p60]"
+MIXCLOUD_NO_DASH_HLS = "[format_id !=? dash-a1-x3][format_id !*=? hls-6]"
+BANDCAMP_NO_AIFF_ALAC = "[format_id !=? aiff-lossless][format_id !=? alac]"
 AUDIO_FORMAT = (
     BEST_ONLY_AUDIO + MIXCLOUD_NO_DASH_HLS + BANDCAMP_NO_AIFF_ALAC + BEST_FALLBACK
 )
