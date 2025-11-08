@@ -187,7 +187,7 @@ class StreamInfo:
                         + "\n"
                         + "This is a safe choice for the vast majority of cases.\n"
                         + "However, it is not adequate if the file is a streaming manifest pointing to a live stream.\n"
-                        + "If that is the case, please run CATT with the flag `--stream-type BUFFERED`"
+                        + "If that is the case, please run CATT with the flag `--stream-type live`"
                     )
                 else:
                     echo_verbose(
