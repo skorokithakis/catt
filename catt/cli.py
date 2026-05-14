@@ -69,7 +69,15 @@ class YtdlOptParamType(click.ParamType):
             self.fail("{} is not a valid key/value pair.".format(value))
 
         ykey, yval = value.split("=", 1)
-        yval = {"true": True, "false": False}.get(yval.lower().strip(), yval)
+        yval_stripped = yval.strip()
+        if yval_stripped.startswith("[") and yval_stripped.endswith("]"):
+            inner = yval_stripped[1:-1].strip()
+            if inner:
+                yval = [item.strip() for item in inner.split(",")]
+            else:
+                yval = []
+        else:
+            yval = {"true": True, "false": False}.get(yval_stripped.lower(), yval)
         return (ykey, yval)
 
 
