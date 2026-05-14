@@ -1,7 +1,6 @@
 import io
 import re
 import socketserver
-import sys
 import time
 import traceback
 from http.server import BaseHTTPRequestHandler
@@ -115,10 +114,9 @@ def serve_file(
                 # This is supposed to happen when the Chromecast seeks or stops.
                 pass
             except BrokenPipeError:
-                print(
-                    "Device disconnected while playing. Please check that the video file is compatible with the device.",
-                    file=sys.stderr,
-                )
+                # This is normal when the Chromecast closes a range request after
+                # seeking, track-switching, or reaching EOF.  Silently ignore it.
+                pass
             except:  # noqa
                 traceback.print_exc()
 

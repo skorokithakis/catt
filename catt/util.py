@@ -45,10 +45,16 @@ def guess_mime(path):
     # source: https://developers.google.com/cast/docs/media
     extension = Path(path).suffix.lower()
     extensions = {
-        ".mp4": "video/mp4",
+        ".aac": "audio/aac",
+        ".flac": "audio/flac",
         ".m4a": "audio/mp4",
         ".mp3": "audio/mp3",
         ".mpa": "audio/mpeg",
+        ".mp4": "video/mp4",
+        ".oga": "audio/ogg",
+        ".ogg": "audio/ogg",
+        ".opus": "audio/ogg",
+        ".wav": "audio/wav",
         ".webm": "video/webm",
         ".mkv": "video/x-matroska",
         ".bmp": "image/bmp",

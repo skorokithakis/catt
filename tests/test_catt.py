@@ -14,6 +14,7 @@ from catt.controllers import PlaybackBaseMixin
 from catt.controllers import SimpleListener
 from catt.error import CastError
 from catt.stream_info import StreamInfo
+from catt.util import guess_mime
 
 
 def ignore_tmr_failure(func):
@@ -73,6 +74,33 @@ class TestThings(unittest.TestCase):
         self.assertEqual(stream.video_url, url)
         self.assertTrue(stream.is_remote_file)
         self.assertTrue(stream._is_direct_link)
+
+
+class TestGuessMime(unittest.TestCase):
+    def test_opus_returns_audio_ogg(self):
+        self.assertEqual(guess_mime("song.opus"), "audio/ogg")
+        self.assertEqual(guess_mime("song.OPUS"), "audio/ogg")
+
+    def test_ogg_returns_audio_ogg(self):
+        self.assertEqual(guess_mime("song.ogg"), "audio/ogg")
+
+    def test_oga_returns_audio_ogg(self):
+        self.assertEqual(guess_mime("song.oga"), "audio/ogg")
+
+    def test_flac_returns_audio_flac(self):
+        self.assertEqual(guess_mime("song.flac"), "audio/flac")
+
+    def test_wav_returns_audio_wav(self):
+        self.assertEqual(guess_mime("song.wav"), "audio/wav")
+
+    def test_aac_returns_audio_aac(self):
+        self.assertEqual(guess_mime("song.aac"), "audio/aac")
+
+    def test_unknown_extension_falls_back_to_video_mp4(self):
+        self.assertEqual(guess_mime("song.xyz"), "video/mp4")
+
+    def test_existing_mp4_still_works(self):
+        self.assertEqual(guess_mime("movie.mp4"), "video/mp4")
 
 
 class TestYtdlOpt(unittest.TestCase):
