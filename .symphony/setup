@@ -1,0 +1,7 @@
+#!/bin/bash
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+poetry install
+poetry run pre-commit install
