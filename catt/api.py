@@ -86,7 +86,10 @@ class CattDevice:
         """
 
         if resolve:
-            stream = StreamInfo(url)
+            if not self._cast:
+                self._create_cast()
+            assert self._cast is not None
+            stream = StreamInfo(url, cast_info=self._cast.cast_info)
             url = stream.video_url
         self.controller.prep_app()
         self.controller.play_media_url(url, subtitles=subtitle_url, **kwargs)
@@ -182,4 +185,4 @@ class CattDevice:
 def discover() -> List[CattDevice]:
     """Perform discovery of devices present on local network, and return result."""
 
-    return [CattDevice(ip_addr=c.socket_client.host) for c in get_casts()]
+    return [CattDevice(ip_addr=c.cast_info.host) for c in get_casts()]
