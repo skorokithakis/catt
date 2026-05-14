@@ -13,6 +13,9 @@ from pychromecast.config import APP_YOUTUBE as YOUTUBE_APP_ID
 from pychromecast.controllers.dashcast import (
     DashCastController as PyChromecastDashCastController,
 )
+from pychromecast.controllers.media import (
+    MediaStatusListener as PyChromecastMediaStatusListener,
+)
 from pychromecast.controllers.youtube import YouTubeController
 
 from .discovery import get_cast
@@ -238,7 +241,7 @@ class CastStatusListener:
         return status.app_id == self.app_id
 
 
-class MediaStatusListener:
+class MediaStatusListener(PyChromecastMediaStatusListener):
     def __init__(self, current_state, states, invert=False):
         if any(s not in VALID_STATE_EVENTS for s in states):
             raise ListenerError("Invalid state(s)")
@@ -249,6 +252,7 @@ class MediaStatusListener:
 
         self._state_event = threading.Event()
         self._current_state = current_state
+        self.load_failed_error_code: Optional[int] = None
         if self._current_state in self._states_waited_for:
             self._state_event.set()
 
@@ -259,15 +263,22 @@ class MediaStatusListener:
         else:
             self._state_event.clear()
 
+    def load_media_failed(self, queue_item_id: int, error_code: int) -> None:
+        self.load_failed_error_code = error_code
+        self._state_event.set()
+
     def wait_for_states(self, timeout=None):
         return self._state_event.wait(timeout=timeout)
 
 
-class SimpleListener:
+class SimpleListener(PyChromecastMediaStatusListener):
     def __init__(self):
         self._status_received = threading.Event()
 
     def new_media_status(self, status):
+        self._status_received.set()
+
+    def load_media_failed(self, queue_item_id: int, error_code: int) -> None:
         self._status_received.set()
 
     def block_until_status_received(self):
@@ -530,7 +541,14 @@ class PlaybackBaseMixin:
         self._cast.media_controller.register_status_listener(media_listener)
 
         try:
-            return media_listener.wait_for_states(timeout=timeout)
+            result = media_listener.wait_for_states(timeout=timeout)
+            if media_listener.load_failed_error_code is not None:
+                raise CastError(
+                    "Chromecast failed to load media "
+                    f"(error code {media_listener.load_failed_error_code}). "
+                    "The media format or codec may not be supported by this device."
+                )
+            return result
         except pychromecast.error.UnsupportedNamespace:
             raise CastError("Chromecast app operation was interrupted")
 

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import concurrent.futures
+import time
 import unittest
 
 import click
@@ -7,6 +9,10 @@ import click.testing
 from yt_dlp.utils import DownloadError
 
 from catt.cli import YTDL_OPT
+from catt.controllers import MediaStatusListener
+from catt.controllers import PlaybackBaseMixin
+from catt.controllers import SimpleListener
+from catt.error import CastError
 from catt.stream_info import StreamInfo
 
 
@@ -116,6 +122,73 @@ class TestYtdlOpt(unittest.TestCase):
         key, val = self._convert("key=plain")
         self.assertEqual(key, "key")
         self.assertEqual(val, "plain")
+
+
+class _FakeStatus:
+    """Minimal stub for pychromecast media status."""
+
+    player_state = "UNKNOWN"
+
+
+class _FakeMediaController:
+    """Minimal stub for pychromecast MediaController."""
+
+    def __init__(self):
+        self.status = _FakeStatus()
+        self._listener = None
+
+    def register_status_listener(self, listener):
+        self._listener = listener
+
+
+class _FakeCast:
+    """Minimal stub for pychromecast.Chromecast."""
+
+    def __init__(self):
+        self.media_controller = _FakeMediaController()
+
+
+class _WaitForStub(PlaybackBaseMixin):
+    """Minimal stub exposing PlaybackBaseMixin.wait_for for testing."""
+
+    def __init__(self):
+        self._cast = _FakeCast()
+
+
+class TestLoadMediaFailed(unittest.TestCase):
+    def test_media_status_listener_records_error_and_unblocks(self):
+        """load_media_failed records error code and unblocks wait_for_states."""
+        listener = MediaStatusListener(current_state="UNKNOWN", states=["PLAYING"])
+        self.assertIsNone(listener.load_failed_error_code)
+        listener.load_media_failed(0, 42)
+        self.assertTrue(listener.wait_for_states(timeout=1))
+        self.assertEqual(listener.load_failed_error_code, 42)
+
+    def test_simple_listener_unblocks_on_load_failed(self):
+        """load_media_failed unblocks block_until_status_received."""
+        listener = SimpleListener()
+        listener.load_media_failed(0, 42)
+        # Returns immediately because the internal event is already set.
+        listener.block_until_status_received()
+
+    def test_wait_for_raises_casterror_on_load_failure(self):
+        """PlaybackBaseMixin.wait_for raises CastError with the error code."""
+        stub = _WaitForStub()
+
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(stub.wait_for, ["PLAYING"], False, 2)
+
+            # Wait until the listener has been registered.
+            mc = stub._cast.media_controller
+            while mc._listener is None:
+                time.sleep(0.01)
+
+            # Trigger a load failure.
+            mc._listener.load_media_failed(0, 7)
+
+            with self.assertRaises(CastError) as ctx:
+                future.result()
+            self.assertIn("error code 7", str(ctx.exception))
 
 
 if __name__ == "__main__":
