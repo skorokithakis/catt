@@ -22,6 +22,19 @@ def echo_status(status):
     if status.get("title"):
         click.echo("Title: {}".format(status["title"]))
 
+    if status.get("artist"):
+        click.echo("Artist: {}".format(status["artist"]))
+    if status.get("album_name"):
+        click.echo("Album: {}".format(status["album_name"]))
+    if status.get("track"):
+        click.echo("Track: {}".format(status["track"]))
+    if status.get("series_title"):
+        click.echo("Series: {}".format(status["series_title"]))
+    if status.get("season"):
+        click.echo("Season: {}".format(status["season"]))
+    if status.get("episode"):
+        click.echo("Episode: {}".format(status["episode"]))
+
     if status.get("current_time"):
         current = human_time(status["current_time"])
         if status.get("duration"):

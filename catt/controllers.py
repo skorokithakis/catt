@@ -367,6 +367,12 @@ class CastController:
             "content_id": status.content_id,
             "current_time": status.current_time if self._is_seekable else None,
             "thumb": status.images[0].url if status.images else None,
+            "artist": status.artist,
+            "album_name": status.album_name,
+            "track": status.track,
+            "series_title": status.series_title,
+            "season": status.season,
+            "episode": status.episode,
         }
 
     @property
