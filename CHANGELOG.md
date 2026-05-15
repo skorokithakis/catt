@@ -8,6 +8,24 @@
 * Tell apart live videos from buffered videos (#464) [medape]
 
 
+## [0.13.1](https://github.com/skorokithakis/catt/compare/v0.13.0...v0.13.1) (2026-05-15)
+
+
+### Features
+
+* Drop support for Python before 3.11, as that's what PyChromecast requires ([a815de7](https://github.com/skorokithakis/catt/commit/a815de7c46585454e33a351e79a733d2e56d3596))
+* More control over subtitles ([#467](https://github.com/skorokithakis/catt/issues/467)) ([7bd7788](https://github.com/skorokithakis/catt/commit/7bd7788754e19883fe5fa9692a5e5cda7f2cfca8))
+* Support list values for -y yt-dlp option ([ddda0d4](https://github.com/skorokithakis/catt/commit/ddda0d42966fe49e8f9ed91e26d786efc2ecb7cd)), closes [#453](https://github.com/skorokithakis/catt/issues/453)
+* Surface artist/album/track/series metadata in status ([c4aa2d8](https://github.com/skorokithakis/catt/commit/c4aa2d8b94dd79e443a725bd884062a7439cbaaf))
+
+
+### Bug Fixes
+
+* Audio MIME types and misleading disconnect warning ([62ddcce](https://github.com/skorokithakis/catt/commit/62ddcced3ceb83ebdbf89d7f8b78a8bd389ceda5)), closes [#389](https://github.com/skorokithakis/catt/issues/389)
+* Handle Chromecast load failures cleanly ([1e56117](https://github.com/skorokithakis/catt/commit/1e56117f3ad8aaa83f406218aec1ba241d1d3231)), closes [#437](https://github.com/skorokithakis/catt/issues/437)
+* Pass cast_info to StreamInfo in API and fix discover() ([27f96a0](https://github.com/skorokithakis/catt/commit/27f96a06827d0abc075f4e5c68339ed8591f762f))
+* Title, Volume and remote Mp3 files ([#491](https://github.com/skorokithakis/catt/issues/491)) ([cb90c11](https://github.com/skorokithakis/catt/commit/cb90c1134a6aeb91ca99575fcf50aec335f00eca))
+
 ## [0.13.0](https://github.com/skorokithakis/catt/compare/v0.12.0...v0.13.0) (2025-08-19)
 
 
@@ -1159,5 +1177,3 @@
 * Make temporary directory finding cross-platform. [Stavros Korokithakis]
 
 * Remove unused import. [Stavros Korokithakis]
-
-
