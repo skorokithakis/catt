@@ -74,7 +74,7 @@ class TestThings(unittest.TestCase):
         self.assertEqual(stream.extractor, "twitch")
 
     def test_stream_info_direct_link(self):
-        url = "https://homeazan.com/file_example_MP3_700KB.mp3"
+        url = "https://upload.wikimedia.org/wikipedia/commons/c/c8/Example.ogg"
         stream = StreamInfo(url)
         self.assertEqual(stream.video_url, url)
         self.assertTrue(stream.is_remote_file)
