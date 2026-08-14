@@ -1,17 +1,22 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import concurrent.futures
+import contextlib
 import time
 import unittest
+from unittest import mock
 
 import click
 import click.testing
+from pychromecast.error import RequestTimeout
 from yt_dlp.utils import DownloadError
 
 from catt.cli import YTDL_OPT
 from catt.controllers import MediaStatusListener
 from catt.controllers import PlaybackBaseMixin
 from catt.controllers import SimpleListener
+from catt.discovery import get_cast_with_ip
+from catt.discovery import get_casts
 from catt.error import CastError
 from catt.stream_info import StreamInfo
 from catt.util import guess_mime
@@ -217,6 +222,79 @@ class TestLoadMediaFailed(unittest.TestCase):
             with self.assertRaises(CastError) as ctx:
                 future.result()
             self.assertIn("error code 7", str(ctx.exception))
+
+
+class TestDiscoveryTimeout(unittest.TestCase):
+    @contextlib.contextmanager
+    def _patch_discovery(self, fake_cast):
+        """Patch discovery and cast construction, returning the context managers."""
+        browser = mock.Mock()
+        with (
+            mock.patch(
+                "catt.discovery.pychromecast.discovery.discover_chromecasts",
+                return_value=([object()], browser),
+            ),
+            mock.patch(
+                "catt.discovery.pychromecast.get_chromecast_from_cast_info",
+                return_value=fake_cast,
+            ),
+        ):
+            yield browser
+
+    def test_get_casts_raises_casterror_when_device_does_not_connect(self):
+        fake_cast = mock.Mock()
+        fake_cast.cast_info.friendly_name = "Kitchen"
+        fake_cast.wait.side_effect = RequestTimeout("wait", 30)
+
+        with self._patch_discovery(fake_cast) as browser:
+            with self.assertRaises(CastError) as ctx:
+                get_casts()
+
+        fake_cast.wait.assert_called_once_with(timeout=30)
+        browser.stop_discovery.assert_called_once_with()
+        self.assertIn("Kitchen", str(ctx.exception))
+        self.assertIn("did not respond", str(ctx.exception))
+
+    def test_get_casts_raises_casterror_when_wait_returns_without_connecting(self):
+        # Some pychromecast versions return silently from wait() on expiry;
+        # the connection state check must catch that case.
+        fake_cast = mock.Mock()
+        fake_cast.cast_info.friendly_name = "Kitchen"
+        fake_cast.wait.return_value = None
+        fake_cast.socket_client.is_connected = False
+
+        with self._patch_discovery(fake_cast) as browser:
+            with self.assertRaises(CastError) as ctx:
+                get_casts()
+
+        fake_cast.wait.assert_called_once_with(timeout=30)
+        browser.stop_discovery.assert_called_once_with()
+        self.assertIn("Kitchen", str(ctx.exception))
+
+    def test_get_cast_with_ip_raises_casterror_when_device_does_not_connect(self):
+        fake_cast = mock.Mock()
+        fake_cast.wait.side_effect = RequestTimeout("wait", 30)
+        device_info = mock.Mock()
+        device_info.uuid = "deadbeef"
+        device_info.model_name = "Chromecast"
+        device_info.friendly_name = "Living Room"
+
+        with (
+            mock.patch(
+                "catt.discovery.pychromecast.discovery.get_device_info",
+                return_value=device_info,
+            ),
+            mock.patch(
+                "catt.discovery.pychromecast.get_chromecast_from_host",
+                return_value=fake_cast,
+            ),
+        ):
+            with self.assertRaises(CastError) as ctx:
+                get_cast_with_ip("192.168.1.10")
+
+        fake_cast.wait.assert_called_once_with(timeout=30)
+        self.assertIn("Living Room", str(ctx.exception))
+        self.assertIn("192.168.1.10", str(ctx.exception))
 
 
 if __name__ == "__main__":

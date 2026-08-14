@@ -3,11 +3,35 @@ from typing import Optional
 from typing import Union
 
 import pychromecast
+from pychromecast.error import RequestTimeout
 
 from .error import CastError
 from .util import is_ipaddress
 
 DEFAULT_PORT = 8009
+CAST_TIMEOUT = 30
+
+
+def _wait_for_cast(cast: pychromecast.Chromecast, description: str) -> None:
+    """
+    Wait for a cast device to be ready, raising CastError if it does not
+    respond within CAST_TIMEOUT seconds.
+
+    :param cast: The Chromecast object to wait for.
+    :type cast: pychromecast.Chromecast
+    :param description: Human-readable description of the device.
+    :type description: str
+    """
+
+    msg = 'Device "{}" did not respond within {} seconds'.format(
+        description, CAST_TIMEOUT
+    )
+    try:
+        cast.wait(timeout=CAST_TIMEOUT)
+    except RequestTimeout as err:
+        raise CastError(msg) from err
+    if not cast.socket_client.is_connected:
+        raise CastError(msg)
 
 
 def get_casts(names: Optional[List[str]] = None) -> List[pychromecast.Chromecast]:
@@ -32,10 +56,12 @@ def get_casts(names: Optional[List[str]] = None) -> List[pychromecast.Chromecast
         pychromecast.get_chromecast_from_cast_info(c, browser.zc) for c in cast_infos
     ]
 
-    for cast in casts:
-        cast.wait()
+    try:
+        for cast in casts:
+            _wait_for_cast(cast, cast.cast_info.friendly_name)
+    finally:
+        browser.stop_discovery()
 
-    browser.stop_discovery()
     casts.sort(key=lambda c: c.cast_info.friendly_name)
     return casts
 
@@ -93,7 +119,7 @@ def get_cast_with_ip(
         device_info.friendly_name,
     )
     cast = pychromecast.get_chromecast_from_host(host)
-    cast.wait()
+    _wait_for_cast(cast, "{} ({})".format(device_info.friendly_name, cast_ip))
     return cast
 
 
