@@ -12,9 +12,17 @@ from pychromecast.error import RequestTimeout
 from yt_dlp.utils import DownloadError
 
 from catt.cli import YTDL_OPT
+from catt.controllers import App
+from catt.controllers import CastController
+from catt.controllers import DASHCAST_APP_ID
+from catt.controllers import DashCastController
+from catt.controllers import DefaultCastController
+from catt.controllers import MEDIA_RECEIVER_APP_ID
 from catt.controllers import MediaStatusListener
 from catt.controllers import PlaybackBaseMixin
 from catt.controllers import SimpleListener
+from catt.controllers import YOUTUBE_APP_ID
+from catt.controllers import YoutubeCastController
 from catt.discovery import get_cast_with_ip
 from catt.discovery import get_casts
 from catt.error import CastError
@@ -295,6 +303,124 @@ class TestDiscoveryTimeout(unittest.TestCase):
         fake_cast.wait.assert_called_once_with(timeout=30)
         self.assertIn("Living Room", str(ctx.exception))
         self.assertIn("192.168.1.10", str(ctx.exception))
+
+
+class TestControllerTimeouts(unittest.TestCase):
+    @contextlib.contextmanager
+    def _fast_wait_timeout(self):
+        """Temporarily shorten WAIT_TIMEOUT so timeout tests don't block for 30s."""
+        with mock.patch("catt.controllers.WAIT_TIMEOUT", 0.01):
+            yield
+
+    def _make_cast(self, app_id):
+        cast = mock.Mock()
+        cast.app_id = app_id
+        return cast
+
+    def _make_app(self, name, app_id, device_types):
+        return App(app_name=name, app_id=app_id, supported_device_types=device_types)
+
+    def test_dashcast_prep_app_raises_casterror_when_app_never_becomes_ready(self):
+        cast = self._make_cast(None)
+        app = self._make_app("dashcast", DASHCAST_APP_ID, ["cast", "audio"])
+        controller = DashCastController(cast, app, prep=None)
+
+        with self._fast_wait_timeout():
+            with self.assertRaises(CastError) as ctx:
+                controller.prep_app()
+
+        cast.start_app.assert_called_once_with(DASHCAST_APP_ID, force_launch=True)
+        self.assertIn("timed out", str(ctx.exception))
+        self.assertIn(DASHCAST_APP_ID, str(ctx.exception))
+
+    def test_prep_app_raises_casterror_when_app_never_becomes_ready(self):
+        cast = self._make_cast("12345678")
+        app = self._make_app("default", MEDIA_RECEIVER_APP_ID, ["cast", "audio"])
+        controller = CastController(cast, app, prep=None)
+
+        with self._fast_wait_timeout():
+            with self.assertRaises(CastError) as ctx:
+                controller.prep_app()
+
+        cast.start_app.assert_called_once_with(MEDIA_RECEIVER_APP_ID)
+        self.assertIn("timed out", str(ctx.exception))
+        self.assertIn(MEDIA_RECEIVER_APP_ID, str(ctx.exception))
+
+    def test_kill_force_quits_app_even_when_cloud_app_never_becomes_ready(self):
+        cast = self._make_cast("12345678")
+        app = self._make_app("default", MEDIA_RECEIVER_APP_ID, ["cast", "audio"])
+        controller = CastController(cast, app, prep=None)
+
+        with self._fast_wait_timeout():
+            controller.kill(force=True)
+
+        cast.quit_app.assert_called_once_with()
+
+    def test_block_until_status_received_raises_casterror_when_status_never_arrives(
+        self,
+    ):
+        listener = SimpleListener()
+
+        with self._fast_wait_timeout():
+            with self.assertRaises(CastError) as ctx:
+                listener.block_until_status_received()
+
+        self.assertIn("media status", str(ctx.exception))
+        self.assertIn("timed out", str(ctx.exception))
+
+    def test_play_media_url_raises_casterror_when_media_session_never_becomes_active(
+        self,
+    ):
+        cast = self._make_cast(MEDIA_RECEIVER_APP_ID)
+        app = self._make_app("default", MEDIA_RECEIVER_APP_ID, ["cast", "audio"])
+        controller = DefaultCastController(cast, app, prep=None)
+        controller._controller.session_active_event.is_set.return_value = False
+
+        with mock.patch("catt.controllers.WAIT_TIMEOUT", mock.sentinel.timeout):
+            with self.assertRaises(CastError) as ctx:
+                controller.play_media_url("https://example.com/video.mp4")
+
+        controller._controller.block_until_active.assert_called_once_with(
+            timeout=mock.sentinel.timeout
+        )
+        self.assertIn("media session", str(ctx.exception))
+        self.assertIn("timed out", str(ctx.exception))
+
+    def test_youtube_play_media_id_raises_casterror_when_playback_never_starts(self):
+        cast = self._make_cast(YOUTUBE_APP_ID)
+        app = self._make_app("youtube", YOUTUBE_APP_ID, ["cast"])
+        with mock.patch("catt.controllers.YouTubeController"):
+            controller = YoutubeCastController(cast, app, prep=None)
+
+        with mock.patch("catt.controllers.WAIT_TIMEOUT", mock.sentinel.timeout):
+            with mock.patch.object(
+                controller, "wait_for", return_value=False
+            ) as wait_for:
+                with self.assertRaises(CastError) as ctx:
+                    controller.play_media_id("abc123", current_time=42)
+
+        wait_for.assert_called_once_with(["PLAYING"], timeout=mock.sentinel.timeout)
+        self.assertIn("PLAYING", str(ctx.exception))
+        self.assertIn("seconds", str(ctx.exception))
+
+    def test_youtube_add_raises_casterror_when_still_buffering(self):
+        cast = self._make_cast(YOUTUBE_APP_ID)
+        app = self._make_app("youtube", YOUTUBE_APP_ID, ["cast"])
+        with mock.patch("catt.controllers.YouTubeController"):
+            controller = YoutubeCastController(cast, app, prep=None)
+
+        with mock.patch("catt.controllers.WAIT_TIMEOUT", mock.sentinel.timeout):
+            with mock.patch.object(
+                controller, "wait_for", return_value=False
+            ) as wait_for:
+                with self.assertRaises(CastError) as ctx:
+                    controller.add("abc123")
+
+        wait_for.assert_called_once_with(
+            ["BUFFERING"], invert=True, timeout=mock.sentinel.timeout
+        )
+        self.assertIn("buffering", str(ctx.exception))
+        self.assertIn("seconds", str(ctx.exception))
 
 
 if __name__ == "__main__":

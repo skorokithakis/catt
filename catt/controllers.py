@@ -30,6 +30,23 @@ from .util import echo_warning
 GOOGLE_MEDIA_NAMESPACE = "urn:x-cast:com.google.cast.media"
 VALID_STATE_EVENTS = ["UNKNOWN", "IDLE", "BUFFERING", "PLAYING", "PAUSED"]
 CLOUD_APP_ID = "38579375"
+WAIT_TIMEOUT = 30
+
+
+def _wait_for_event(event: threading.Event, description: str) -> None:
+    """
+    Wait for an event to be set, raising CastError if it is not set
+    within WAIT_TIMEOUT seconds.
+
+    :param event: The event to wait for.
+    :type event: threading.Event
+    :param description: Human-readable description of what is being waited for.
+    :type description: str
+    """
+
+    msg = "Waiting for {} timed out after {} seconds".format(description, WAIT_TIMEOUT)
+    if not event.wait(timeout=WAIT_TIMEOUT):
+        raise CastError(msg)
 
 
 class App:
@@ -282,7 +299,7 @@ class SimpleListener(PyChromecastMediaStatusListener):
         self._status_received.set()
 
     def block_until_status_received(self):
-        self._status_received.wait()
+        _wait_for_event(self._status_received, "media status")
 
 
 class CastController:
@@ -315,7 +332,10 @@ class CastController:
 
         if not self._cast_listener.app_ready.is_set():
             self._cast.start_app(self._cast_listener.app_id)
-            self._cast_listener.app_ready.wait()
+            _wait_for_event(
+                self._cast_listener.app_ready,
+                'app "{}" to become ready'.format(self._cast_listener.app_id),
+            )
 
     def prep_control(self):
         """Make sure chromecast is not idle."""
@@ -476,7 +496,9 @@ class CastController:
             listener = CastStatusListener(CLOUD_APP_ID)
             self._cast.register_status_listener(listener)
             self._cast.start_app(CLOUD_APP_ID)
-            listener.app_ready.wait()
+            # Give the dummy cloud app a chance to start, but never block the
+            # actual kill on it: time out and quit the session regardless.
+            listener.app_ready.wait(timeout=WAIT_TIMEOUT)
         self._cast.quit_app()
 
 
@@ -584,7 +606,17 @@ class DefaultCastController(CastController, MediaControllerMixin, PlaybackBaseMi
             stream_type=kwargs.get("stream_type"),
             media_info=kwargs.get("media_info"),
         )
-        self._controller.block_until_active()
+        # block_until_active() discards the result of its internal Event.wait(),
+        # so we have to inspect session_active_event ourselves to tell a real
+        # session from an expired timeout. That attribute is pychromecast
+        # internals: re-check it when bumping the pychromecast major.
+        self._controller.block_until_active(timeout=WAIT_TIMEOUT)
+        if not self._controller.session_active_event.is_set():
+            raise CastError(
+                "Waiting for the media session to become active timed out after {} seconds".format(
+                    WAIT_TIMEOUT
+                )
+            )
 
     def restore(self, data):
         self.play_media_url(
@@ -609,7 +641,10 @@ class DashCastController(CastController):
         # We must force the launch of the DashCast app because it, by design,
         # becomes unresponsive after a website is loaded.
         self._cast.start_app(self._cast_listener.app_id, force_launch=True)
-        self._cast_listener.app_ready.wait()
+        _wait_for_event(
+            self._cast_listener.app_ready,
+            'app "{}" to become ready'.format(self._cast_listener.app_id),
+        )
 
 
 class YoutubeCastController(CastController, MediaControllerMixin, PlaybackBaseMixin):
@@ -624,8 +659,22 @@ class YoutubeCastController(CastController, MediaControllerMixin, PlaybackBaseMi
         self._controller.play_video(video_id)
         current_time = kwargs.get("current_time")
         if current_time:
-            self.wait_for(["PLAYING"])
+            self._wait_until_playing()
             self.seek(current_time)
+
+    def _wait_until_playing(self) -> None:
+        if not self.wait_for(["PLAYING"], timeout=WAIT_TIMEOUT):
+            raise CastError(
+                "Playback did not reach the PLAYING state within {} seconds".format(
+                    WAIT_TIMEOUT
+                )
+            )
+
+    def _wait_until_not_buffering(self) -> None:
+        if not self.wait_for(["BUFFERING"], invert=True, timeout=WAIT_TIMEOUT):
+            raise CastError(
+                "Playback did not stop buffering within {} seconds".format(WAIT_TIMEOUT)
+            )
 
     def play_playlist(self, playlist_id, video_id):
         self.clear()
@@ -633,15 +682,15 @@ class YoutubeCastController(CastController, MediaControllerMixin, PlaybackBaseMi
 
     def add(self, video_id):
         # You can't add videos to the queue while the app is buffering.
-        self.wait_for(["BUFFERING"], invert=True)
+        self._wait_until_not_buffering()
         self._controller.add_to_queue(video_id)
 
     def add_next(self, video_id):
-        self.wait_for(["BUFFERING"], invert=True)
+        self._wait_until_not_buffering()
         self._controller.play_next(video_id)
 
     def remove(self, video_id):
-        self.wait_for(["BUFFERING"], invert=True)
+        self._wait_until_not_buffering()
         self._controller.remove_video(video_id)
 
     def clear(self):
