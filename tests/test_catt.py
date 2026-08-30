@@ -2,16 +2,20 @@
 # -*- coding: utf-8 -*-
 import concurrent.futures
 import contextlib
+import json
 import time
 import unittest
+import uuid
 from unittest import mock
 
 import click
 import click.testing
+from pychromecast import CastInfo
 from pychromecast.error import RequestTimeout
 from yt_dlp.utils import DownloadError
 
 from catt.cli import YTDL_OPT
+from catt.cli import scan
 from catt.controllers import App
 from catt.controllers import CastController
 from catt.controllers import DASHCAST_APP_ID
@@ -163,6 +167,39 @@ class TestYtdlOpt(unittest.TestCase):
         key, val = self._convert("key=plain")
         self.assertEqual(key, "key")
         self.assertEqual(val, "plain")
+
+
+class TestScan(unittest.TestCase):
+    def test_scan_json_outputs_cast_info_fields(self):
+        cast_info = CastInfo(
+            services=set(),
+            uuid=uuid.UUID("12345678-1234-5678-1234-567812345678"),
+            model_name="Chromecast",
+            friendly_name="Living Room",
+            host="192.168.1.10",
+            port=8009,
+            cast_type="cast",
+            manufacturer="Google Inc.",
+        )
+
+        runner = click.testing.CliRunner()
+        with mock.patch("catt.cli.get_cast_infos", return_value=[cast_info]):
+            result = runner.invoke(scan, ["-j"])
+
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertEqual(
+            json.loads(result.output),
+            {
+                "Living Room": {
+                    "host": "192.168.1.10",
+                    "port": 8009,
+                    "uuid": "12345678-1234-5678-1234-567812345678",
+                    "model_name": "Chromecast",
+                    "friendly_name": "Living Room",
+                    "manufacturer": "Google Inc.",
+                }
+            },
+        )
 
 
 class _FakeStatus:

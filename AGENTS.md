@@ -87,12 +87,6 @@ yet; when it does, do the audit above rather than dropping the cap blindly.
 
 ## Known gotchas
 
-- **`catt/api.py:185` uses `c.socket_client.host`.** The `socket_client`
-  attribute path was restructured in newer pychromecast versions; this
-  call may be broken against current 14.x. The modern equivalent is
-  `c.cast_info.host`. Verify against a real device before changing — and
-  if you fix it, check whether anything else in `discovery.py` /
-  `api.py` reads `socket_client` similarly.
 - **`setup.cfg`** declares `python_requires >= 3.4`. Stale; the real floor
   is 3.11 (per `pyproject.toml`). Harmless but misleading.
 - **`tox.ini`** is stale (see "Commands" above).
