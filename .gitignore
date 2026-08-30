@@ -124,3 +124,6 @@ dmypy.json
 .idea/
 poetry.lock
 .vscode/
+
+# tk ticket system (local working state)
+.tickets/
