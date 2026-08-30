@@ -1,6 +1,14 @@
 # Changelog
 
 
+## [0.13.3](https://github.com/skorokithakis/catt/compare/v0.13.2...v0.13.3) (2026-08-30)
+
+
+### Documentation
+
+* Fix the changelog and document the single release path ([fb5d020](https://github.com/skorokithakis/catt/commit/fb5d020d4494d8aa84d373d8e80490ce9c9d8165))
+* Note that docs commits release, and the dispatch token requirement ([e3f6c90](https://github.com/skorokithakis/catt/commit/e3f6c9089b075cb27ce2abd37e18b9019a1623ff))
+
 ## [0.13.2](https://github.com/skorokithakis/catt/compare/v0.13.1...v0.13.2) (2026-08-30)
 
 
