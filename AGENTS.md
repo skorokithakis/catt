@@ -12,8 +12,8 @@ from many online sources to a Chromecast. The CLI entry point is
 
 - **Language:** Python `>= 3.11` (classifiers cover 3.11 / 3.12 / 3.13).
 - **Package manager / build:** Poetry (`pyproject.toml` is the single source
-  of truth for dependencies and version). `setup.cfg` and `tox.ini` are
-  legacy and stale — do not rely on them.
+  of truth for dependencies and version). `tox.ini` is legacy and stale — do
+  not rely on it.
 - **Key runtime deps:** `click`, `pychromecast`, `yt-dlp`, `requests`,
   `ifaddr`.
 - **Lint / format / type-check:** `ruff` (lint + format) and `mypy`, both
@@ -35,6 +35,22 @@ pytest tests/
 
 `tox.ini` targets py36–py39 and invokes `python setup.py test` — it is
 stale, ignore it.
+
+## Releasing
+
+- **Release-please is the only release path.** Merging its release PR creates
+  the tag and GitHub release, then dispatches `publish-pypi.yml` to publish
+  to PyPI through trusted publishing.
+- **Never release by hand or hand-push a `v*` tag.** Nothing listens to tag
+  pushes, so a hand-made tag silently ships nothing.
+- **For an unavoidable out-of-band publish,** manually run
+  `publish-pypi.yml` with the tag and update `.release-please-manifest.json`
+  in the same change. Otherwise release-please sees an older current version
+  and may reissue a version already on PyPI: `0.13.1` was released by hand
+  on 2025-08-19 without a manifest update; a year later release-please
+  proposed `0.13.1` again, found the existing tag, and published nothing.
+- **Keep `publish-pypi.yml` top-level, not reusable.** PyPI trusted
+  publishing cannot match a reusable workflow.
 
 ## Repo layout
 
@@ -87,14 +103,11 @@ yet; when it does, do the audit above rather than dropping the cap blindly.
 
 ## Known gotchas
 
-- **`setup.cfg`** declares `python_requires >= 3.4`. Stale; the real floor
-  is 3.11 (per `pyproject.toml`). Harmless but misleading.
 - **`tox.ini`** is stale (see "Commands" above).
 
 ## When making changes
 
-1. Edit `pyproject.toml` for dependency changes; do not touch
-   `requirements_dev.txt` or `setup.cfg` for runtime deps.
+1. Edit `pyproject.toml` for dependency changes.
 2. Run `pre-commit run --all-files` before committing.
 3. Add or update tests in `tests/` for behaviour changes. `realcc_tests/`
    is for changes that genuinely need a live Chromecast — most PRs should

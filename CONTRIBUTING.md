@@ -80,16 +80,13 @@ development.
 
     Now you can make your changes locally.
 
-5.  When you\'re done making changes, check that your changes pass
-    flake8 and the tests, including testing other Python versions with
-    tox:
+5.  When you're done making changes, check that your changes pass
+    pre-commit and the tests:
 
     ``` {.shell}
-    $ flake8 catt tests
+    $ pre-commit run --all-files
     $ pytest
     ```
-
-    To get flake8 and tox, just pip install them into your virtualenv.
 
 6.  Commit your changes and push your branch to GitHub:
 
@@ -110,9 +107,9 @@ Before you submit a pull request, check that it meets these guidelines:
 2.  If the pull request adds functionality, the docs should be updated.
     Put your new functionality into a function with a docstring, and add
     the feature to the list in README.md.
-3.  The pull request should work for all Python versions after 3.7. Check
-    <https://gitlab.com/stavros/catt/-/pipelines> and make
-    sure that the tests pass for all supported Python versions.
+3.  The pull request should work on Python 3.11 and later. Check the
+    [GitHub Actions checks](https://github.com/skorokithakis/catt/actions)
+    and make sure that the tests pass for all supported Python versions.
 
 Tips
 ----
@@ -120,5 +117,5 @@ Tips
 To run a subset of tests:
 
 ``` {.shell}
-$ python -m unittest tests.test_catt
+$ pytest tests/test_catt.py
 ```
