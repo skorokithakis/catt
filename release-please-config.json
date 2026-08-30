@@ -1,5 +1,4 @@
 {
-  "bump-patch-for-minor-pre-major": true,
   "bump-minor-pre-major": true,
   "always-update": true,
   "packages": {

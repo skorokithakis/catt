@@ -1,9 +1,6 @@
 name: Publish to PyPI
 
 on:
-  push:
-    tags:
-      - 'v*'  # Trigger on version tags like v1.0.0
   workflow_dispatch:
     inputs:
       tag:
@@ -24,12 +21,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.tag || github.ref }}
+          ref: ${{ github.event.inputs.tag }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.11'
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
