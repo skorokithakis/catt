@@ -51,6 +51,12 @@ stale, ignore it.
   proposed `0.13.1` again, found the existing tag, and published nothing.
 - **Keep `publish-pypi.yml` top-level, not reusable.** PyPI trusted
   publishing cannot match a reusable workflow.
+- **`docs:` commits trigger a patch release.** Observed, not obvious from
+  the config. Use `chore:` or `ci:` for changes that should not ship.
+- **The dispatch needs a token that can call the workflow-dispatch API.**
+  If a release goes red at `Dispatch PyPI publish`, that is the cause: the
+  tag and GitHub release already exist, so just run `publish-pypi.yml`
+  manually with that tag, then widen the token's scope.
 
 ## Repo layout
 
