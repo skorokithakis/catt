@@ -670,6 +670,13 @@ def write_config():
 @cli.command("set_default", short_help="Set the selected device as default.")
 @click.pass_obj
 def set_default(settings):
+    """
+    Set the selected device as default.
+
+    Select the device with the top-level -d option, before the command:
+
+        catt -d <device> set_default
+    """
     config = readconfig()
     device = get_device_from_settings(settings)
     config["options"]["device"] = device
@@ -693,6 +700,13 @@ def del_default(settings):
 @click.argument("name")
 @click.pass_obj
 def set_alias(settings, name):
+    """
+    Set NAME as the alias of the selected device (case-insensitive).
+
+    Select the device with the top-level -d option, before the command:
+
+        catt -d <device> set_alias <alias>
+    """
     config = readconfig()
     device = get_device_from_settings(settings)
     old_alias = get_alias_from_config(config, device)
@@ -705,6 +719,13 @@ def set_alias(settings, name):
 @cli.command("del_alias", short_help="Delete the alias name of the selected device.")
 @click.pass_obj
 def del_alias(settings):
+    """
+    Delete the alias name of the selected device.
+
+    Select the device with the top-level -d option, before the command:
+
+        catt -d <device> del_alias
+    """
     config = readconfig()
     device = get_device_from_settings(settings)
     alias = get_alias_from_config(config, device)
@@ -724,9 +745,8 @@ def get_alias_from_config(config, device):
 def get_device_from_settings(settings):
     device_desc = settings["selected_device"]
     if not device_desc or not settings["selected_device_is_from_cli"]:
-        raise CliError(
-            "No device specified (must be explicitly specified with -d option)"
-        )
+        command = click.get_current_context().info_name
+        raise CliError("No device specified. Use: catt -d <device> {}".format(command))
     is_ip = is_ipaddress(device_desc)
     if is_ip:
         found = cast_ip_exists(device_desc)
